@@ -341,7 +341,7 @@ async function handleImdbCatalogRequest(
           runtimeMin: effectiveFilters.runtimeMin,
           runtimeMax: effectiveFilters.runtimeMax,
           languages: effectiveFilters.languages,
-          countries: effectiveFilters.countries,
+          imdbCountries: effectiveFilters.imdbCountries,
           keywords: effectiveFilters.keywords,
           awardsWon: effectiveFilters.awardsWon,
           awardsNominated: effectiveFilters.awardsNominated,
