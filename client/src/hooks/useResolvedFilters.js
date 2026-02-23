@@ -37,7 +37,9 @@ export async function resolveItems(items, fetchById, search) {
             };
           }
         }
-      } catch { void 0; }
+      } catch {
+        void 0;
+      }
       return item;
     })
   );

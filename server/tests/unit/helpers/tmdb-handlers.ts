@@ -3,15 +3,24 @@ import { http, HttpResponse } from 'msw';
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 
 const movieGenres = [
-  { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' },
-  { id: 35, name: 'Comedy' }, { id: 80, name: 'Crime' }, { id: 99, name: 'Documentary' },
-  { id: 18, name: 'Drama' }, { id: 14, name: 'Fantasy' }, { id: 27, name: 'Horror' },
-  { id: 878, name: 'Science Fiction' }, { id: 53, name: 'Thriller' },
+  { id: 28, name: 'Action' },
+  { id: 12, name: 'Adventure' },
+  { id: 16, name: 'Animation' },
+  { id: 35, name: 'Comedy' },
+  { id: 80, name: 'Crime' },
+  { id: 99, name: 'Documentary' },
+  { id: 18, name: 'Drama' },
+  { id: 14, name: 'Fantasy' },
+  { id: 27, name: 'Horror' },
+  { id: 878, name: 'Science Fiction' },
+  { id: 53, name: 'Thriller' },
 ];
 
 const tvGenres = [
-  { id: 10759, name: 'Action & Adventure' }, { id: 35, name: 'Comedy' },
-  { id: 18, name: 'Drama' }, { id: 10765, name: 'Sci-Fi & Fantasy' },
+  { id: 10759, name: 'Action & Adventure' },
+  { id: 35, name: 'Comedy' },
+  { id: 18, name: 'Drama' },
+  { id: 10765, name: 'Sci-Fi & Fantasy' },
 ];
 
 export const tmdbHandlers = [
@@ -31,8 +40,24 @@ export const tmdbHandlers = [
       total_pages: 5,
       total_results: 100,
       results: [
-        { id: 550, title: 'Fight Club', popularity: 61.4, vote_average: 8.4, poster_path: '/poster.jpg', release_date: '1999-10-15', genre_ids: [18, 53] },
-        { id: 680, title: 'Pulp Fiction', popularity: 55.2, vote_average: 8.5, poster_path: '/poster2.jpg', release_date: '1994-09-10', genre_ids: [53, 80] },
+        {
+          id: 550,
+          title: 'Fight Club',
+          popularity: 61.4,
+          vote_average: 8.4,
+          poster_path: '/poster.jpg',
+          release_date: '1999-10-15',
+          genre_ids: [18, 53],
+        },
+        {
+          id: 680,
+          title: 'Pulp Fiction',
+          popularity: 55.2,
+          vote_average: 8.5,
+          poster_path: '/poster2.jpg',
+          release_date: '1994-09-10',
+          genre_ids: [53, 80],
+        },
       ],
     });
   }),
@@ -45,7 +70,15 @@ export const tmdbHandlers = [
       total_pages: 3,
       total_results: 60,
       results: [
-        { id: 1396, name: 'Breaking Bad', popularity: 150.3, vote_average: 8.9, poster_path: '/bb.jpg', first_air_date: '2008-01-20', genre_ids: [18, 80] },
+        {
+          id: 1396,
+          name: 'Breaking Bad',
+          popularity: 150.3,
+          vote_average: 8.9,
+          poster_path: '/bb.jpg',
+          first_air_date: '2008-01-20',
+          genre_ids: [18, 80],
+        },
       ],
     });
   }),
@@ -58,7 +91,15 @@ export const tmdbHandlers = [
       total_pages: 1,
       total_results: 1,
       results: [
-        { id: 550, title: query || 'Mock Movie', popularity: 50, vote_average: 8.0, poster_path: '/mock.jpg', release_date: '2000-01-01', genre_ids: [28] },
+        {
+          id: 550,
+          title: query || 'Mock Movie',
+          popularity: 50,
+          vote_average: 8.0,
+          poster_path: '/mock.jpg',
+          release_date: '2000-01-01',
+          genre_ids: [28],
+        },
       ],
     });
   }),
@@ -71,7 +112,15 @@ export const tmdbHandlers = [
       total_pages: 1,
       total_results: 1,
       results: [
-        { id: 1396, name: query || 'Mock Show', popularity: 50, vote_average: 8.0, poster_path: '/mock.jpg', first_air_date: '2000-01-01', genre_ids: [18] },
+        {
+          id: 1396,
+          name: query || 'Mock Show',
+          popularity: 50,
+          vote_average: 8.0,
+          poster_path: '/mock.jpg',
+          first_air_date: '2000-01-01',
+          genre_ids: [18],
+        },
       ],
     });
   }),
@@ -84,7 +133,16 @@ export const tmdbHandlers = [
       total_pages: 1,
       total_results: 1,
       results: [
-        { id: 550, title: query || 'Mock Result', media_type: 'movie', popularity: 50, vote_average: 8.0, poster_path: '/mock.jpg', release_date: '2000-01-01', genre_ids: [28] },
+        {
+          id: 550,
+          title: query || 'Mock Result',
+          media_type: 'movie',
+          popularity: 50,
+          vote_average: 8.0,
+          poster_path: '/mock.jpg',
+          release_date: '2000-01-01',
+          genre_ids: [28],
+        },
       ],
     });
   }),
@@ -145,7 +203,15 @@ export const tmdbHandlers = [
       total_pages: 5,
       total_results: 100,
       results: [
-        { id: 550, title: 'Trending Movie', popularity: 100, vote_average: 8.0, poster_path: '/t.jpg', release_date: '2025-01-01', genre_ids: [28] },
+        {
+          id: 550,
+          title: 'Trending Movie',
+          popularity: 100,
+          vote_average: 8.0,
+          poster_path: '/t.jpg',
+          release_date: '2025-01-01',
+          genre_ids: [28],
+        },
       ],
     });
   }),

@@ -116,32 +116,6 @@ export const ReleaseFilters = memo(function ReleaseFilters({
 
   return (
     <>
-      <label className="checkbox-label-row" style={{ cursor: 'pointer', marginBottom: '12px' }}>
-        <div
-          className={`checkbox ${localCatalog?.filters?.releasedOnly ? 'checked' : ''}`}
-          role="checkbox"
-          aria-checked={!!localCatalog?.filters?.releasedOnly}
-          tabIndex={0}
-          onClick={() => onFiltersChange('releasedOnly', !localCatalog?.filters?.releasedOnly)}
-          onKeyDown={(e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-              e.preventDefault();
-              onFiltersChange('releasedOnly', !localCatalog?.filters?.releasedOnly);
-            }
-          }}
-        >
-          {localCatalog?.filters?.releasedOnly && <Check size={14} />}
-        </div>
-        <LabelWithTooltip
-          label="Released only"
-          tooltip={
-            isMovie
-              ? 'Only show movies with a digital, physical, or TV release on or before today. Filters out announced and in-production titles.'
-              : 'Only show TV series that have already started airing. Filters out announced shows with future air dates.'
-          }
-        />
-      </label>
-
       <div className="date-presets">
         <div className="date-preset-row">
           <span className="date-preset-label">Last</span>
@@ -256,6 +230,32 @@ export const ReleaseFilters = memo(function ReleaseFilters({
       </div>
       {dateRangeError && <span className="field-error">{dateRangeError}</span>}
 
+      <label className="checkbox-label-row" style={{ cursor: 'pointer', marginTop: '12px' }}>
+        <div
+          className={`checkbox ${localCatalog?.filters?.releasedOnly ? 'checked' : ''}`}
+          role="checkbox"
+          aria-checked={!!localCatalog?.filters?.releasedOnly}
+          tabIndex={0}
+          onClick={() => onFiltersChange('releasedOnly', !localCatalog?.filters?.releasedOnly)}
+          onKeyDown={(e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+              e.preventDefault();
+              onFiltersChange('releasedOnly', !localCatalog?.filters?.releasedOnly);
+            }
+          }}
+        >
+          {localCatalog?.filters?.releasedOnly && <Check size={14} />}
+        </div>
+        <LabelWithTooltip
+          label="Released only"
+          tooltip={
+            isMovie
+              ? 'Only show movies with a digital, physical, or TV release on or before today. Filters out announced and in-production titles.'
+              : 'Only show TV series that have already started airing. Filters out announced shows with future air dates.'
+          }
+        />
+      </label>
+
       {!isMovie && (
         <div className="filter-two-col" style={{ marginTop: '16px' }}>
           <div className="filter-group">
@@ -341,7 +341,10 @@ export const ReleaseFilters = memo(function ReleaseFilters({
               onChange={(value) => {
                 onFiltersChange('region', value);
                 if (value) onFiltersChange('certificationCountry', value);
-                if (!value) onFiltersChange('releaseTypes', []);
+                if (!value) {
+                  onFiltersChange('releaseTypes', []);
+                  onFiltersChange('certificationCountry', undefined);
+                }
               }}
               placeholder="Worldwide"
               searchPlaceholder="Search countries..."

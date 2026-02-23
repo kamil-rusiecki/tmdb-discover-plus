@@ -1,7 +1,7 @@
 name: ✨ Feature Request
 description: Suggest a new feature or enhancement
-title: "[Feature]: "
-labels: ["enhancement", "triage"]
+title: '[Feature]: '
+labels: ['enhancement', 'triage']
 body:
   - type: markdown
     attributes:
@@ -31,7 +31,7 @@ body:
     attributes:
       label: Proposed Solution
       description: Describe the solution you'd like
-      placeholder: "I would like to be able to..."
+      placeholder: 'I would like to be able to...'
     validations:
       required: true
 
@@ -40,7 +40,7 @@ body:
     attributes:
       label: Alternatives Considered
       description: Describe any alternative solutions or features you've considered
-      placeholder: "I also considered..."
+      placeholder: 'I also considered...'
 
   - type: dropdown
     id: category

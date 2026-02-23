@@ -31,7 +31,7 @@ export function useCatalogManager(config, addToast) {
     config.setCatalogs((prev) => [...prev, newCatalog]);
     setActiveCatalog(newCatalog);
   };
-  
+
   const handleSetGlobalSource = (source) => {
     setGlobalSource(source);
     if (activeCatalog && (activeCatalog.source || 'tmdb') !== source) {

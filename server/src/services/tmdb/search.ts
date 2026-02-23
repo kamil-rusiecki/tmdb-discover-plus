@@ -21,7 +21,7 @@ export async function search(
   query: string,
   type: ContentType = 'movie',
   page: number = 1,
-  options?: { displayLanguage?: string; language?: string; includeAdult?: boolean },
+  options?: { displayLanguage?: string; language?: string; includeAdult?: boolean }
 ): Promise<unknown> {
   const mediaType = type === 'series' ? 'tv' : 'movie';
   const params: Record<string, string | number | boolean | undefined> = { query, page };
@@ -34,10 +34,7 @@ export async function search(
   return tmdbFetch(`/search/${mediaType}`, apiKey, params);
 }
 
-export async function searchPerson(
-  apiKey: string,
-  query: string,
-): Promise<PersonSearchResult[]> {
+export async function searchPerson(apiKey: string, query: string): Promise<PersonSearchResult[]> {
   const data = (await tmdbFetch('/search/person', apiKey, { query })) as {
     results?: TmdbPersonResult[];
   };
@@ -55,7 +52,7 @@ async function getPersonCredits(
   apiKey: string,
   personId: number,
   type: ContentType = 'movie',
-  language?: string,
+  language?: string
 ): Promise<{ cast?: TmdbPersonCredit[]; crew?: TmdbPersonCredit[] }> {
   const mediaType = type === 'series' ? 'tv' : 'movie';
   const params: Record<string, string | undefined> = {};
@@ -94,7 +91,7 @@ export async function comprehensiveSearch(
   query: string,
   type: ContentType = 'movie',
   page: number = 1,
-  options: ComprehensiveSearchOptions = {},
+  options: ComprehensiveSearchOptions = {}
 ): Promise<ComprehensiveSearchResponse> {
   const { displayLanguage, language, includeAdult } = options;
   const languageParam = displayLanguage || language;
@@ -125,7 +122,9 @@ export async function comprehensiveSearch(
 
   const titleItems = titleResult?.results || [];
 
-  const topMatch = titleItems[0] as { id: number; title?: string; name?: string; popularity?: number; [key: string]: unknown } | undefined;
+  const topMatch = titleItems[0] as
+    | { id: number; title?: string; name?: string; popularity?: number; [key: string]: unknown }
+    | undefined;
   if (
     page === 1 &&
     topMatch &&
@@ -219,10 +218,7 @@ export async function comprehensiveSearch(
   };
 }
 
-export async function searchCompany(
-  apiKey: string,
-  query: string,
-): Promise<CompanySearchResult[]> {
+export async function searchCompany(apiKey: string, query: string): Promise<CompanySearchResult[]> {
   const data = (await tmdbFetch('/search/company', apiKey, { query })) as {
     results?: Array<{ id: number; name: string; logo_path: string | null }>;
   };
@@ -235,10 +231,7 @@ export async function searchCompany(
   );
 }
 
-export async function searchKeyword(
-  apiKey: string,
-  query: string,
-): Promise<KeywordSearchResult[]> {
+export async function searchKeyword(apiKey: string, query: string): Promise<KeywordSearchResult[]> {
   const data = (await tmdbFetch('/search/keyword', apiKey, { query })) as {
     results?: Array<{ id: number; name: string }>;
   };

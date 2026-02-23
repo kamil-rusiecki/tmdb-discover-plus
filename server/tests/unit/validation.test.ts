@@ -138,7 +138,11 @@ describe('normalizeContentType', () => {
 
 describe('sanitizeFilters', () => {
   it('only allows known keys', () => {
-    const result = sanitizeFilters({ sortBy: 'popularity.desc', evil: 'DROP TABLE', genres: ['28'] });
+    const result = sanitizeFilters({
+      sortBy: 'popularity.desc',
+      evil: 'DROP TABLE',
+      genres: ['28'],
+    });
     expect(result).toHaveProperty('sortBy', 'popularity.desc');
     expect(result).toHaveProperty('genres');
     expect(result).not.toHaveProperty('evil');

@@ -183,7 +183,7 @@ export function SearchInput({
                   padding: '8px 12px',
                   cursor: 'pointer',
                   color: 'inherit',
-                  font: 'inherit'
+                  font: 'inherit',
                 }}
               >
                 {item.profilePath || item.logoPath ? (

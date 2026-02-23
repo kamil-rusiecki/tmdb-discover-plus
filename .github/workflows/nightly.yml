@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check
     if: needs.check.outputs.should_run == 'true'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -69,11 +69,11 @@ jobs:
           else
             MSGS=$(git log "${{ steps.get_last_nightly.outputs.last_tag }}"..HEAD --pretty=format:"* %s (%h)")
           fi
-          
+
           if [ -z "$MSGS" ]; then
             MSGS="* Automated nightly build"
           fi
-          
+
           echo "messages<<EOF" >> $GITHUB_OUTPUT
           echo "$MSGS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -95,24 +95,24 @@ jobs:
         run: |
           NOTES=$(cat <<'EOF'
           ## 🌙 Nightly Build
-          
+
           **Tag:** ${{ steps.gen_tag.outputs.tag_name }}
           **Commit:** ${{ github.sha }}
           **Branch:** main
-          
+
           ### Changes since last nightly:
           ${{ steps.commits.outputs.messages }}
-          
+
           ---
-          
+
           ⚠️ **Warning:** This is a development build intended for testing. Use at your own risk.
-          
+
           🔗 **Test URL:** https://84f50d1c22e7-tmdb-discover-plus.baby-beamup.club/
-          
+
           📦 **Stable Version:** For production use, please use the latest stable release.
           EOF
           )
-          
+
           gh release create "$TAG_NAME" \
             --repo "${{ github.repository }}" \
             --title "🌙 Nightly: $TAG_NAME" \
@@ -147,7 +147,7 @@ jobs:
           const fs = require('fs');
           const { execSync } = require('child_process');
           const pkg = require('./package.json');
-          
+
           const metadata = {
             version: pkg.version,
             tag: '${{ steps.gen_tag.outputs.tag_name }}',
@@ -155,7 +155,7 @@ jobs:
             commitHash: '${{ github.sha }}'.substring(0, 7),
             buildTime: new Date().toISOString(),
           };
-          
+
           fs.writeFileSync('server/src/metadata.json', JSON.stringify(metadata, null, 2));
           console.log('Generated metadata:', metadata);
           "

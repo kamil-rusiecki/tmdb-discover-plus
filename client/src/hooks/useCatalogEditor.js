@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useActiveFilters } from './useActiveFilters';
 import { useCatalogSync } from './useCatalogSync';
 import { useResolvedFilters } from './useResolvedFilters';
@@ -19,6 +19,40 @@ const DEFAULT_CATALOG = {
 };
 
 export { DEFAULT_CATALOG };
+
+const PRESET_DATE_MAP = {
+  last_30_days: { from: 'today-30d', to: 'today' },
+  last_90_days: { from: 'today-90d', to: 'today' },
+  last_180_days: { from: 'today-6mo', to: 'today' },
+  last_365_days: { from: 'today-12mo', to: 'today' },
+  next_30_days: { from: 'today', to: 'today+30d' },
+  next_90_days: { from: 'today', to: 'today+3mo' },
+  era_2020s: { from: '2020-01-01', to: '2030-01-01' },
+  era_2010s: { from: '2010-01-01', to: '2020-01-01' },
+  era_2000s: { from: '2000-01-01', to: '2010-01-01' },
+  era_1990s: { from: '1990-01-01', to: '2000-01-01' },
+  era_1980s: { from: '1980-01-01', to: '1990-01-01' },
+};
+
+function withRestoredPreset(catalog) {
+  if (!catalog) return DEFAULT_CATALOG;
+  const filters = catalog.filters || {};
+  if (!filters.datePreset) return catalog;
+  const isMovie = catalog.type === 'movie';
+  const fromKey = isMovie ? 'releaseDateFrom' : 'airDateFrom';
+  const toKey = isMovie ? 'releaseDateTo' : 'airDateTo';
+  if (filters[fromKey] && filters[toKey]) return catalog;
+  const dates = PRESET_DATE_MAP[filters.datePreset];
+  if (!dates) return catalog;
+  return {
+    ...catalog,
+    filters: {
+      ...filters,
+      [fromKey]: filters[fromKey] || dates.from,
+      [toKey]: filters[toKey] || dates.to,
+    },
+  };
+}
 
 export function useCatalogEditor() {
   const { activeCatalog: catalog, preferences = {}, handleUpdateCatalog: onUpdate } = useCatalog();
@@ -75,7 +109,9 @@ export function useCatalogEditor() {
       : { movie: {}, series: {} };
   const safeWatchRegions = Array.isArray(watchRegions) ? watchRegions : [];
 
-  const [localCatalog, setLocalCatalog] = useState(catalog || DEFAULT_CATALOG);
+  const [localCatalog, setLocalCatalog] = useState(() =>
+    withRestoredPreset(catalog || DEFAULT_CATALOG)
+  );
   const [previewData, setPreviewData] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState(null);
@@ -91,6 +127,30 @@ export function useCatalogEditor() {
   });
 
   const prevCatalogIdRef = useRef(null);
+
+  // Sync all catalog-derived state when the selected catalog changes.
+  // Uses "setState during render" — React-approved pattern to avoid setState-in-effect.
+  // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  const incomingCatalogId = catalog?._id ?? null;
+  if (prevCatalogIdRef.current !== incomingCatalogId) {
+    prevCatalogIdRef.current = incomingCatalogId;
+    setLocalCatalog(catalog ? withRestoredPreset(catalog) : DEFAULT_CATALOG);
+    setPreviewData(null);
+    if (catalog?.formState?.expandedSections) {
+      setExpandedSections(catalog.formState.expandedSections);
+    } else if (catalog) {
+      setExpandedSections({
+        basic: false,
+        genres: false,
+        filters: false,
+        release: false,
+        streaming: false,
+        people: false,
+        options: false,
+      });
+    }
+  }
+
   const {
     selectedPeople,
     setSelectedPeople,
@@ -197,42 +257,6 @@ export function useCatalogEditor() {
     });
     return Array.from(byId.values());
   }, [tvNetworks, searchedNetworks]);
-
-  const catalogIdForSync = catalog?._id;
-  const catalogRef = useRef(catalog);
-  useEffect(() => {
-    catalogRef.current = catalog;
-  });
-
-  useEffect(() => {
-    const currentCatalog = catalogRef.current;
-    if (currentCatalog) {
-      setLocalCatalog(currentCatalog);
-      const prevId = prevCatalogIdRef.current;
-      const newId = currentCatalog._id || null;
-      if (prevId !== newId) {
-        setPreviewData(null);
-        if (currentCatalog.formState?.expandedSections) {
-          setExpandedSections(currentCatalog.formState.expandedSections);
-        } else {
-          setExpandedSections({
-            basic: false,
-            genres: false,
-            filters: false,
-            release: false,
-            streaming: false,
-            people: false,
-            options: false,
-          });
-        }
-      }
-      prevCatalogIdRef.current = newId;
-    } else {
-      setLocalCatalog(DEFAULT_CATALOG);
-      setPreviewData(null);
-      prevCatalogIdRef.current = null;
-    }
-  }, [catalogIdForSync]);
 
   return {
     catalog,

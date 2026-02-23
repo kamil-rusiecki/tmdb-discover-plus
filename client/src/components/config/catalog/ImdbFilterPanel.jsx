@@ -171,10 +171,7 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
       >
         <div className="filter-grid">
           <div className="filter-group">
-            <LabelWithTooltip
-              label="Sort By"
-              tooltip="How to order your IMDb results."
-            />
+            <LabelWithTooltip label="Sort By" tooltip="How to order your IMDb results." />
             <SearchableSelect
               options={imdbSortOptions}
               value={filters.sortBy || 'POPULARITY'}
@@ -385,7 +382,10 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
       >
         <div className="filter-grid">
           <div className="filter-group">
-            <LabelWithTooltip label="Release Date From" tooltip="Include titles released on or after this date." />
+            <LabelWithTooltip
+              label="Release Date From"
+              tooltip="Include titles released on or after this date."
+            />
             <input
               id="imdb-date-from"
               type="date"
@@ -395,7 +395,10 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
             />
           </div>
           <div className="filter-group">
-            <LabelWithTooltip label="Release Date To" tooltip="Include titles released on or before this date." />
+            <LabelWithTooltip
+              label="Release Date To"
+              tooltip="Include titles released on or before this date."
+            />
             <input
               id="imdb-date-to"
               type="date"
