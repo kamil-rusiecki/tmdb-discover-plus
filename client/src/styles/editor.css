@@ -172,17 +172,18 @@
   min-height: 0;
 }
 
-/* Ensure dropdowns appear above other sections */
-.searchable-select-dropdown,
-.multi-select-dropdown,
-.search-input-dropdown {
-  z-index: 9999 !important;
-}
-
-/* Filter section when expanded should have higher stacking context */
-.filter-section:has(.filter-section-content) {
-  z-index: auto;
-}
+/*
+ * z-index scale for this app:
+ *   100  — sticky header
+ *   200  — dropdowns (searchable-select, multi-select, search-input)
+ *          Must be > header so they clear it, but < modal so they sit behind it.
+ *  1000  — modal overlay
+ *  1100  — toast notifications
+ * 10000  — skip-to-content a11y link
+ *
+ * Do NOT raise dropdown z-indexes above 1000 — that causes them to
+ * overlap modal dialogs (export / import) that open on top of the editor.
+ */
 
 /* Note: .filter-section-content intentionally has no position/z-index
    to avoid stacking context issues with dropdowns */

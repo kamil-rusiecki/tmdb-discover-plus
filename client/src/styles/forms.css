@@ -328,7 +328,7 @@ input[type='date'].input::-webkit-calendar-picker-indicator {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 9999;
+  z-index: 200;
   overflow: hidden;
   animation: dropdownFadeIn 0.15s ease;
 }
@@ -407,7 +407,7 @@ input[type='date'].input::-webkit-calendar-picker-indicator {
 }
 
 .multi-select.open {
-  z-index: 9999;
+  z-index: 200;
 }
 
 .multi-select-trigger {
@@ -480,7 +480,7 @@ input[type='date'].input::-webkit-calendar-picker-indicator {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 9999;
+  z-index: 200;
   overflow: hidden;
   animation: dropdownFadeIn 0.15s ease;
 }
@@ -676,7 +676,7 @@ input[type='date'].input::-webkit-calendar-picker-indicator {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 1000;
+  z-index: 200;
   max-height: 280px;
   overflow-y: auto;
   animation: dropdownFadeIn 0.15s ease;
