@@ -68,6 +68,7 @@ export async function advancedSearch(
   queryParams.types = types;
 
   if (params.genres?.length) queryParams.genres = params.genres;
+  if (params.excludeGenres?.length) queryParams.excludeGenres = params.excludeGenres;
   if (params.imdbRatingMin) queryParams.imdbRatingMin = params.imdbRatingMin;
   if (params.totalVotesMin) queryParams.totalVotesMin = params.totalVotesMin;
   if (params.releaseDateStart) queryParams.releaseDateStart = params.releaseDateStart;

@@ -1,9 +1,10 @@
 import { useState, useCallback, useMemo, memo } from 'react';
 import { FilterSection } from './FilterSection';
+import { GenreSelector } from './GenreSelector';
 
 // TODO: Awards section hidden until upstream API compatibility is resolved. Set to false to re-enable.
 const AWARDS_HIDDEN = true;
-import { Settings, Sparkles, Calendar, Award, Tag, Globe } from 'lucide-react';
+import { Settings, Sparkles, Calendar, Award, Tag, Globe, List } from 'lucide-react';
 import { SearchableSelect } from '../../forms/SearchableSelect';
 import { RangeSlider, SingleSlider } from '../../forms/RangeSlider';
 import { LabelWithTooltip } from '../../forms/Tooltip';
@@ -29,6 +30,8 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
     awards: false,
     region: false,
   });
+
+  const [keywordInput, setKeywordInput] = useState('');
 
   const localExpandedSections = expandedSections || internalSections;
 
@@ -62,15 +65,32 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
     [imdbAwards, isMovieCatalog]
   );
 
-  const handleGenreToggle = useCallback(
-    (genre) => {
-      const current = filters.genres || [];
-      const next = current.includes(genre)
-        ? current.filter((g) => g !== genre)
-        : [...current, genre];
-      onFiltersChange('genres', next);
+  const imdbGenreObjects = useMemo(
+    () => imdbGenres.map((g) => ({ id: g, name: g })),
+    [imdbGenres]
+  );
+
+  const handleTriStateGenreClick = useCallback(
+    (genreId) => {
+      const included = filters.genres || [];
+      const excluded = filters.excludeGenres || [];
+      const isIncluded = included.includes(genreId);
+      const isExcluded = excluded.includes(genreId);
+      let newIncluded, newExcluded;
+      if (isIncluded) {
+        newIncluded = included.filter((id) => id !== genreId);
+        newExcluded = [...excluded, genreId];
+      } else if (isExcluded) {
+        newIncluded = included;
+        newExcluded = excluded.filter((id) => id !== genreId);
+      } else {
+        newIncluded = [...included, genreId];
+        newExcluded = excluded;
+      }
+      onFiltersChange('genres', newIncluded);
+      onFiltersChange('excludeGenres', newExcluded);
     },
-    [filters.genres, onFiltersChange]
+    [filters.genres, filters.excludeGenres, onFiltersChange]
   );
 
   const handleKeywordToggle = useCallback(
@@ -82,6 +102,20 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
       onFiltersChange('keywords', next);
     },
     [filters.keywords, onFiltersChange]
+  );
+
+  const handleAddKeyword = useCallback(
+    (e) => {
+      e.preventDefault();
+      const kw = keywordInput.trim();
+      if (!kw) return;
+      const current = filters.keywords || [];
+      if (!current.includes(kw)) {
+        onFiltersChange('keywords', [...current, kw]);
+      }
+      setKeywordInput('');
+    },
+    [keywordInput, filters.keywords, onFiltersChange]
   );
 
   const handleAwardToggle = useCallback(
@@ -176,15 +210,36 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
 
   return (
     <>
+      {/* <div className="filter-section p-4 mb-4 rounded-lg border border-white/5 bg-white/5">
+        <div className="filter-group mb-0">
+          <LabelWithTooltip
+            label="Custom IMDb List ID"
+            tooltip="Optional: Enter an IMDb list ID (e.g., ls597789139) to fetch items exclusively from that list. Other filters will be disabled."
+          />
+          <input
+            type="text"
+            className="input"
+            placeholder="e.g. ls597789139"
+            value={filters.imdbListId || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              onFiltersChange('imdbListId', val || undefined);
+              onFiltersChange('listType', val ? 'imdb_list' : 'discover');
+            }}
+          />
+        </div>
+      </div> */}
+
       <FilterSection
         id="basic"
         title="Sort & Filter"
-        description="Sort order and basic filters"
-        icon={Settings}
-        isOpen={localExpandedSections.basic}
-        onToggle={toggleSection}
-      >
-        <div className="filter-grid">
+            description="Sort order and basic filters"
+            icon={Settings}
+            isOpen={localExpandedSections.basic}
+            onToggle={toggleSection}
+          >
+            <div className="filter-grid">
+
           <div className="filter-group">
             <LabelWithTooltip label="Sort By" tooltip="How to order your IMDb results." />
             <SearchableSelect
@@ -223,9 +278,9 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
                 {imdbTitleTypes
                   .filter((tt) => {
                     if (localCatalog?.type === 'series') {
-                      return ['tvSeries', 'tvMiniSeries', 'tvSpecial'].includes(tt.value);
+                      return ['tvSeries', 'tvMiniSeries', 'tvSpecial', 'tvEpisode', 'tvShort', 'podcastSeries', 'podcastEpisode'].includes(tt.value);
                     }
-                    return ['movie', 'tvMovie', 'short', 'video'].includes(tt.value);
+                    return ['movie', 'tvMovie', 'short', 'video', 'videoGame', 'musicVideo'].includes(tt.value);
                   })
                   .map((tt) => {
                     const selected = (filters.types || []).includes(tt.value);
@@ -368,23 +423,21 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
         icon={Sparkles}
         isOpen={localExpandedSections.genres}
         onToggle={toggleSection}
-        badgeCount={(filters.genres || []).length}
+        badgeCount={(filters.genres || []).length + (filters.excludeGenres || []).length}
       >
-        <div className="imdb-chip-wrap">
-          {imdbGenres.map((genre) => {
-            const selected = (filters.genres || []).includes(genre);
-            return (
-              <button
-                key={genre}
-                type="button"
-                className={`genre-chip ${selected ? 'selected' : ''}`}
-                onClick={() => handleGenreToggle(genre)}
-              >
-                {genre}
-              </button>
-            );
-          })}
-        </div>
+        <GenreSelector
+          genres={imdbGenreObjects}
+          selectedGenres={filters.genres || []}
+          excludedGenres={filters.excludeGenres || []}
+          genreMatchMode="any"
+          onInclude={handleTriStateGenreClick}
+          onExclude={handleTriStateGenreClick}
+          onClear={handleTriStateGenreClick}
+          onSetMatchMode={() => {}}
+          showMatchMode={false}
+          loading={false}
+          onRefresh={() => {}}
+        />
       </FilterSection>
 
       <FilterSection
@@ -469,33 +522,49 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
         </div>
       </FilterSection>
 
-      {imdbKeywords.length > 0 && (
-        <FilterSection
-          id="keywords"
-          title="Keywords"
-          description="Filter by predefined IMDb keywords"
-          icon={Tag}
-          isOpen={localExpandedSections.keywords}
-          onToggle={toggleSection}
-          badgeCount={(filters.keywords || []).length}
-        >
-          <div className="imdb-chip-wrap--scrollable">
-            {imdbKeywords.map((kw) => {
-              const selected = (filters.keywords || []).includes(kw);
-              return (
+      <FilterSection
+        id="keywords"
+        title="Keywords"
+        description="Type any keyword to filter by."
+        icon={Tag}
+        isOpen={localExpandedSections.keywords}
+        onToggle={toggleSection}
+        badgeCount={(filters.keywords || []).length}
+      >
+        <div className="filter-group">
+          <form className="flex gap-2" onSubmit={handleAddKeyword}>
+            <input
+              type="text"
+              className="input flex-1"
+              placeholder="e.g. superhero, survival..."
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
+            />
+            <button 
+              type="submit" 
+              className="px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] text-white rounded transition-colors text-sm font-medium"
+              disabled={!keywordInput.trim()}
+            >
+              Add
+            </button>
+          </form>
+          {(filters.keywords || []).length > 0 && (
+            <div className="imdb-selected-chips mt-3" style={{ marginTop: '12px' }}>
+              {filters.keywords.map((kw) => (
                 <button
                   key={kw}
                   type="button"
-                  className={`genre-chip ${selected ? 'selected' : ''}`}
+                  className="genre-chip selected imdb-chip--clickable flex items-center gap-1"
                   onClick={() => handleKeywordToggle(kw)}
+                  title={`Remove ${kw}`}
                 >
-                  {kw.replace(/-/g, ' ')}
+                  {kw} <span className="opacity-70">&times;</span>
                 </button>
-              );
-            })}
-          </div>
-        </FilterSection>
-      )}
+              ))}
+            </div>
+          )}
+        </div>
+      </FilterSection>
 
       {/* Awards section hidden temporarily — re-enable by removing AWARDS_HIDDEN */}
       {!AWARDS_HIDDEN && imdbAwards.length > 0 && (
@@ -547,22 +616,6 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
             </div>
           </div>
         </FilterSection>
-      )}
-
-      {listType === 'imdb_list' && (
-        <div className="filter-group imdb-list-group">
-          <label className="filter-label" htmlFor="imdb-list-id">
-            IMDb List ID
-          </label>
-          <input
-            id="imdb-list-id"
-            type="text"
-            className="input"
-            placeholder="ls597789139"
-            value={filters.imdbListId || ''}
-            onChange={(e) => onFiltersChange('imdbListId', e.target.value)}
-          />
-        </div>
       )}
     </>
   );

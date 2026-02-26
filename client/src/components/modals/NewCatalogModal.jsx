@@ -6,8 +6,6 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
   const [name, setName] = useState('');
   const [source, setSource] = useState('tmdb');
   const [type, setType] = useState('movie'); // 'movie' or 'series'
-  const [imdbListType, setImdbListType] = useState('discover');
-  const [imdbListId, setImdbListId] = useState('');
   const modalRef = useModalA11y(isOpen, onClose);
 
   if (!isOpen) return null;
@@ -18,14 +16,11 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
 
     if (source === 'imdb') {
       const filters = {
-        listType: imdbListType,
+        listType: 'discover',
         genres: [],
         sortBy: 'POPULARITY',
         sortOrder: 'ASC',
       };
-      if (imdbListType === 'imdb_list' && imdbListId.trim()) {
-        filters.imdbListId = imdbListId.trim().match(/^ls\d{1,15}$/)?.[0] || '';
-      }
       onAdd({
         name: name.trim(),
         type,
@@ -50,13 +45,10 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
     setName('');
     setSource('tmdb');
     setType('movie');
-    setImdbListType('discover');
-    setImdbListId('');
     onClose();
   };
 
-  const isImdbListValid =
-    source !== 'imdb' || imdbListType !== 'imdb_list' || /^ls\d{1,15}$/.test(imdbListId.trim());
+  const isImdbListValid = true;
 
   return (
     <div
@@ -185,36 +177,7 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
               />
             </div>
 
-            {source === 'imdb' && (
-              <div className="filter-group" style={{ marginTop: '16px' }}>
-                <label className="filter-label" htmlFor="new-catalog-context">
-                  Initial Context
-                </label>
-                <select
-                  id="new-catalog-context"
-                  className="input"
-                  value={imdbListType}
-                  onChange={(e) => setImdbListType(e.target.value)}
-                >
-                  <option value="discover">Advanced Search (Default)</option>
-                  <option value="top250">IMDb Top 250</option>
-                  <option value="popular">Most Popular</option>
-                  <option value="imdb_list">Custom IMDb List ID</option>
-                </select>
 
-                {imdbListType === 'imdb_list' && (
-                  <div style={{ marginTop: '8px' }}>
-                    <input
-                      type="text"
-                      className={`input ${imdbListId && !isImdbListValid ? 'field-invalid' : ''}`}
-                      placeholder="e.g. ls597789139"
-                      value={imdbListId}
-                      onChange={(e) => setImdbListId(e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           <div className="modal-footer">

@@ -390,39 +390,6 @@ export const ReleaseFilters = memo(function ReleaseFilters({
                 </span>
               )}
             </div>
-            <div className="filter-group">
-              <LabelWithTooltip
-                label="Age Rating Country"
-                tooltip="Select which country's certification system to use for age ratings. Changing this updates the available options in the Age Rating filter. Independent of the Release Region filter."
-              />
-              <SearchableSelect
-                options={safeCertCountries}
-                value={localCatalog?.filters?.certificationCountry || ''}
-                onChange={(value) => onFiltersChange('certificationCountry', value || undefined)}
-                placeholder="US (default)"
-                searchPlaceholder="Search countries..."
-                labelKey="english_name"
-                valueKey="iso_3166_1"
-              />
-            </div>
-            <div className="filter-group">
-              <LabelWithTooltip
-                label="Age Rating"
-                tooltip="Content certification/age rating (e.g., PG-13, R, TV-MA). Varies by country - US ratings shown by default."
-              />
-              <MultiSelect
-                options={(certOptions || []).map((c) => ({
-                  value: c.certification,
-                  label: c.certification,
-                }))}
-                value={localCatalog?.filters?.certifications || []}
-                onChange={(value) => onFiltersChange('certifications', value)}
-                placeholder="Any"
-                labelKey="label"
-                valueKey="value"
-              />
-              <span className="filter-label-hint">Use this for exact certifications.</span>
-            </div>
           </div>
         </>
       ) : (
@@ -459,6 +426,42 @@ export const ReleaseFilters = memo(function ReleaseFilters({
           </div>
         </div>
       )}
+
+      <div className="filter-two-col" style={{ marginTop: '16px' }}>
+        <div className="filter-group">
+          <LabelWithTooltip
+            label="Age Rating Country"
+            tooltip="Select which country's certification system to use for age ratings. Changing this updates the available options in the Age Rating filter. Independent of the Release Region filter."
+          />
+          <SearchableSelect
+            options={safeCertCountries}
+            value={localCatalog?.filters?.certificationCountry || ''}
+            onChange={(value) => onFiltersChange('certificationCountry', value || undefined)}
+            placeholder="US (default)"
+            searchPlaceholder="Search countries..."
+            labelKey="english_name"
+            valueKey="iso_3166_1"
+          />
+        </div>
+        <div className="filter-group">
+          <LabelWithTooltip
+            label="Age Rating"
+            tooltip="Content certification/age rating (e.g., PG-13, R, TV-MA). Varies by country - US ratings shown by default."
+          />
+          <MultiSelect
+            options={(certOptions || []).map((c) => ({
+              value: c.certification,
+              label: c.certification,
+            }))}
+            value={localCatalog?.filters?.certifications || []}
+            onChange={(value) => onFiltersChange('certifications', value)}
+            placeholder="Any"
+            labelKey="label"
+            valueKey="value"
+          />
+          <span className="filter-label-hint">Use this for exact certifications.</span>
+        </div>
+      </div>
     </>
   );
 });

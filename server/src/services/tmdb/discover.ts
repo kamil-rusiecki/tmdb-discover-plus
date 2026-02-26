@@ -133,20 +133,20 @@ export async function discover(apiKey: string, options: DiscoverOptions = {}): P
     } else if (region && releaseTypes.length > 0) {
       params.with_release_type = releaseTypes.join('|');
     }
+  }
 
-    if (certifications.length > 0) {
-      params.certification = certifications.join('|');
-      params.certification_country = certificationCountry || 'US';
-    } else if (certification) {
-      params.certification = certification;
-      params.certification_country = certificationCountry || 'US';
-    } else if (certificationMin || certificationMax) {
-      if (certificationMin) params['certification.gte'] = certificationMin;
-      if (certificationMax) params['certification.lte'] = certificationMax;
-      params.certification_country = certificationCountry || 'US';
-    } else if (certificationCountry) {
-      params.certification_country = certificationCountry;
-    }
+  if (certifications.length > 0) {
+    params.certification = certifications.join('|');
+    params.certification_country = certificationCountry || 'US';
+  } else if (certification) {
+    params.certification = certification;
+    params.certification_country = certificationCountry || 'US';
+  } else if (certificationMin || certificationMax) {
+    if (certificationMin) params['certification.gte'] = certificationMin;
+    if (certificationMax) params['certification.lte'] = certificationMax;
+    params.certification_country = certificationCountry || 'US';
+  } else if (certificationCountry) {
+    params.certification_country = certificationCountry;
   }
 
   if (mediaType === 'tv') {

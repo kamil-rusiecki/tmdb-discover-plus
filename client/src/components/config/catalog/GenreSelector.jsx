@@ -13,6 +13,7 @@ export const GenreSelector = memo(function GenreSelector({
   onSetMatchMode,
   loading,
   onRefresh,
+  showMatchMode = true,
 }) {
   const getGenreState = (id) => {
     if (selectedGenres.includes(id)) return 'include';
@@ -68,7 +69,7 @@ export const GenreSelector = memo(function GenreSelector({
         </span>
       </div>
 
-      {selectedGenres.length >= 2 && (
+      {showMatchMode && selectedGenres.length >= 2 && (
         <div className="genre-match-mode-box">
           <div className="genre-match-mode-label">How should multiple genres be matched?</div>
           <div className="genre-match-mode-options">

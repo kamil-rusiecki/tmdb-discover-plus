@@ -80,7 +80,7 @@ export interface ImdbPageInfo {
 export interface ImdbSearchResult {
   titles: ImdbTitle[];
   pageInfo: ImdbPageInfo;
-  totalCount?: number;
+  totalResults?: number;
 }
 
 export interface ImdbRankingEntry extends ImdbTitle {
@@ -287,12 +287,19 @@ export const IMDB_TITLE_TYPES = [
   { value: 'short', label: 'Short Film' },
   { value: 'tvSpecial', label: 'TV Special' },
   { value: 'video', label: 'Video' },
+  { value: 'tvEpisode', label: 'TV Episode' },
+  { value: 'tvShort', label: 'TV Short' },
+  { value: 'videoGame', label: 'Video Game' },
+  { value: 'musicVideo', label: 'Music Video' },
+  { value: 'podcastSeries', label: 'Podcast Series' },
+  { value: 'podcastEpisode', label: 'Podcast Episode' },
 ] as const;
 
 export interface ImdbAdvancedSearchParams {
   query?: string;
   types?: ImdbTitleType[];
   genres?: string[];
+  excludeGenres?: string[];
   sortBy?: ImdbSortBy;
   sortOrder?: ImdbSortOrder;
   imdbRatingMin?: number;
@@ -317,6 +324,7 @@ export interface ImdbCatalogFilters {
   imdbListId?: string;
   query?: string;
   genres?: string[];
+  excludeGenres?: string[];
   sortBy?: ImdbSortBy;
   sortOrder?: ImdbSortOrder;
   imdbRatingMin?: number;

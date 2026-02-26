@@ -332,6 +332,7 @@ async function handleImdbCatalogRequest(
           query: effectiveFilters.query,
           types: effectiveFilters.types,
           genres: effectiveFilters.genres,
+          excludeGenres: effectiveFilters.excludeGenres,
           sortBy: effectiveFilters.sortBy || 'POPULARITY',
           sortOrder: effectiveFilters.sortOrder || 'ASC',
           imdbRatingMin: effectiveFilters.imdbRatingMin,

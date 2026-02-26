@@ -155,6 +155,7 @@ const IMDB_ALLOWED_KEYS = [
   'imdbListId',
   'query',
   'genres',
+  'excludeGenres',
   'sortBy',
   'sortOrder',
   'imdbRatingMin',

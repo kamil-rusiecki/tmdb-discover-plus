@@ -522,6 +522,7 @@ router.post('/imdb/preview', requireAuth, async (req, res) => {
       const searchParams = {
         types: filters.types,
         genres: filters.genres,
+        excludeGenres: filters.excludeGenres,
         sortBy: filters.sortBy || 'POPULARITY',
         sortOrder: filters.sortOrder || 'ASC',
         imdbRatingMin: filters.imdbRatingMin,
@@ -542,7 +543,7 @@ router.post('/imdb/preview', requireAuth, async (req, res) => {
         0
       );
       titles = (result.titles || []).slice(0, 20);
-      totalResults = result.totalCount || result.titles?.length || 0;
+      totalResults = result.totalResults || result.titles?.length || 0;
     }
 
     const metas = titles.map((item) => imdb.imdbToStremioMeta(item, type)).filter(Boolean);
