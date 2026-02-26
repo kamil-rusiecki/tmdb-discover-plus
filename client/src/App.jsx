@@ -12,6 +12,7 @@ import { api } from './services/api';
 import { Download, Settings, Loader } from 'lucide-react';
 import { FilterPanelSkeleton, CatalogListSkeleton } from './components/layout/Skeleton';
 import { PanelErrorBoundary } from './components/layout/PanelErrorBoundary';
+import { CreditsBanner } from './components/layout/CreditsBanner';
 import { AppProviders } from './context/AppContext';
 
 import './styles/globals.css';
@@ -135,7 +136,7 @@ function App() {
         >
           <div className="container">
             <div className="builder-toolbar">
-              <div>
+              <div className="builder-title-area">
                 <h2>Catalog Builder</h2>
                 <p className="text-secondary">Create and customize your Stremio catalogs</p>
 
@@ -164,6 +165,9 @@ function App() {
                   </div>
                 )}
               </div>
+              
+              <CreditsBanner />
+
               <div className="actions-toolbar">
                 {userConfigs.length > 0 && (
                   <ConfigDropdown

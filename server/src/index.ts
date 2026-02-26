@@ -125,7 +125,7 @@ app.use((req, res, next) => {
       "default-src 'self'",
       "script-src 'self' https://cdnjs.buymeacoffee.com",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' https://image.tmdb.org https://storage.ko-fi.com https://m.media-amazon.com https://ia.media-imdb.com data:",
+      "img-src 'self' https://docs.elfhosted.com https://image.tmdb.org https://storage.ko-fi.com https://m.media-amazon.com https://ia.media-imdb.com data:",
       "font-src 'self'",
       "connect-src 'self' https://api.themoviedb.org",
       "frame-ancestors 'none'",
