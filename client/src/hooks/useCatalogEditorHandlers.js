@@ -212,6 +212,7 @@ export function useCatalogEditorHandlers({
           filters: {
             ...cleanedFilters,
             sortBy: isNextImdb ? 'POPULARITY' : 'popularity.desc',
+            sortOrder: isNextImdb ? 'DESC' : undefined,
             listType: 'discover',
             genres: [],
             excludeGenres: [],

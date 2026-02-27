@@ -19,7 +19,7 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
         listType: 'discover',
         genres: [],
         sortBy: 'POPULARITY',
-        sortOrder: 'ASC',
+        sortOrder: 'DESC',
       };
       onAdd({
         name: name.trim(),
