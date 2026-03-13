@@ -73,7 +73,12 @@ export async function advancedSearch(
 
   if (params.query) queryParams.query = params.query;
   queryParams.sortBy = params.sortBy || 'POPULARITY';
-  queryParams.sortOrder = params.sortOrder || 'DESC';
+  const requestedOrder = params.sortOrder || 'DESC';
+  if (queryParams.sortBy === 'POPULARITY') {
+    queryParams.sortOrder = requestedOrder === 'DESC' ? 'ASC' : 'DESC';
+  } else {
+    queryParams.sortOrder = requestedOrder;
+  }
   queryParams.limit = params.limit || 100;
 
   const types = params.types?.length ? params.types : mapContentTypeToImdbTypes(contentType);
