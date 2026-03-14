@@ -3,6 +3,12 @@ import { api } from '../services/api';
 
 export function useConfig(initialUserId = null) {
   const [userId, setUserId] = useState(initialUserId);
+
+  useEffect(() => {
+    if (initialUserId && initialUserId !== userId && !loading) {
+      setUserId(initialUserId);
+    }
+  }, [initialUserId, loading, userId]);
   const [apiKey, setApiKeyState] = useState('');
   const [catalogs, setCatalogs] = useState([]);
   const [configName, setConfigName] = useState('');
@@ -42,7 +48,9 @@ export function useConfig(initialUserId = null) {
       const sessionResult = await api.verifySession();
       if (sessionResult.valid) {
         setIsAuthenticated(true);
-        setUserId(sessionResult.userId);
+        if (!initialUserId) {
+          setUserId(sessionResult.userId);
+        }
         setAuthChecked(true);
         return;
       }
@@ -110,6 +118,8 @@ export function useConfig(initialUserId = null) {
     async (id) => {
       setLoading(true);
       setError(null);
+      setCatalogs([]);
+      setConfigName('');
       try {
         const config = await api.getConfig(id);
         applyConfig(config);

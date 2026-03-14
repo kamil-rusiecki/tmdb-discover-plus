@@ -77,6 +77,7 @@ export function useAuth(config, addToast, urlUserId, deps) {
     let stale = false;
 
     setPageLoading(true);
+    setActiveCatalog(null);
     config
       .loadConfig(urlUserId)
       .then((data) => {

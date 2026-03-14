@@ -191,7 +191,7 @@ function App() {
                     <button
                       className="btn btn-primary"
                       onClick={actions.handleSave}
-                      disabled={isSaving}
+                      disabled={isSaving || config.loading || configsLoading}
                     >
                       {isSaving ? (
                         <Loader size={18} className="animate-spin" />
