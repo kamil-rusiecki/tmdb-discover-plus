@@ -1,10 +1,6 @@
 import { useState, useCallback, useMemo, memo } from 'react';
 import { FilterSection } from './FilterSection';
 import { GenreSelector } from './GenreSelector';
-
-// TODO: Awards section hidden until upstream API compatibility is resolved. Set to false to re-enable.
-const AWARDS_HIDDEN = false;
-const MAX_RANK_HIDDEN = true;
 import {
   Settings,
   Sparkles,
@@ -25,6 +21,10 @@ import { SearchableSelect } from '../../forms/SearchableSelect';
 import { SearchInput } from '../../forms/SearchInput';
 import { RangeSlider, SingleSlider } from '../../forms/RangeSlider';
 import { LabelWithTooltip } from '../../forms/Tooltip';
+
+// TODO: Awards section hidden until upstream API compatibility is resolved. Set to false to re-enable.
+const AWARDS_HIDDEN = false;
+const MAX_RANK_HIDDEN = true;
 
 export const ImdbFilterPanel = memo(function ImdbFilterPanel({
   localCatalog,

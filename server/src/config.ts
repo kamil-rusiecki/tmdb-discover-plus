@@ -25,6 +25,7 @@ export const config = Object.freeze({
   port: envInt('PORT', 7000),
   nodeEnv: env('NODE_ENV', 'production'),
   baseUrl: env('BASE_URL'),
+  jsonBodyLimit: env('JSON_BODY_LIMIT', '512kb'),
 
   cors: Object.freeze({
     origin: env('CORS_ORIGIN', '*'),

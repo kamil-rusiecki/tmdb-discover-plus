@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { api } from '../services/api';
 import { logger } from '../utils/logger';
-import { MOVIE_ONLY_FILTER_KEYS, SERIES_ONLY_FILTER_KEYS } from './useCatalogEditorHandlers';
+import { MOVIE_ONLY_FILTER_KEYS, SERIES_ONLY_FILTER_KEYS } from './catalogEditor.constants';
 
 function prepareForSave(catalog) {
   const isMovie = catalog.type === 'movie';

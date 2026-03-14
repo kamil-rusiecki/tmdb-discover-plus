@@ -3,22 +3,8 @@ import { useActiveFilters } from './useActiveFilters';
 import { useCatalogSync } from './useCatalogSync';
 import { useResolvedFilters } from './useResolvedFilters';
 import { useWatchProviders } from './useWatchProviders';
+import { DEFAULT_CATALOG } from './catalogEditor.constants';
 import { useCatalog, useTMDBData, useAppActions } from '../context/AppContext';
-
-const DEFAULT_CATALOG = {
-  name: '',
-  type: 'movie',
-  filters: {
-    genres: [],
-    excludeGenres: [],
-    sortBy: 'popularity.desc',
-    imdbOnly: false,
-    voteCountMin: 0,
-  },
-  enabled: true,
-};
-
-export { DEFAULT_CATALOG };
 
 const PRESET_DATE_MAP = {
   last_30_days: { from: 'today-30d', to: 'today' },

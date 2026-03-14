@@ -105,27 +105,27 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({ limit: config.jsonBodyLimit }));
 app.use(compression({ threshold: 1024 }));
 
 const CSP_POLICY = {
   'default-src': ["'self'"],
   'script-src': ["'self'"],
-  'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+  'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
   'img-src': [
     "'self'",
-    "https://docs.elfhosted.com",
-    "https://image.tmdb.org",
-    "https://storage.ko-fi.com",
-    "https://m.media-amazon.com",
-    "https://ia.media-imdb.com",
-    "data:"
+    'https://docs.elfhosted.com',
+    'https://image.tmdb.org',
+    'https://storage.ko-fi.com',
+    'https://m.media-amazon.com',
+    'https://ia.media-imdb.com',
+    'data:',
   ],
-  'font-src': ["'self'", "https://fonts.gstatic.com"],
-  'connect-src': ["'self'", "https://api.themoviedb.org"],
+  'font-src': ["'self'", 'https://fonts.gstatic.com'],
+  'connect-src': ["'self'", 'https://api.themoviedb.org'],
   'frame-ancestors': ["'none'"],
   'base-uri': ["'self'"],
-  'form-action': ["'self'"]
+  'form-action': ["'self'"],
 };
 
 app.use((req, res, next) => {
@@ -147,7 +147,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
 
 app.use(requestIdMiddleware());
 

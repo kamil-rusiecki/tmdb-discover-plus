@@ -1,31 +1,9 @@
 import { useCallback, useRef } from 'react';
-import { DEFAULT_CATALOG } from './useCatalogEditor';
-
-// Filters that only make sense for movie-type catalogs.
-const MOVIE_ONLY_FILTER_KEYS = [
-  'includeVideo',
-  'primaryReleaseYear',
-  'releaseDateFrom',
-  'releaseDateTo',
-  'releaseTypes',
-  'releaseType',
-];
-
-// Filters that only make sense for series-type catalogs.
-const SERIES_ONLY_FILTER_KEYS = [
-  'airDateFrom',
-  'airDateTo',
-  'firstAirDateFrom',
-  'firstAirDateTo',
-  'firstAirDateYear',
-  'includeNullFirstAirDates',
-  'screenedTheatrically',
-  'timezone',
-  'withNetworks',
-  'networks',
-  'tvStatus',
-  'tvType',
-];
+import {
+  DEFAULT_CATALOG,
+  MOVIE_ONLY_FILTER_KEYS,
+  SERIES_ONLY_FILTER_KEYS,
+} from './catalogEditor.constants';
 
 /**
  * Returns a copy of `filters` with all keys for the OPPOSITE type removed.
@@ -52,8 +30,6 @@ function pickTypeSpecificFilters(filters, type) {
   }
   return stash;
 }
-
-export { MOVIE_ONLY_FILTER_KEYS, SERIES_ONLY_FILTER_KEYS };
 
 export function useCatalogEditorHandlers({
   catalog,

@@ -3,6 +3,7 @@ import { api } from '../services/api';
 
 export function useConfig(initialUserId = null) {
   const [userId, setUserId] = useState(initialUserId);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (initialUserId && initialUserId !== userId && !loading) {
@@ -16,7 +17,6 @@ export function useConfig(initialUserId = null) {
     showAdultContent: false,
     defaultLanguage: 'en',
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
