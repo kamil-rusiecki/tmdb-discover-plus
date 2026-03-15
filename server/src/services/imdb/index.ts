@@ -5,7 +5,7 @@ export {
   getInFlightCount,
 } from './client.ts';
 export { advancedSearch, getTopRanking, getPopular, getList } from './discover.ts';
-export { getTitle } from './detail.ts';
+export { getTitle, getEpisodesBySeason } from './detail.ts';
 export { search, getSuggestions, basicSearch } from './search.ts';
 export {
   getGenres,

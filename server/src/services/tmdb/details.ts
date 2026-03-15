@@ -3,6 +3,7 @@ import { getCache } from '../cache/index.ts';
 import { tmdbFetch } from './client.ts';
 import { TMDB_IMAGE_BASE } from './constants.ts';
 import { formatRuntime } from './stremioMeta.ts';
+import * as imdb from '../imdb/index.ts';
 
 import type {
   ContentType,
@@ -136,6 +137,138 @@ interface TvDetailsForEpisodes {
   external_ids?: { imdb_id?: string | null };
 }
 
+interface ImdbEpisodeEdge {
+  position?: number;
+  node?: {
+    id?: string;
+    titleText?: { text?: string };
+    plot?: { plotText?: { plainText?: string } };
+    releaseDate?: { year?: number; month?: number | null; day?: number | null };
+    runtime?: { seconds?: number };
+    primaryImage?: { url?: string };
+  };
+}
+
+const IMDB_EPISODE_PAGE_LIMIT = 250;
+const IMDB_EPISODE_PAGE_MAX = 4;
+
+async function getImdbEpisodesForSeason(
+  imdbId: string,
+  season: number
+): Promise<ImdbEpisodeEdge[]> {
+  const edges: ImdbEpisodeEdge[] = [];
+  let endCursor: string | undefined;
+
+  for (let i = 0; i < IMDB_EPISODE_PAGE_MAX; i++) {
+    const response = await imdb.getEpisodesBySeason(imdbId, {
+      season,
+      limit: IMDB_EPISODE_PAGE_LIMIT,
+      endCursor,
+    });
+
+    const page = response?.title?.episodes?.episodes;
+    const pageEdges = Array.isArray(page?.edges) ? page.edges : [];
+    edges.push(...(pageEdges as ImdbEpisodeEdge[]));
+
+    const hasNext = Boolean(page?.pageInfo?.hasNextPage);
+    const nextCursor = page?.pageInfo?.endCursor || undefined;
+    if (!hasNext || !nextCursor) break;
+    endCursor = nextCursor;
+  }
+
+  return edges;
+}
+
+function mapImdbEpisodesToStremioVideos(
+  imdbId: string,
+  season: number,
+  episodes: ImdbEpisodeEdge[],
+  seasonPosterMap: Record<number, string>,
+  seriesBackdrop: string | null
+): StremioVideo[] {
+  return episodes
+    .map((ep): StremioVideo | null => {
+      const episode = Number(ep.position);
+
+      if (!Number.isFinite(episode) || episode <= 0) return null;
+
+      const title = ep.node?.titleText?.text || `Episode ${episode}`;
+
+      const releaseDate = ep.node?.releaseDate;
+      const releaseYear = releaseDate?.year;
+      const releaseMonth = releaseDate?.month ?? 1;
+      const releaseDay = releaseDate?.day ?? 1;
+      const released =
+        typeof releaseYear === 'number'
+          ? new Date(
+              Date.UTC(releaseYear, Math.max(releaseMonth - 1, 0), Math.max(releaseDay, 1))
+            ).toISOString()
+          : undefined;
+
+      let runtime: string | undefined;
+      const runtimeSeconds = ep.node?.runtime?.seconds;
+      if (typeof runtimeSeconds === 'number' && runtimeSeconds > 0) {
+        runtime = formatRuntime(Math.round(runtimeSeconds / 60));
+      }
+
+      const video: StremioVideo = {
+        id: ep.node?.id || `${imdbId}:${season}:${episode}`,
+        season,
+        episode,
+        title,
+      };
+
+      if (released) video.released = released;
+      const overview = ep.node?.plot?.plotText?.plainText;
+      if (overview) video.overview = overview;
+
+      const thumbnail =
+        ep.node?.primaryImage?.url || seasonPosterMap[season] || seriesBackdrop || undefined;
+      if (thumbnail) video.thumbnail = thumbnail;
+
+      if (released) video.available = new Date(released) <= new Date();
+      if (runtime) video.runtime = runtime;
+
+      return video;
+    })
+    .filter((v): v is StremioVideo => v !== null);
+}
+
+function mergeSeriesVideos(primary: StremioVideo[], fallback: StremioVideo[]): StremioVideo[] {
+  const merged = new Map<string, StremioVideo>();
+
+  for (const v of primary) {
+    merged.set(`${v.season}:${v.episode}`, { ...v });
+  }
+
+  for (const fb of fallback) {
+    const key = `${fb.season}:${fb.episode}`;
+    const current = merged.get(key);
+    if (!current) {
+      merged.set(key, { ...fb });
+      continue;
+    }
+
+    const isGenericTmdbTitle =
+      !current.title || new RegExp(`^Episode\\s+${current.episode}$`, 'i').test(current.title);
+
+    merged.set(key, {
+      ...current,
+      title: isGenericTmdbTitle && fb.title ? fb.title : current.title,
+      overview: current.overview || fb.overview,
+      released: current.released || fb.released,
+      thumbnail: current.thumbnail || fb.thumbnail,
+      runtime: current.runtime || fb.runtime,
+      available: current.available ?? fb.available,
+    });
+  }
+
+  return Array.from(merged.values()).sort((a, b) => {
+    if (a.season !== b.season) return a.season - b.season;
+    return a.episode - b.episode;
+  });
+}
+
 export async function getSeriesEpisodes(
   apiKey: string,
   tmdbId: number | string,
@@ -212,6 +345,62 @@ export async function getSeriesEpisodes(
     if (a.season !== b.season) return a.season - b.season;
     return a.episode - b.episode;
   });
+
+  if (imdbId) {
+    const fallbackVideos: StremioVideo[] = [];
+    const IMDB_SEASON_CONCURRENCY = 3;
+    const tmdbSeasonNumbers = seasonQueue.map((s) => s.season_number).filter((n) => n > 0);
+    const maxTmdbSeason = tmdbSeasonNumbers.length > 0 ? Math.max(...tmdbSeasonNumbers) : 0;
+    const seasonNumbersToProbe = Array.from(
+      new Set([
+        ...tmdbSeasonNumbers,
+        ...(maxTmdbSeason > 0 ? [maxTmdbSeason + 1, maxTmdbSeason + 2] : [1, 2]),
+      ])
+    ).sort((a, b) => a - b);
+
+    const imdbSeasonQueue = seasonNumbersToProbe.map((season_number) => ({ season_number }));
+
+    for (let i = 0; i < imdbSeasonQueue.length; i += IMDB_SEASON_CONCURRENCY) {
+      const batch = imdbSeasonQueue.slice(i, i + IMDB_SEASON_CONCURRENCY);
+      const batchVideos = await Promise.all(
+        batch.map(async (season) => {
+          try {
+            const episodeEdges = await getImdbEpisodesForSeason(imdbId, season.season_number);
+            if (!episodeEdges.length) return [];
+            return mapImdbEpisodesToStremioVideos(
+              imdbId,
+              season.season_number,
+              episodeEdges,
+              seasonPosterMap,
+              seriesBackdrop
+            );
+          } catch (error) {
+            log.debug('IMDb season episode fetch failed', {
+              imdbId,
+              season: season.season_number,
+              error: (error as Error).message,
+            });
+            return [];
+          }
+        })
+      );
+
+      for (const arr of batchVideos) fallbackVideos.push(...arr);
+    }
+
+    if (fallbackVideos.length > 0) {
+      const merged = mergeSeriesVideos(videos, fallbackVideos);
+      if (merged.length > videos.length) {
+        log.debug('Merged missing episodes from IMDb API', {
+          tmdbId,
+          tmdbCount: videos.length,
+          imdbCount: fallbackVideos.length,
+          mergedCount: merged.length,
+        });
+      }
+      return merged;
+    }
+  }
 
   return videos;
 }
