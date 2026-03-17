@@ -11,6 +11,7 @@ import type {
   TmdbResult,
   TmdbDetails,
   ContentType,
+  StremioMeta,
   StremioMetaPreview,
 } from '../types/index.ts';
 import * as tmdb from '../services/tmdb/index.ts';
@@ -24,11 +25,14 @@ import {
 } from '../utils/helpers.ts';
 import { resolveDynamicDatePreset } from '../utils/dateHelpers.ts';
 import { createLogger } from '../utils/logger.ts';
+import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { addonRateLimit } from '../utils/rateLimit.ts';
 import { etagMiddleware } from '../utils/etag.ts';
+import { CachedError } from '../services/cache/CacheWrapper.ts';
+import { getCache } from '../services/cache/index.ts';
 import { config } from '../config.ts';
 import { isValidUserId, isValidContentType, sanitizeImdbFilters } from '../utils/validation.ts';
 import { sendError, ErrorCodes } from '../utils/AppError.ts';
@@ -132,6 +136,11 @@ function getPlaceholderUrls(baseUrl: string): {
     posterPlaceholder: `${base}/placeholder-poster.svg`,
     backdropPlaceholder: `${base}/placeholder-thumbnail.svg`,
   };
+}
+
+function buildMetaCacheKey(payload: Record<string, unknown>): string {
+  const digest = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  return `meta:full:${digest}`;
 }
 
 router.get('/:userId/manifest.json', async (req, res) => {
@@ -717,6 +726,8 @@ async function handleMetaRequest(
     const requestedId = String(id || '');
     const configuredLanguage = pickPreferredMetaLanguage(config);
     const language = extra?.displayLanguage || configuredLanguage || extra?.language || 'en';
+    const baseUrl = getBaseUrl(req);
+    const resolvedBaseUrl = normalizeBaseUrl(config.baseUrl || baseUrl);
 
     log.debug('Meta language resolution', {
       configured: configuredLanguage,
@@ -724,92 +735,152 @@ async function handleMetaRequest(
       extraLang: extra?.language,
       final: language,
     });
-
-    let tmdbId = null;
-    let imdbId = null;
-
-    if (/^tt\d+/i.test(requestedId)) {
-      imdbId = requestedId;
-      const found = await tmdb.findByImdbId(apiKey, imdbId, type, { language });
-      tmdbId = found?.tmdbId || null;
-    } else if (requestedId.startsWith('tmdb:')) {
-      tmdbId = Number(requestedId.replace('tmdb:', ''));
-    } else if (/^\d+$/.test(requestedId)) {
-      tmdbId = Number(requestedId);
-    }
-
-    if (!tmdbId) return res.json({ meta: {} });
-
-    const details = (await tmdb.getDetails(apiKey, tmdbId, type, {
+    const cache = getCache();
+    const configVersion = config.updatedAt ? new Date(config.updatedAt).getTime() : 0;
+    const posterHash = posterOptions?.apiKey
+      ? crypto.createHash('sha1').update(posterOptions.apiKey).digest('hex').slice(0, 12)
+      : 'none';
+    const metaCacheKey = buildMetaCacheKey({
+      userId,
+      type,
+      requestedId,
       language,
-    })) as TmdbDetails | null;
-    const detailsImdb = details?.external_ids?.imdb_id || null;
-    imdbId = imdbId || detailsImdb;
+      baseUrl: resolvedBaseUrl,
+      configVersion,
+      posterService: posterOptions?.service || 'none',
+      posterHash,
+    });
 
-    let videos = null;
-    const hasLogos = (details?.images?.logos?.length ?? 0) > 0;
-    const [episodesResult, allLogos] = await Promise.all([
-      type === 'series'
-        ? tmdb.getSeriesEpisodes(apiKey, tmdbId, details as TmdbDetails, { language })
-        : Promise.resolve(null),
-      !hasLogos ? tmdb.getLogos(apiKey, tmdbId, type) : Promise.resolve(null),
-    ]);
-    videos = episodesResult;
-    if (videos) {
-      log.debug('Fetched series episodes', { tmdbId, episodeCount: videos?.length || 0 });
-    }
+    const cacheEntry = await cache.getEntry(metaCacheKey);
+    const cacheState = cacheEntry?.__errorType
+      ? 'error'
+      : cacheEntry?.__isStale
+        ? 'stale'
+        : cacheEntry
+          ? 'hit'
+          : 'miss';
 
-    const baseUrl = getBaseUrl(req);
-    const manifestUrl = `${baseUrl}/${userId}/manifest.json`;
+    const computeMeta = async (): Promise<Partial<StremioMeta> | null> => {
+      let tmdbId = null;
+      let imdbId = null;
 
-    const genreCatalogId =
-      (config.catalogs || [])
-        .filter((c) => c.enabled !== false && (c.type === type || (!c.type && type === 'movie')))
-        .map((c) => buildCatalogId('tmdb', c))[0] || null;
+      if (/^tt\d+/i.test(requestedId)) {
+        imdbId = requestedId;
+        const found = await tmdb.findByImdbId(apiKey, imdbId, type, { language });
+        tmdbId = found?.tmdbId || null;
+      } else if (requestedId.startsWith('tmdb:')) {
+        tmdbId = Number(requestedId.replace('tmdb:', ''));
+      } else if (/^\d+$/.test(requestedId)) {
+        tmdbId = Number(requestedId);
+      }
 
-    let userRegion = config.preferences?.region || config.preferences?.countries || null;
+      if (!tmdbId) return null;
 
-    if (!userRegion && Array.isArray(config.catalogs)) {
-      const certCatalog = config.catalogs.find(
-        (c) => c.filters?.certificationCountry && c.filters.certificationCountry !== 'US'
-      );
-      if (certCatalog) {
-        userRegion = certCatalog.filters.certificationCountry ?? null;
-      } else {
-        const originCatalog = config.catalogs.find((c) => c.filters?.countries);
-        if (originCatalog) {
-          userRegion = originCatalog.filters.countries ?? null;
+      const details = (await tmdb.getDetails(apiKey, tmdbId, type, {
+        language,
+      })) as TmdbDetails | null;
+      if (!details) return null;
+
+      const detailsImdb = details?.external_ids?.imdb_id || null;
+      imdbId = imdbId || detailsImdb;
+
+      const hasLogos = (details?.images?.logos?.length ?? 0) > 0;
+      const [episodesResult, allLogos] = await Promise.all([
+        type === 'series'
+          ? tmdb.getSeriesEpisodes(apiKey, tmdbId, details as TmdbDetails, { language })
+          : Promise.resolve(null),
+        !hasLogos ? tmdb.getLogos(apiKey, tmdbId, type) : Promise.resolve(null),
+      ]);
+
+      if (episodesResult) {
+        log.debug('Fetched series episodes', { tmdbId, episodeCount: episodesResult.length || 0 });
+      }
+
+      const manifestUrl = `${baseUrl}/${userId}/manifest.json`;
+
+      const genreCatalogId =
+        (config.catalogs || [])
+          .filter((c) => c.enabled !== false && (c.type === type || (!c.type && type === 'movie')))
+          .map((c) => buildCatalogId('tmdb', c))[0] || null;
+
+      let userRegion = config.preferences?.region || config.preferences?.countries || null;
+
+      if (!userRegion && Array.isArray(config.catalogs)) {
+        const certCatalog = config.catalogs.find(
+          (c) => c.filters?.certificationCountry && c.filters.certificationCountry !== 'US'
+        );
+        if (certCatalog) {
+          userRegion = certCatalog.filters.certificationCountry ?? null;
+        } else {
+          const originCatalog = config.catalogs.find((c) => c.filters?.countries);
+          if (originCatalog) {
+            userRegion = originCatalog.filters.countries ?? null;
+          }
         }
+      }
+
+      if (userRegion && typeof userRegion !== 'string') {
+        userRegion = Array.isArray(userRegion) ? String(userRegion[0]) : String(userRegion);
+      }
+
+      return tmdb.toStremioFullMeta(
+        details,
+        type,
+        imdbId,
+        requestedId,
+        posterOptions,
+        episodesResult,
+        language,
+        { manifestUrl, genreCatalogId, allLogos, userRegion }
+      );
+    };
+
+    let meta = null as Partial<StremioMeta> | null;
+
+    try {
+      meta = (await cache.wrap(metaCacheKey, computeMeta, CACHE_TTLS.META_HEADER, {
+        allowStale: true,
+      })) as Partial<StremioMeta> | null;
+    } catch (error) {
+      if (error instanceof CachedError) {
+        log.warn('Bypassing cached meta error and recomputing', {
+          id: requestedId,
+          type,
+          cacheError: error.errorType,
+        });
+        await cache.del(metaCacheKey);
+        meta = await computeMeta();
+        if (meta) {
+          await cache.set(metaCacheKey, meta, CACHE_TTLS.META_HEADER);
+        }
+      } else {
+        throw error;
       }
     }
 
-    if (userRegion && typeof userRegion !== 'string') {
-      userRegion = Array.isArray(userRegion) ? String(userRegion[0]) : String(userRegion);
-    }
-
-    const meta = await tmdb.toStremioFullMeta(
-      details,
-      type,
-      imdbId,
-      requestedId,
-      posterOptions,
-      videos,
-      language,
-      { manifestUrl, genreCatalogId, allLogos, userRegion }
-    );
-
-    const resolvedBaseUrl = normalizeBaseUrl(config.baseUrl || baseUrl);
+    const responseMeta: Partial<StremioMeta> | Record<string, never> = meta || {};
     const { posterPlaceholder, backdropPlaceholder } = getPlaceholderUrls(resolvedBaseUrl);
-    if (meta && !meta.poster) meta.poster = posterPlaceholder;
-    if (meta?.videos) {
-      for (const v of meta.videos) {
+    if (!responseMeta.poster) responseMeta.poster = posterPlaceholder;
+    if (responseMeta.videos) {
+      for (const v of responseMeta.videos) {
         if (!v.thumbnail) v.thumbnail = backdropPlaceholder;
       }
     }
 
+    log.debug('Meta response served', {
+      id: requestedId,
+      type,
+      userIdPrefix: userId.slice(0, 8),
+      language,
+      cacheState,
+      durationMs: Date.now() - startTime,
+      hasVideos: Array.isArray(responseMeta.videos),
+      videoCount: Array.isArray(responseMeta.videos) ? responseMeta.videos.length : 0,
+    });
+
     res.etagJson(
       {
-        meta,
+        meta: responseMeta,
         cacheMaxAge: CACHE_TTLS.META_HEADER,
         staleRevalidate: 86400,
         staleError: 86400,
