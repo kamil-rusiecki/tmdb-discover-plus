@@ -200,7 +200,22 @@ export async function advancedSearch(
   const catalogKey = buildCatalogCacheKey(filterHash, skip);
   try {
     const cached = await cache.get(catalogKey);
-    if (cached) return cached as ImdbSearchResult;
+    if (cached) {
+      const cachedResult = cached as ImdbSearchResult;
+      if (cachedResult.pageInfo?.endCursor) {
+        const nextSkip = skip + (params.limit || IMDB_PAGE_SIZE);
+        const cursorKey = buildCursorCacheKey(filterHash, nextSkip);
+        try {
+          const existingCursor = (await cache.get(cursorKey)) as string | null;
+          if (!existingCursor) {
+            await cache.set(cursorKey, cachedResult.pageInfo.endCursor, ttl);
+          }
+        } catch (err) {
+          logSwallowedError('imdb:discover:cache-set-cursor-from-cached-catalog', err);
+        }
+      }
+      return cachedResult;
+    }
   } catch (err) {
     logSwallowedError('imdb:discover:cache-get-catalog', err);
   }
@@ -208,7 +223,16 @@ export async function advancedSearch(
   if (skip > 0) {
     const cursorKey = buildCursorCacheKey(filterHash, skip);
     try {
-      const cursor = (await cache.get(cursorKey)) as string | null;
+      let cursor = (await cache.get(cursorKey)) as string | null;
+      if (!cursor) {
+        const pageSize = params.limit || IMDB_PAGE_SIZE;
+        const previousSkip = skip - pageSize;
+        if (previousSkip >= 0) {
+          await advancedSearch(params, contentType, previousSkip);
+          cursor = (await cache.get(cursorKey)) as string | null;
+        }
+      }
+
       if (cursor) {
         queryParams.endCursor = cursor;
       } else {
