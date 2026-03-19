@@ -35,7 +35,12 @@ import { etagMiddleware } from '../utils/etag.ts';
 import { CachedError } from '../services/cache/CacheWrapper.ts';
 import { getCache } from '../services/cache/index.ts';
 import { config } from '../config.ts';
-import { isValidUserId, isValidContentType, sanitizeImdbFilters } from '../utils/validation.ts';
+import {
+  isValidUserId,
+  isValidContentType,
+  sanitizeImdbFilters,
+  sanitizeFiltersForSource,
+} from '../utils/validation.ts';
 import { sendError, ErrorCodes } from '../utils/AppError.ts';
 import {
   CACHE_TTLS,
@@ -424,7 +429,9 @@ async function handleImdbCatalogRequest(
 
     log.debug('IMDb Catalog matched', { name: catalogConfig.name, id: catalogId });
 
-    const filters = sanitizeImdbFilters(catalogConfig.filters || {});
+    const filters = sanitizeImdbFilters(
+      sanitizeFiltersForSource('imdb', catalogConfig.filters || {})
+    );
     const listType: string = (filters.listType as string) || 'discover';
     const effectiveFilters = { ...filters };
     if (extra.genre && extra.genre !== 'All') {
@@ -643,7 +650,7 @@ async function handleCatalogRequest(
       return res.json({ metas: [] });
     }
 
-    const effectiveFilters = { ...(catalogConfig.filters || {}) };
+    const effectiveFilters = { ...sanitizeFiltersForSource('tmdb', catalogConfig.filters || {}) };
     await resolveGenreFilter(extra, effectiveFilters, type, apiKey);
     const resolvedFilters = resolveDynamicDatePreset(
       effectiveFilters,

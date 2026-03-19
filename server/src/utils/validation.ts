@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import type { CatalogFilters } from '../types/config.ts';
 
 export function isValidApiKeyFormat(apiKey: unknown): boolean {
   if (!apiKey || typeof apiKey !== 'string') return false;
@@ -351,6 +352,91 @@ export function sanitizeImdbFilters(filters: unknown): Record<string, unknown> {
   }
 
   return sanitized;
+}
+
+const TMDB_ONLY_FILTER_KEYS: ReadonlyArray<string> = [
+  'listType',
+  'voteCountMin',
+  'imdbOnly',
+  'displayLanguage',
+  'region',
+  'releaseType',
+  'releaseTypes',
+  'releaseDateFrom',
+  'releaseDateTo',
+  'primaryReleaseYear',
+  'includeVideo',
+  'airDateFrom',
+  'airDateTo',
+  'firstAirDateFrom',
+  'firstAirDateTo',
+  'firstAirDateYear',
+  'includeNullFirstAirDates',
+  'screenedTheatrically',
+  'timezone',
+  'withNetworks',
+  'tvStatus',
+  'tvType',
+  'withPeople',
+  'withCast',
+  'withCrew',
+  'withCompanies',
+  'withKeywords',
+  'watchRegion',
+  'watchProviders',
+  'watchMonetizationType',
+  'watchMonetizationTypes',
+  'releasedOnly',
+  'certificationMin',
+  'certificationMax',
+  'datePreset',
+  'certification',
+];
+
+const IMDB_ONLY_FILTER_KEYS: ReadonlyArray<string> = [
+  'imdbListId',
+  'imdbRatingMin',
+  'imdbRatingMax',
+  'totalVotesMin',
+  'totalVotesMax',
+  'releaseDateStart',
+  'releaseDateEnd',
+  'imdbCountries',
+  'languages',
+  'keywords',
+  'awardsWon',
+  'awardsNominated',
+  'types',
+  'sortOrder',
+  'rankedList',
+  'rankedLists',
+  'excludeRankedLists',
+  'rankedListMaxRank',
+  'creditedNames',
+  'companies',
+  'certificateRating',
+  'certificateCountry',
+  'certificates',
+  'explicitContent',
+  'plot',
+  'filmingLocations',
+  'withData',
+  'inTheatersLat',
+  'inTheatersLong',
+  'inTheatersRadius',
+];
+
+export function sanitizeFiltersForSource(
+  source: 'tmdb' | 'imdb',
+  filters: Record<string, unknown> | CatalogFilters
+): Record<string, unknown> {
+  if (!filters || typeof filters !== 'object') return {};
+  const keysToStrip = source === 'tmdb' ? IMDB_ONLY_FILTER_KEYS : TMDB_ONLY_FILTER_KEYS;
+  const result: Record<string, unknown> = { ...filters };
+  for (const key of keysToStrip) {
+    delete result[key];
+  }
+  return result;
 }
 
 export const validateRequest = {

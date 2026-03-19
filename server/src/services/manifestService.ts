@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as tmdb from './tmdb/index.ts';
 import { isImdbApiEnabled } from './imdb/index.ts';
+import { getSource } from './sources/registry.ts';
 import { normalizeGenreName, parseIdArray } from '../utils/helpers.ts';
 import { createLogger } from '../utils/logger.ts';
 import { getApiKeyFromConfig, updateCatalogGenres } from './configService.ts';
@@ -20,17 +21,14 @@ const ADDON_NAME = 'TMDB Discover+';
 const ADDON_DESCRIPTION = 'Create custom movie and TV catalogs with powerful TMDB filters';
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf8'));
 const ADDON_VERSION = pkg.version;
-const TMDB_PAGE_SIZE = 20;
-
 export function buildManifest(userConfig: UserConfig | null, baseUrl: string): StremioManifest {
   const resolvedBaseUrl = config.baseUrl || baseUrl;
-  const IMDB_PAGE_SIZE = 100;
   const catalogs: ManifestCatalog[] = (userConfig?.catalogs || [])
     .filter((c) => c.enabled !== false)
     .map((catalog) => {
-      const isImdb = catalog.source === 'imdb';
-      const prefix = isImdb ? 'imdb' : 'tmdb';
-      const pageSize = isImdb ? IMDB_PAGE_SIZE : TMDB_PAGE_SIZE;
+      const source = getSource(catalog.source ?? 'tmdb');
+      const prefix = source.catalogIdPrefix;
+      const pageSize = source.defaultPageSize;
 
       return {
         id: `${prefix}-${catalog._id || catalog.name.toLowerCase().replace(/\s+/g, '-')}`,

@@ -4,22 +4,9 @@ import { CertificationCountryFilter } from '../../forms/CertificationCountryFilt
 import { MultiSelect } from '../../forms/MultiSelect';
 import { SearchableSelect } from '../../forms/SearchableSelect';
 import { LabelWithTooltip } from '../../forms/Tooltip';
+import { DATE_PRESETS, PRESET_DATE_MAP } from '../../../constants/datePresets';
 
 const CURRENT_YEAR = new Date().getFullYear();
-
-const DATE_PRESETS = [
-  { label: 'Last 30 days', value: 'last_30_days', group: 'last' },
-  { label: 'Last 90 days', value: 'last_90_days', group: 'last' },
-  { label: 'Last 6 months', value: 'last_180_days', group: 'last' },
-  { label: 'Last 12 months', value: 'last_365_days', group: 'last' },
-  { label: 'Next 30 days', value: 'next_30_days', group: 'next' },
-  { label: 'Next 3 months', value: 'next_90_days', group: 'next' },
-  { label: '2020s', value: 'era_2020s', group: 'decade' },
-  { label: '2010s', value: 'era_2010s', group: 'decade' },
-  { label: '2000s', value: 'era_2000s', group: 'decade' },
-  { label: '1990s', value: 'era_1990s', group: 'decade' },
-  { label: '1980s', value: 'era_1980s', group: 'decade' },
-];
 
 export const ReleaseFilters = memo(function ReleaseFilters({
   localCatalog,
@@ -36,15 +23,14 @@ export const ReleaseFilters = memo(function ReleaseFilters({
   const safeReleaseTypes = Array.isArray(releaseTypes) ? releaseTypes : [];
   const safeTvStatuses = Array.isArray(tvStatuses) ? tvStatuses : [];
   const safeTvTypes = Array.isArray(tvTypes) ? tvTypes : [];
-  const safeCertCountries = Array.isArray(certCountries) ? certCountries : [];
 
   const certificationCountryOptions = useMemo(
     () =>
-      safeCertCountries.map((c) => ({
+      (Array.isArray(certCountries) ? certCountries : []).map((c) => ({
         value: c.iso_3166_1,
         label: c.english_name || c.iso_3166_1,
       })),
-    [safeCertCountries]
+    [certCountries]
   );
 
   const certificationRatingOptions = useMemo(
@@ -84,23 +70,6 @@ export const ReleaseFilters = memo(function ReleaseFilters({
     return null;
   }, [localCatalog?.filters?.firstAirDateFrom, localCatalog?.filters?.firstAirDateTo]);
 
-  const getPresetDates = useCallback((presetValue) => {
-    const presetMap = {
-      last_30_days: { from: 'today-30d', to: 'today' },
-      last_90_days: { from: 'today-90d', to: 'today' },
-      last_180_days: { from: 'today-6mo', to: 'today' },
-      last_365_days: { from: 'today-12mo', to: 'today' },
-      next_30_days: { from: 'today', to: 'today+30d' },
-      next_90_days: { from: 'today', to: 'today+3mo' },
-      era_2020s: { from: '2020-01-01', to: '2030-01-01' },
-      era_2010s: { from: '2010-01-01', to: '2020-01-01' },
-      era_2000s: { from: '2000-01-01', to: '2010-01-01' },
-      era_1990s: { from: '1990-01-01', to: '2000-01-01' },
-      era_1980s: { from: '1980-01-01', to: '1990-01-01' },
-    };
-    return presetMap[presetValue] || null;
-  }, []);
-
   const DATE_TAG_LABELS = {
     today: 'Today',
     'today-30d': 'Today − 30 days',
@@ -115,14 +84,14 @@ export const ReleaseFilters = memo(function ReleaseFilters({
 
   const handleDatePreset = useCallback(
     (preset) => {
-      const dates = getPresetDates(preset.value);
+      const dates = PRESET_DATE_MAP[preset.value] || null;
       const fromKey = isMovie ? 'releaseDateFrom' : 'airDateFrom';
       const toKey = isMovie ? 'releaseDateTo' : 'airDateTo';
       onFiltersChange('datePreset', preset.value);
       onFiltersChange(fromKey, dates?.from);
       onFiltersChange(toKey, dates?.to);
     },
-    [isMovie, onFiltersChange, getPresetDates]
+    [isMovie, onFiltersChange]
   );
 
   const handleClearDatePreset = useCallback(() => {

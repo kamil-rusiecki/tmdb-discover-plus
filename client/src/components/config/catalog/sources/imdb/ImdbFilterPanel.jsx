@@ -1,0 +1,1 @@
+export { ImdbFilterPanel } from '../../ImdbFilterPanel';

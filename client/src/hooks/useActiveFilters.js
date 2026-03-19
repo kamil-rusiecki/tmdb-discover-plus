@@ -1,26 +1,6 @@
 import { useCallback, useMemo } from 'react';
-
-const DEFAULT_FILTERS = {
-  genres: [],
-  excludeGenres: [],
-  sortBy: 'popularity.desc',
-  imdbOnly: false,
-  voteCountMin: 0,
-};
-
-const DATE_PRESETS = [
-  { label: 'Last 30 days', value: 'last_30_days' },
-  { label: 'Last 90 days', value: 'last_90_days' },
-  { label: 'Last 6 months', value: 'last_180_days' },
-  { label: 'Last 12 months', value: 'last_365_days' },
-  { label: 'Next 30 days', value: 'next_30_days' },
-  { label: 'Next 3 months', value: 'next_90_days' },
-  { label: 'Era: 2020s', value: 'era_2020s' },
-  { label: 'Era: 2010s', value: 'era_2010s' },
-  { label: 'Era: 2000s', value: 'era_2000s' },
-  { label: 'Era: 1990s', value: 'era_1990s' },
-  { label: 'Era: 1980s', value: 'era_1980s' },
-];
+import { DATE_PRESETS } from '../constants/datePresets';
+import { getSource } from '../sources/index';
 
 export function useActiveFilters({
   localCatalog,
@@ -714,16 +694,7 @@ export function useActiveFilters({
   const clearAllFilters = useCallback(() => {
     setLocalCatalog((prev) => ({
       ...prev,
-      filters:
-        prev?.source === 'imdb'
-          ? {
-              genres: [],
-              excludeGenres: [],
-              sortBy: 'POPULARITY',
-              sortOrder: 'DESC',
-              listType: 'discover',
-            }
-          : { ...DEFAULT_FILTERS },
+      filters: { ...getSource(prev?.source ?? 'tmdb').defaultFilters },
     }));
     setSelectedPeople([]);
     setSelectedCompanies([]);

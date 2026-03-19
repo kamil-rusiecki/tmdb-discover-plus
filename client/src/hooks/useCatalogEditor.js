@@ -5,20 +5,7 @@ import { useResolvedFilters } from './useResolvedFilters';
 import { useWatchProviders } from './useWatchProviders';
 import { DEFAULT_CATALOG } from './catalogEditor.constants';
 import { useCatalog, useTMDBData, useAppActions } from '../context/AppContext';
-
-const PRESET_DATE_MAP = {
-  last_30_days: { from: 'today-30d', to: 'today' },
-  last_90_days: { from: 'today-90d', to: 'today' },
-  last_180_days: { from: 'today-6mo', to: 'today' },
-  last_365_days: { from: 'today-12mo', to: 'today' },
-  next_30_days: { from: 'today', to: 'today+30d' },
-  next_90_days: { from: 'today', to: 'today+3mo' },
-  era_2020s: { from: '2020-01-01', to: '2030-01-01' },
-  era_2010s: { from: '2010-01-01', to: '2020-01-01' },
-  era_2000s: { from: '2000-01-01', to: '2010-01-01' },
-  era_1990s: { from: '1990-01-01', to: '2000-01-01' },
-  era_1980s: { from: '1980-01-01', to: '1990-01-01' },
-};
+import { PRESET_DATE_MAP } from '../constants/datePresets';
 
 function withRestoredPreset(catalog) {
   if (!catalog) return DEFAULT_CATALOG;

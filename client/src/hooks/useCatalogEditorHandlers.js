@@ -1,16 +1,11 @@
 import { useCallback, useRef } from 'react';
-import {
-  DEFAULT_CATALOG,
-  MOVIE_ONLY_FILTER_KEYS,
-  SERIES_ONLY_FILTER_KEYS,
-} from './catalogEditor.constants';
+import { DEFAULT_CATALOG } from './catalogEditor.constants';
+import { getSource } from '../sources/index';
 
-/**
- * Returns a copy of `filters` with all keys for the OPPOSITE type removed.
- * Used to produce the "active" filter set after a type switch.
- */
-function stripOppositeTypeFilters(filters, targetType) {
-  const keysToRemove = targetType === 'movie' ? SERIES_ONLY_FILTER_KEYS : MOVIE_ONLY_FILTER_KEYS;
+function stripOppositeTypeFilters(filters, targetType, sourceId) {
+  const source = getSource(sourceId ?? 'tmdb');
+  const keysToRemove =
+    targetType === 'movie' ? source.seriesOnlyFilterKeys : source.movieOnlyFilterKeys;
   const result = { ...filters };
   for (const key of keysToRemove) {
     delete result[key];
@@ -18,12 +13,9 @@ function stripOppositeTypeFilters(filters, targetType) {
   return result;
 }
 
-/**
- * Picks only the type-specific filter keys out of a filter object.
- * Used to stash the filters before switching away from a type.
- */
-function pickTypeSpecificFilters(filters, type) {
-  const keys = type === 'movie' ? MOVIE_ONLY_FILTER_KEYS : SERIES_ONLY_FILTER_KEYS;
+function pickTypeSpecificFilters(filters, type, sourceId) {
+  const source = getSource(sourceId ?? 'tmdb');
+  const keys = type === 'movie' ? source.movieOnlyFilterKeys : source.seriesOnlyFilterKeys;
   const stash = {};
   for (const key of keys) {
     if (filters[key] !== undefined) stash[key] = filters[key];
@@ -100,10 +92,14 @@ export function useCatalogEditorHandlers({
         if (catalogId) {
           const stash = typeFilterStashRef.current;
           if (!stash[catalogId]) stash[catalogId] = {};
-          stash[catalogId][currentType] = pickTypeSpecificFilters(prev.filters || {}, currentType);
+          stash[catalogId][currentType] = pickTypeSpecificFilters(
+            prev.filters || {},
+            currentType,
+            prev.source
+          );
         }
 
-        const strippedFilters = stripOppositeTypeFilters(prev.filters || {}, type);
+        const strippedFilters = stripOppositeTypeFilters(prev.filters || {}, type, prev.source);
 
         const previousStash = typeFilterStashRef.current[catalogId]?.[type] || {};
 
@@ -161,50 +157,15 @@ export function useCatalogEditorHandlers({
     (source) => {
       let result;
       setLocalCatalog((prev) => {
-        const isNextImdb = source === 'imdb';
-        const cleanedFilters = { ...prev.filters };
-
-        if (isNextImdb) {
-          delete cleanedFilters.voteCountMin;
-          delete cleanedFilters.certifications;
-          delete cleanedFilters.watchProviders;
-          delete cleanedFilters.watchRegion;
-          delete cleanedFilters.withPeople;
-          delete cleanedFilters.withCompanies;
-          delete cleanedFilters.withKeywords;
-          delete cleanedFilters.withNetworks;
-          delete cleanedFilters.monetizationType;
-          delete cleanedFilters.releaseType;
-          delete cleanedFilters.tvStatus;
-          delete cleanedFilters.tvType;
-          delete cleanedFilters.originalLanguage;
-          delete cleanedFilters.yearRange;
-          delete cleanedFilters.datePreset;
-          delete cleanedFilters.imdbOnly;
-        } else {
-          delete cleanedFilters.keywords;
-          delete cleanedFilters.awardsWon;
-          delete cleanedFilters.awardsNominated;
-          delete cleanedFilters.imdbListId;
-          delete cleanedFilters.types;
-          delete cleanedFilters.imdbRatingMin;
-          delete cleanedFilters.totalVotesMin;
-          delete cleanedFilters.releaseDateStart;
-          delete cleanedFilters.releaseDateEnd;
-          delete cleanedFilters.runtimeMin;
-          delete cleanedFilters.runtimeMax;
-          delete cleanedFilters.languages;
-          delete cleanedFilters.imdbCountries;
-          delete cleanedFilters.sortOrder;
-        }
-
+        const nextSource = getSource(source);
+        const cleanedFilters = nextSource.cleanFiltersOnSwitch(prev.filters || {});
         const updated = {
           ...prev,
-          source: isNextImdb ? 'imdb' : 'tmdb',
+          source: nextSource.id,
           filters: {
             ...cleanedFilters,
-            sortBy: isNextImdb ? 'POPULARITY' : 'popularity.desc',
-            sortOrder: isNextImdb ? 'DESC' : undefined,
+            sortBy: nextSource.defaultSortBy,
+            sortOrder: nextSource.defaultFilters.sortOrder,
             listType: 'discover',
             genres: [],
             excludeGenres: [],

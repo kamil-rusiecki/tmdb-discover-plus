@@ -1,21 +1,9 @@
 import { generatePosterUrl, isValidPosterConfig } from '../posterService.ts';
 import { metahubUrl, buildStremioSearchUrl, DISPLAY } from '../../constants.ts';
+import { formatRuntime, generateSlug } from '../common/stremioHelpers.ts';
 
 import type { ContentType } from '../../types/index.ts';
 import type { ImdbTitle, ImdbRankingEntry, ImdbListItem, ImdbPosterOptions } from './types.ts';
-
-function formatRuntime(minutes: number | undefined | null): string | undefined {
-  if (!minutes) return undefined;
-  if (minutes < 60) return `${minutes}min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h${m}min` : `${h}h`;
-}
-
-function generateSlug(type: string, title: string, id: string): string {
-  const safeTitle = (title || '').toLowerCase().replace(/ /g, '-');
-  return `${type}/${safeTitle}-${id}`;
-}
 
 function mapImdbTypeToContentType(imdbType: string): ContentType {
   if (['tvSeries', 'tvMiniSeries', 'tvSpecial', 'tvShort'].includes(imdbType)) {

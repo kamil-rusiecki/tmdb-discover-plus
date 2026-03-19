@@ -16,8 +16,8 @@ export interface UserPreferences {
   countries?: string;
 }
 
-export interface CatalogFilters {
-  listType?: string;
+export interface BaseCatalogFilters {
+  sortBy?: string;
   genres?: number[];
   excludeGenres?: number[];
   genreMatchMode?: import('./common.ts').GenreMatchMode;
@@ -25,69 +25,95 @@ export interface CatalogFilters {
   yearTo?: number;
   ratingMin?: number;
   ratingMax?: number;
-  sortBy?: string;
-  language?: string;
-  displayLanguage?: string;
-  countries?: string;
-  region?: string;
-  includeAdult?: boolean;
-  includeVideo?: boolean;
-  genreNames?: string[];
-  discoverOnly?: boolean;
-  randomize?: boolean;
-  imdbOnly?: boolean;
-  voteCountMin?: number;
   runtimeMin?: number;
   runtimeMax?: number;
-  releaseDateFrom?: string;
-  releaseDateTo?: string;
-  releaseType?: number;
-  releaseTypes?: number[];
-  certification?: string;
+  language?: string;
+  countries?: string;
   certifications?: string[];
   certificationCountry?: string;
-  certificationMin?: string;
-  certificationMax?: string;
+  excludeKeywords?: string | string[];
+  includeAdult?: boolean;
+  randomize?: boolean;
+  discoverOnly?: boolean;
+  query?: string;
+  genreNames?: string[];
+}
+
+export interface TmdbCatalogFilters extends BaseCatalogFilters {
+  listType?: string;
+  voteCountMin?: number;
+  imdbOnly?: boolean;
+  displayLanguage?: string;
+  region?: string;
+  releaseType?: number;
+  releaseTypes?: number[];
+  releaseDateFrom?: string;
+  releaseDateTo?: string;
+  primaryReleaseYear?: number;
+  includeVideo?: boolean;
   airDateFrom?: string;
   airDateTo?: string;
   firstAirDateFrom?: string;
   firstAirDateTo?: string;
   firstAirDateYear?: number;
-  primaryReleaseYear?: number;
   includeNullFirstAirDates?: boolean;
   screenedTheatrically?: boolean;
   timezone?: string;
-  datePreset?: string;
   withNetworks?: string;
   tvStatus?: string;
   tvType?: string;
+  withPeople?: string;
   withCast?: string;
   withCrew?: string;
-  withPeople?: string;
   withCompanies?: string;
   withKeywords?: string;
-  excludeKeywords?: string | string[];
   excludeCompanies?: string;
   watchRegion?: string;
   watchProviders?: number[];
   watchMonetizationType?: string;
   watchMonetizationTypes?: string[];
   releasedOnly?: boolean;
-  // IMDb-specific filters
-  imdbCountries?: string[];
+  certificationMin?: string;
+  certificationMax?: string;
+  datePreset?: string;
+  certification?: string;
+}
+
+export interface ImdbCatalogFilters extends BaseCatalogFilters {
   imdbListId?: string;
   imdbRatingMin?: number;
+  imdbRatingMax?: number;
   totalVotesMin?: number;
+  totalVotesMax?: number;
   releaseDateStart?: string;
   releaseDateEnd?: string;
+  imdbCountries?: string[];
   languages?: string[];
   keywords?: string[];
-  awardsWon?: number;
-  awardsNominated?: number;
+  awardsWon?: string[];
+  awardsNominated?: string[];
   types?: string[];
-  query?: string;
   sortOrder?: string;
+  rankedList?: string;
+  rankedLists?: string[];
+  excludeRankedLists?: string[];
+  rankedListMaxRank?: number;
+  creditedNames?: string[];
+  companies?: string[];
+  excludeCompanies?: string[];
+  certificateRating?: string;
+  certificateCountry?: string;
+  certificates?: string[];
+  explicitContent?: string;
+  plot?: string | string[];
+  filmingLocations?: string | string[];
+  withData?: string[];
+  inTheatersLat?: number;
+  inTheatersLong?: number;
+  inTheatersRadius?: number;
 }
+
+export type CatalogFilters = TmdbCatalogFilters & ImdbCatalogFilters;
 
 export interface CatalogFormState {
   selectedPeople?: Array<{ id: number | string; name: string; profile_path?: string }>;
