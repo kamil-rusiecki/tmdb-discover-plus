@@ -231,6 +231,29 @@ export async function advancedSearch(
           await advancedSearch(params, contentType, previousSkip);
           cursor = (await cache.get(cursorKey)) as string | null;
         }
+
+        if (!cursor && previousSkip === 0) {
+          const firstPageData = (await imdbFetch(
+            '/api/imdb/search/advanced',
+            queryParams,
+            ttl
+          )) as ImdbSearchResult;
+
+          try {
+            await cache.set(buildCatalogCacheKey(filterHash, 0), firstPageData, ttl);
+          } catch (err) {
+            logSwallowedError('imdb:discover:cache-set-catalog-backfill', err);
+          }
+
+          if (firstPageData.pageInfo?.endCursor) {
+            try {
+              await cache.set(cursorKey, firstPageData.pageInfo.endCursor, ttl);
+              cursor = firstPageData.pageInfo.endCursor;
+            } catch (err) {
+              logSwallowedError('imdb:discover:cache-set-cursor-backfill', err);
+            }
+          }
+        }
       }
 
       if (cursor) {

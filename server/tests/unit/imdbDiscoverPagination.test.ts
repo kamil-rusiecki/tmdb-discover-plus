@@ -118,4 +118,39 @@ describe('imdb advancedSearch pagination cursor hydration', () => {
       300
     );
   });
+
+  it('recovers skip=20 by fetching first page live when cached chain lacks cursor', async () => {
+    cacheGet.mockImplementation(async (key: string) => {
+      if (key.includes('imdb:catalog:') && key.includes(':skip0')) {
+        return {
+          titles: [{ id: 'ttcached000' }],
+          pageInfo: undefined,
+        };
+      }
+      if (key.includes('imdb:cursor:') && key.includes(':skip20')) {
+        return null;
+      }
+      return null;
+    });
+
+    mockedImdbFetch
+      .mockResolvedValueOnce({
+        titles: [{ id: 'tt1111111' }],
+        pageInfo: { hasNextPage: true, endCursor: 'cursor-live-first-page' },
+      })
+      .mockResolvedValueOnce({
+        titles: [{ id: 'tt2222222' }],
+        pageInfo: { hasNextPage: true, endCursor: 'cursor-live-second-page' },
+      });
+
+    const result = await advancedSearch({}, 'movie', 20);
+
+    expect(result.titles).toHaveLength(1);
+    expect(mockedImdbFetch).toHaveBeenCalledTimes(2);
+    expect(cacheSet).toHaveBeenCalledWith(
+      expect.stringMatching(/^imdb:cursor:.*:skip20$/),
+      'cursor-live-first-page',
+      300
+    );
+  });
 });
