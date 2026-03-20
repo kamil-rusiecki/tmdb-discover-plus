@@ -202,13 +202,14 @@ export async function advancedSearch(
     const cached = await cache.get(catalogKey);
     if (cached) {
       const cachedResult = cached as ImdbSearchResult;
-      if (cachedResult.pageInfo?.endCursor) {
+      const cachedEndCursor = cachedResult.pagination?.endCursor;
+      if (cachedEndCursor) {
         const nextSkip = skip + (params.limit || IMDB_PAGE_SIZE);
         const cursorKey = buildCursorCacheKey(filterHash, nextSkip);
         try {
           const existingCursor = (await cache.get(cursorKey)) as string | null;
           if (!existingCursor) {
-            await cache.set(cursorKey, cachedResult.pageInfo.endCursor, ttl);
+            await cache.set(cursorKey, cachedEndCursor, ttl);
           }
         } catch (err) {
           logSwallowedError('imdb:discover:cache-set-cursor-from-cached-catalog', err);
@@ -232,7 +233,7 @@ export async function advancedSearch(
             pageSize,
             filterHash,
           });
-          return { titles: [], pageInfo: { hasNextPage: false, endCursor: null } };
+          return { titles: [], pagination: { hasNextPage: false, endCursor: null } };
         }
 
         let walkingSkip = 0;
@@ -269,11 +270,12 @@ export async function advancedSearch(
             logSwallowedError('imdb:discover:cache-set-catalog-backfill', err);
           }
 
-          if (!walkPageData.pageInfo?.endCursor) {
+          const walkEndCursor = walkPageData.pagination?.endCursor;
+          if (!walkEndCursor) {
             break;
           }
 
-          walkingCursor = walkPageData.pageInfo.endCursor;
+          walkingCursor = walkEndCursor;
           try {
             await cache.set(nextCursorKey, walkingCursor, ttl);
           } catch (err) {
@@ -289,11 +291,11 @@ export async function advancedSearch(
         queryParams.endCursor = cursor;
       } else {
         log.debug('No cursor cache for skip, returning empty', { skip, filterHash });
-        return { titles: [], pageInfo: { hasNextPage: false, endCursor: null } };
+        return { titles: [], pagination: { hasNextPage: false, endCursor: null } };
       }
     } catch (err) {
       logSwallowedError('imdb:discover:cache-get-cursor', err);
-      return { titles: [], pageInfo: { hasNextPage: false, endCursor: null } };
+      return { titles: [], pagination: { hasNextPage: false, endCursor: null } };
     }
   }
 
@@ -309,11 +311,12 @@ export async function advancedSearch(
     logSwallowedError('imdb:discover:cache-set-catalog', err);
   }
 
-  if (data.pageInfo?.endCursor) {
+  const dataEndCursor = data.pagination?.endCursor;
+  if (dataEndCursor) {
     const nextSkip = skip + (params.limit || IMDB_PAGE_SIZE);
     const cursorKey = buildCursorCacheKey(filterHash, nextSkip);
     try {
-      await cache.set(cursorKey, data.pageInfo.endCursor, ttl);
+      await cache.set(cursorKey, dataEndCursor, ttl);
     } catch (err) {
       logSwallowedError('imdb:discover:cache-set-cursor', err);
     }
@@ -428,10 +431,10 @@ export async function getList(
     try {
       const cursor = (await cache.get(cursorKey)) as string | null;
       if (cursor) params.endCursor = cursor;
-      else return { titles: [], pageInfo: { hasNextPage: false, endCursor: null } };
+      else return { titles: [], pagination: { hasNextPage: false, endCursor: null } };
     } catch (err) {
       logSwallowedError('imdb:discover:cache-get-list-cursor', err);
-      return { titles: [], pageInfo: { hasNextPage: false, endCursor: null } };
+      return { titles: [], pagination: { hasNextPage: false, endCursor: null } };
     }
   }
 
@@ -441,16 +444,24 @@ export async function getList(
     ttl
   )) as RawRankingResponse;
 
-  if (data?.titles && Array.isArray(data.titles)) {
+  const rawItems = Array.isArray((data as Record<string, unknown>).items)
+    ? ((data as Record<string, unknown>).items as unknown[])
+    : null;
+  if (rawItems) {
+    data.titles = flattenNestedTitles(rawItems);
+  } else if (data?.titles && Array.isArray(data.titles)) {
     data.titles = flattenNestedTitles(data.titles);
   }
 
-  if (data.pageInfo?.endCursor) {
+  const listEndCursor = (
+    (data as Record<string, unknown>).pagination as { endCursor?: string | null } | undefined
+  )?.endCursor;
+  if (listEndCursor) {
     const nextSkip = skip + limit;
     const cursorKey = `imdb:listcursor:${sanitizedId}:skip${nextSkip}`;
     const cache = getCache();
     try {
-      await cache.set(cursorKey, data.pageInfo.endCursor, ttl);
+      await cache.set(cursorKey, listEndCursor, ttl);
     } catch (err) {
       logSwallowedError('imdb:discover:cache-set-list-cursor', err);
     }

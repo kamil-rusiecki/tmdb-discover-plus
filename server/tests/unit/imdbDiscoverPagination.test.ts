@@ -42,7 +42,7 @@ describe('imdb advancedSearch pagination cursor hydration', () => {
       if (key.includes('imdb:catalog:') && key.includes(':skip0')) {
         return {
           titles: [{ id: 'tt1234567' }],
-          pageInfo: { hasNextPage: true, endCursor: 'cursor-from-cached-page-1' },
+          pagination: { hasNextPage: true, endCursor: 'cursor-from-cached-page-1' },
         };
       }
       if (key.includes('imdb:cursor:') && key.includes(':skip20')) {
@@ -67,7 +67,7 @@ describe('imdb advancedSearch pagination cursor hydration', () => {
       if (key.includes('imdb:catalog:') && key.includes(':skip20')) {
         return {
           titles: [{ id: 'tt7654321' }],
-          pageInfo: { hasNextPage: true, endCursor: 'cursor-from-cached-page-2' },
+          pagination: { hasNextPage: true, endCursor: 'cursor-from-cached-page-2' },
         };
       }
       if (key.includes('imdb:cursor:') && key.includes(':skip40')) {
@@ -89,11 +89,11 @@ describe('imdb advancedSearch pagination cursor hydration', () => {
     mockedImdbFetch
       .mockResolvedValueOnce({
         titles: [{ id: 'tt1111111' }],
-        pageInfo: { hasNextPage: true, endCursor: 'cursor-live-first-page' },
+        pagination: { hasNextPage: true, endCursor: 'cursor-live-first-page' },
       })
       .mockResolvedValueOnce({
         titles: [{ id: 'tt2222222' }],
-        pageInfo: { hasNextPage: true, endCursor: 'cursor-live-second-page' },
+        pagination: { hasNextPage: true, endCursor: 'cursor-live-second-page' },
       });
 
     const result = await advancedSearch({}, 'movie', 20);

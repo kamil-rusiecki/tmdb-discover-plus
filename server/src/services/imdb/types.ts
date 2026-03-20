@@ -79,7 +79,7 @@ export interface ImdbPageInfo {
 
 export interface ImdbSearchResult {
   titles: ImdbTitle[];
-  pageInfo: ImdbPageInfo;
+  pagination?: ImdbPageInfo;
   totalResults?: number;
 }
 
@@ -100,7 +100,7 @@ export interface ImdbListItem extends ImdbTitle {
 
 export interface ImdbListResult {
   titles: ImdbListItem[];
-  pageInfo: ImdbPageInfo;
+  pagination?: ImdbPageInfo;
   listName?: string;
   listDescription?: string;
 }
