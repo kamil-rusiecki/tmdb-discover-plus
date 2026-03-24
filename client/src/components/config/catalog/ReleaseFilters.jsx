@@ -388,13 +388,14 @@ export const ReleaseFilters = memo(function ReleaseFilters({
               tooltip="Whether the TV show is currently Returning Series, Ended, Canceled, In Production, or Pilot status."
             />
             <SearchableSelect
-              options={[{ value: '', label: 'Any' }, ...safeTvStatuses]}
+              options={safeTvStatuses}
               value={localCatalog?.filters?.tvStatus || ''}
               onChange={(value) => onFiltersChange('tvStatus', value)}
               placeholder="Any"
               searchPlaceholder="Search..."
               labelKey="label"
               valueKey="value"
+              aria-label="Show Status"
             />
           </div>
           <div className="filter-group">
@@ -403,13 +404,14 @@ export const ReleaseFilters = memo(function ReleaseFilters({
               tooltip="Format of TV show: Scripted (regular series), Reality, Documentary, Talk Show, News, Miniseries, etc."
             />
             <SearchableSelect
-              options={[{ value: '', label: 'Any' }, ...safeTvTypes]}
+              options={safeTvTypes}
               value={localCatalog?.filters?.tvType || ''}
               onChange={(value) => onFiltersChange('tvType', value)}
               placeholder="Any"
               searchPlaceholder="Search..."
               labelKey="label"
               valueKey="value"
+              aria-label="Show Type"
             />
           </div>
         </div>
