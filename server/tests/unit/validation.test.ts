@@ -8,6 +8,8 @@ import {
   isValidContentType,
   normalizeContentType,
   sanitizeFilters,
+  sanitizeImdbFilters,
+  sanitizeFiltersForSource,
 } from '../../src/utils/validation.ts';
 
 describe('isValidApiKeyFormat', () => {
@@ -169,5 +171,57 @@ describe('sanitizeFilters', () => {
     expect(sanitizeFilters(null)).toEqual({});
     expect(sanitizeFilters(undefined)).toEqual({});
     expect(sanitizeFilters('string')).toEqual({});
+  });
+});
+
+describe('sanitizeImdbFilters', () => {
+  it('preserves valid listType values', () => {
+    expect(sanitizeImdbFilters({ listType: 'top250' })).toMatchObject({ listType: 'top250' });
+    expect(sanitizeImdbFilters({ listType: 'popular' })).toMatchObject({ listType: 'popular' });
+    expect(sanitizeImdbFilters({ listType: 'discover' })).toMatchObject({ listType: 'discover' });
+    expect(sanitizeImdbFilters({ listType: 'imdb_list' })).toMatchObject({
+      listType: 'imdb_list',
+    });
+  });
+
+  it('resets unknown listType to discover', () => {
+    expect(sanitizeImdbFilters({ listType: 'trending' })).toMatchObject({ listType: 'discover' });
+    expect(sanitizeImdbFilters({ listType: 'now_playing' })).toMatchObject({
+      listType: 'discover',
+    });
+  });
+
+  it('passes through when listType is absent', () => {
+    const result = sanitizeImdbFilters({ sortBy: 'POPULARITY' });
+    expect(result).not.toHaveProperty('listType');
+  });
+});
+
+describe('sanitizeFiltersForSource', () => {
+  it('preserves listType for imdb source', () => {
+    const result = sanitizeFiltersForSource('imdb', { listType: 'top250', genres: ['28'] });
+    expect(result).toMatchObject({ listType: 'top250' });
+  });
+
+  it('strips imdb-only keys for tmdb source', () => {
+    const result = sanitizeFiltersForSource('tmdb', {
+      listType: 'discover',
+      imdbRatingMin: 7,
+      genres: ['28'],
+    });
+    expect(result).not.toHaveProperty('imdbRatingMin');
+    expect(result).toHaveProperty('listType', 'discover');
+    expect(result).toHaveProperty('genres');
+  });
+
+  it('strips tmdb-only keys for imdb source', () => {
+    const result = sanitizeFiltersForSource('imdb', {
+      listType: 'top250',
+      releasedOnly: true,
+      voteCountMin: 100,
+    });
+    expect(result).toHaveProperty('listType', 'top250');
+    expect(result).not.toHaveProperty('releasedOnly');
+    expect(result).not.toHaveProperty('voteCountMin');
   });
 });

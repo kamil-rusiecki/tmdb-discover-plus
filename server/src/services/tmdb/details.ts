@@ -224,9 +224,8 @@ function mapImdbEpisodesToStremioVideos(
       const overview = ep.node?.plot?.plotText?.plainText;
       if (overview) video.overview = overview;
 
-      const thumbnail =
-        ep.node?.primaryImage?.url || seasonPosterMap[season] || seriesBackdrop || undefined;
-      if (thumbnail) video.thumbnail = thumbnail;
+      const imdbImage = ep.node?.primaryImage?.url;
+      if (imdbImage) video.thumbnail = imdbImage;
 
       if (released) video.available = new Date(released) <= new Date();
       if (runtime) video.runtime = runtime;
@@ -259,7 +258,7 @@ function mergeSeriesVideos(primary: StremioVideo[], fallback: StremioVideo[]): S
       title: isGenericTmdbTitle && fb.title ? fb.title : current.title,
       overview: current.overview || fb.overview,
       released: current.released || fb.released,
-      thumbnail: current.thumbnail || fb.thumbnail,
+      thumbnail: fb.thumbnail || current.thumbnail,
       runtime: current.runtime || fb.runtime,
       available: current.available ?? fb.available,
     });
@@ -391,6 +390,11 @@ export async function getSeriesEpisodes(
 
     if (fallbackVideos.length > 0) {
       const merged = mergeSeriesVideos(videos, fallbackVideos);
+      for (const v of merged) {
+        if (!v.thumbnail) {
+          v.thumbnail = seasonPosterMap[v.season] || seriesBackdrop || undefined;
+        }
+      }
       if (merged.length > videos.length) {
         log.debug('Merged missing episodes from IMDb API', {
           tmdbId,

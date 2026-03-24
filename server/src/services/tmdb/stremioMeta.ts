@@ -700,6 +700,14 @@ export async function toStremioMetaPreview(
     if (enhancedPoster) poster = enhancedPoster;
   }
 
+  if (!poster && details.images?.posters && details.images.posters.length > 0) {
+    poster = `${TMDB_IMAGE_BASE}/${POSTER_SIZE}${details.images.posters[0].file_path}`;
+  }
+
+  if (!poster && effectiveImdbId) {
+    poster = metahubUrl('poster', effectiveImdbId);
+  }
+
   const primaryId = effectiveImdbId || `tmdb:${details.id}`;
 
   let imdbRating: string | undefined;

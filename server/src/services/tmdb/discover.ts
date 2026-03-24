@@ -194,7 +194,7 @@ export async function discover(apiKey: string, options: DiscoverOptions = {}): P
     const today = new Date().toISOString().split('T')[0];
     if (mediaType === 'movie') {
       if (!params.with_release_type) {
-        params.with_release_type = '4|5|6';
+        params.with_release_type = '4';
       }
       const releaseDateKey = params.region ? 'release_date' : 'primary_release_date';
       if (!params[`${releaseDateKey}.lte`]) {
@@ -204,8 +204,8 @@ export async function discover(apiKey: string, options: DiscoverOptions = {}): P
       if (!params.with_status) {
         params.with_status = '0|3|4|5';
       }
-      if (!params['air_date.lte']) {
-        params['air_date.lte'] = today;
+      if (!params['first_air_date.lte']) {
+        params['first_air_date.lte'] = today;
       }
     }
   }

@@ -165,3 +165,57 @@ describe('fetchSpecialList', () => {
     );
   });
 });
+
+describe('discover — releasedOnly filter', () => {
+  it('sets digital-only release type and primary_release_date.lte for movies without region', async () => {
+    mockedFetch.mockResolvedValue({ page: 1, results: [] });
+    await discover('key', { type: 'movie', releasedOnly: true });
+    expect(mockedFetch).toHaveBeenCalledWith(
+      '/discover/movie',
+      'key',
+      expect.objectContaining({
+        with_release_type: '4',
+        'primary_release_date.lte': expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      })
+    );
+    const call = mockedFetch.mock.calls[0][2] as Record<string, unknown>;
+    expect(call).not.toHaveProperty('release_date.lte');
+  });
+
+  it('uses release_date.lte when region is set for movies', async () => {
+    mockedFetch.mockResolvedValue({ page: 1, results: [] });
+    await discover('key', { type: 'movie', releasedOnly: true, region: 'US' });
+    expect(mockedFetch).toHaveBeenCalledWith(
+      '/discover/movie',
+      'key',
+      expect.objectContaining({
+        with_release_type: '4',
+        'release_date.lte': expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      })
+    );
+    const call = mockedFetch.mock.calls[0][2] as Record<string, unknown>;
+    expect(call).not.toHaveProperty('primary_release_date.lte');
+  });
+
+  it('does not override explicit with_release_type when releasedOnly is set for movies', async () => {
+    mockedFetch.mockResolvedValue({ page: 1, results: [] });
+    await discover('key', { type: 'movie', releasedOnly: true, region: 'US', releaseTypes: ['3'] });
+    const call = mockedFetch.mock.calls[0][2] as Record<string, unknown>;
+    expect(call.with_release_type).toBe('3');
+  });
+
+  it('sets with_status and first_air_date.lte for TV', async () => {
+    mockedFetch.mockResolvedValue({ page: 1, results: [] });
+    await discover('key', { type: 'series', releasedOnly: true });
+    expect(mockedFetch).toHaveBeenCalledWith(
+      '/discover/tv',
+      'key',
+      expect.objectContaining({
+        with_status: '0|3|4|5',
+        'first_air_date.lte': expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      })
+    );
+    const call = mockedFetch.mock.calls[0][2] as Record<string, unknown>;
+    expect(call).not.toHaveProperty('air_date.lte');
+  });
+});

@@ -265,6 +265,13 @@ export function sanitizeImdbFilters(filters: unknown): Record<string, unknown> {
     delete sanitized.sortOrder;
   }
 
+  if (sanitized.listType) {
+    const validListTypes = ['discover', 'top250', 'popular', 'imdb_list'];
+    if (!validListTypes.includes(String(sanitized.listType))) {
+      sanitized.listType = 'discover';
+    }
+  }
+
   // Validate company IDs: must be co + digits
   if (Array.isArray(sanitized.companies)) {
     sanitized.companies = (sanitized.companies as string[]).filter(
@@ -355,7 +362,6 @@ export function sanitizeImdbFilters(filters: unknown): Record<string, unknown> {
 }
 
 const TMDB_ONLY_FILTER_KEYS: ReadonlyArray<string> = [
-  'listType',
   'voteCountMin',
   'imdbOnly',
   'displayLanguage',

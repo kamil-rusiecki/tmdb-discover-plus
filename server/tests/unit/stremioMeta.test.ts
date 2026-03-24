@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { formatRuntime, generateSlug, toStremioMeta } from '../../src/services/tmdb/stremioMeta.ts';
+import {
+  formatRuntime,
+  generateSlug,
+  toStremioMeta,
+  toStremioMetaPreview,
+} from '../../src/services/tmdb/stremioMeta.ts';
 
 vi.mock('../../src/services/posterService.ts', () => ({
   generatePosterUrl: () => null,
@@ -77,5 +82,56 @@ describe('toStremioMeta — null safety', () => {
     const series = { id: 4, name: 'Breaking Bad', overview: '', genre_ids: [] } as any;
     expect(toStremioMeta(movie, 'movie').name).toBe('Inception');
     expect(toStremioMeta(series, 'series').name).toBe('Breaking Bad');
+  });
+});
+
+describe('toStremioMetaPreview — poster fallbacks', () => {
+  const baseDetails = {
+    id: 100,
+    title: 'Test Movie',
+    overview: 'desc',
+    genres: [],
+    credits: { cast: [], crew: [] },
+    images: {},
+    external_ids: {},
+  };
+
+  it('uses poster_path when available', async () => {
+    const details = { ...baseDetails, poster_path: '/poster.jpg' } as any;
+    const result = await toStremioMetaPreview(details, 'movie');
+    expect(result?.poster).toContain('/poster.jpg');
+  });
+
+  it('falls back to images.posters when poster_path is null', async () => {
+    const details = {
+      ...baseDetails,
+      poster_path: null,
+      images: { posters: [{ file_path: '/alt-poster.jpg' }] },
+    } as any;
+    const result = await toStremioMetaPreview(details, 'movie');
+    expect(result?.poster).toContain('/alt-poster.jpg');
+  });
+
+  it('falls back to metahub when no TMDB poster and imdbId is available', async () => {
+    const details = {
+      ...baseDetails,
+      poster_path: null,
+      images: { posters: [] },
+      external_ids: { imdb_id: 'tt1234567' },
+    } as any;
+    const result = await toStremioMetaPreview(details, 'movie');
+    expect(result?.poster).toContain('tt1234567');
+    expect(result?.poster).toContain('metahub.space');
+  });
+
+  it('leaves poster null when no TMDB poster and no imdbId', async () => {
+    const details = {
+      ...baseDetails,
+      poster_path: null,
+      images: { posters: [] },
+      external_ids: {},
+    } as any;
+    const result = await toStremioMetaPreview(details, 'movie');
+    expect(result?.poster).toBeNull();
   });
 });
