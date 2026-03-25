@@ -7,6 +7,7 @@ import { getCache } from '../services/cache/index.ts';
 import { logSwallowedError } from '../utils/helpers.ts';
 import { CACHE_TTLS, DISPLAY } from '../constants.ts';
 import type { ContentType } from '../types/index.ts';
+import type { ImdbTitle } from '../services/imdb/types.ts';
 
 const log = createLogger('CacheWarmer');
 const IMDB_PAGE_SIZE = DISPLAY.IMDB_PAGE_SIZE;
@@ -165,7 +166,7 @@ async function warmImdbEnrichment(apiKey: string | null): Promise<void> {
         const result =
           listType === 'top250' ? await imdb.getTopRanking(type) : await imdb.getPopular(type);
 
-        const allTitles = (result.titles || []) as { id: string }[];
+        const allTitles = (result.titles || []) as ImdbTitle[];
 
         for (
           let page = 0;
@@ -207,16 +208,22 @@ async function warmImdbEnrichment(apiKey: string | null): Promise<void> {
             await Promise.all(
               pageTitles.map(async (title) => {
                 const tmdbId = resolvedIds.get(title.id);
-                if (!tmdbId) return null;
-                const details = detailsMap.get(tmdbId);
-                if (!details) return null;
-                return tmdb.toStremioMetaPreview(
-                  details as Parameters<typeof tmdb.toStremioMetaPreview>[0],
-                  type,
-                  null,
-                  'en',
-                  ratingsMap
-                );
+                if (tmdbId) {
+                  const details = detailsMap.get(tmdbId);
+                  if (details) {
+                    return tmdb.toStremioMetaPreview(
+                      details as Parameters<typeof tmdb.toStremioMetaPreview>[0],
+                      type,
+                      null,
+                      'en',
+                      ratingsMap
+                    );
+                  }
+                }
+                if (title.primaryTitle) {
+                  return imdb.imdbToStremioMeta(title, type) as Record<string, unknown> | null;
+                }
+                return null;
               })
             )
           ).filter((m) => m !== null);

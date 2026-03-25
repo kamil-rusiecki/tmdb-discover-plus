@@ -161,3 +161,28 @@ describe('imdbListItemToStremioMeta', () => {
     expect(result!.id).toBe('tt0111161');
   });
 });
+
+describe('imdbToStremioMeta — catalog fallback compatibility', () => {
+  it('produces output compatible with StremioMetaPreview shape', () => {
+    const result = imdbToStremioMeta(mockImdbTitle as any, 'movie');
+    expect(result).not.toBeNull();
+    expect(result).toHaveProperty('id');
+    expect(result).toHaveProperty('type');
+    expect(result).toHaveProperty('name');
+    expect(result).toHaveProperty('poster');
+    expect(result).toHaveProperty('posterShape', 'poster');
+    expect(result).toHaveProperty('background');
+    expect(result).toHaveProperty('description');
+    expect(result).toHaveProperty('genres');
+    expect(result).toHaveProperty('links');
+    expect(result).toHaveProperty('behaviorHints');
+  });
+
+  it('uses metahub fallback when primaryImage is missing', () => {
+    const noImage = { ...mockImdbTitle, primaryImage: null, posterImages: undefined };
+    const result = imdbToStremioMeta(noImage as any, 'movie');
+    expect(result!.poster).toContain('metahub.space');
+    expect(result!.poster).toContain('tt0111161');
+    expect(result!.background).toContain('metahub.space');
+  });
+});

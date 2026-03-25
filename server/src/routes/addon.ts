@@ -14,6 +14,7 @@ import type {
   StremioMeta,
   StremioMetaPreview,
 } from '../types/index.ts';
+import type { ImdbTitle } from '../services/imdb/types.ts';
 import * as tmdb from '../services/tmdb/index.ts';
 import * as imdb from '../services/imdb/index.ts';
 import {
@@ -339,9 +340,7 @@ async function handleImdbCatalogRequest(
     const posterService = posterOptions?.service || 'none';
     const cache = getCache();
 
-    const computeEnrichedMetas = async (
-      pageTitles: { id: string }[]
-    ): Promise<StremioMetaPreview[]> => {
+    const computeEnrichedMetas = async (pageTitles: ImdbTitle[]): Promise<StremioMetaPreview[]> => {
       const imdbIds = pageTitles
         .map((t) => t.id)
         .filter((id): id is string => !!id && /^tt\d+$/.test(id));
@@ -368,16 +367,26 @@ async function handleImdbCatalogRequest(
         await Promise.all(
           pageTitles.map(async (title) => {
             const tmdbId = resolvedIds.get(title.id);
-            if (!tmdbId) return null;
-            const details = detailsMap.get(tmdbId) as TmdbDetails | null;
-            if (!details) return null;
-            return tmdb.toStremioMetaPreview(
-              details,
-              type,
-              posterOptions,
-              displayLanguage || null,
-              ratingsMap
-            );
+            if (tmdbId) {
+              const details = detailsMap.get(tmdbId) as TmdbDetails | null;
+              if (details) {
+                return tmdb.toStremioMetaPreview(
+                  details,
+                  type,
+                  posterOptions,
+                  displayLanguage || null,
+                  ratingsMap
+                );
+              }
+            }
+            if (title.primaryTitle) {
+              return imdb.imdbToStremioMeta(
+                title,
+                type,
+                posterOptions
+              ) as StremioMetaPreview | null;
+            }
+            return null;
           })
         )
       ).filter((m): m is StremioMetaPreview => m !== null);
@@ -387,7 +396,7 @@ async function handleImdbCatalogRequest(
       if (!searchQuery) return res.json({ metas: [] });
       const imdbTypes = type === 'series' ? ['tvSeries', 'tvMiniSeries'] : ['movie', 'tvMovie'];
       const searchResult = await imdb.search(searchQuery, imdbTypes, IMDB_PAGE_SIZE);
-      const searchTitles = (searchResult.titles || []) as { id: string }[];
+      const searchTitles = (searchResult.titles || []) as ImdbTitle[];
       const metas = await computeEnrichedMetas(searchTitles);
       const baseUrl = normalizeBaseUrl(userConfig.baseUrl || getBaseUrl(req));
       const { posterPlaceholder } = getPlaceholderUrls(baseUrl);
@@ -497,29 +506,29 @@ async function handleImdbCatalogRequest(
     );
 
     const fetchAndEnrichPage = async (targetSkip: number): Promise<StremioMetaPreview[]> => {
-      let pageTitles: { id: string }[] = [];
+      let pageTitles: ImdbTitle[] = [];
       if (listType === 'top250') {
         const result = await imdb.getTopRanking(type);
-        pageTitles = ((result.titles || []) as { id: string }[]).slice(
+        pageTitles = ((result.titles || []) as ImdbTitle[]).slice(
           targetSkip,
           targetSkip + IMDB_PAGE_SIZE
         );
       } else if (listType === 'popular') {
         const result = await imdb.getPopular(type);
-        pageTitles = ((result.titles || []) as { id: string }[]).slice(
+        pageTitles = ((result.titles || []) as ImdbTitle[]).slice(
           targetSkip,
           targetSkip + IMDB_PAGE_SIZE
         );
       } else if (listType === 'imdb_list' && filters.imdbListId) {
         const result = await imdb.getList(filters.imdbListId as string, targetSkip);
-        pageTitles = (result.titles || []) as { id: string }[];
+        pageTitles = (result.titles || []) as ImdbTitle[];
       } else if (searchParams) {
         const result = await imdb.advancedSearch(
           searchParams as Parameters<typeof imdb.advancedSearch>[0],
           type,
           targetSkip
         );
-        pageTitles = (result.titles || []) as { id: string }[];
+        pageTitles = (result.titles || []) as ImdbTitle[];
       }
       return computeEnrichedMetas(pageTitles);
     };
