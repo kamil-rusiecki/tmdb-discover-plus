@@ -400,7 +400,15 @@ export function useActiveFilters({
     }
 
     if (filters.releasedOnly) {
-      active.push({ key: 'releasedOnly', label: 'Released only', section: 'release' });
+      active.push({ key: 'releasedOnly', label: 'Released only', section: 'filters' });
+    }
+
+    if (filters.lastXYears) {
+      active.push({
+        key: 'lastXYears',
+        label: `Last ${filters.lastXYears} years`,
+        section: 'filters',
+      });
     }
 
     // --- IMDB-specific new filters ---
@@ -648,6 +656,9 @@ export function useActiveFilters({
           break;
         case 'releasedOnly':
           update({ releasedOnly: undefined });
+          break;
+        case 'lastXYears':
+          update({ lastXYears: undefined, yearFrom: undefined, yearTo: undefined });
           break;
         case 'creditedNames':
           update({ creditedNames: [] });

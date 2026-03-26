@@ -199,7 +199,7 @@
 
 .type-card.active .type-card-icon {
   background: var(--accent-primary);
-  color: white;
+  color: var(--text-on-accent);
 }
 
 .type-card-icon.tmdb {
@@ -212,7 +212,7 @@
 
 .type-card.active .type-card-icon.tmdb,
 .type-card.active .type-card-icon.imdb {
-  color: white;
+  color: var(--text-on-accent);
 }
 
 .type-card-content {

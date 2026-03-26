@@ -410,7 +410,15 @@ export const TMDB_SOURCE = {
     }
 
     if (filters.releasedOnly) {
-      active.push({ key: 'releasedOnly', label: 'Released only', section: 'release' });
+      active.push({ key: 'releasedOnly', label: 'Released only', section: 'filters' });
+    }
+
+    if (filters.lastXYears) {
+      active.push({
+        key: 'lastXYears',
+        label: `Last ${filters.lastXYears} years`,
+        section: 'filters',
+      });
     }
 
     return active;

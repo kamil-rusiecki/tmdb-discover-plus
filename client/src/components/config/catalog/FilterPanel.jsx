@@ -1,4 +1,5 @@
 import { useCallback, useMemo, memo } from 'react';
+import { Check } from 'lucide-react';
 import { RangeSlider, SingleSlider } from '../../forms/RangeSlider';
 import { MultiSelect } from '../../forms/MultiSelect';
 import { SearchableSelect } from '../../forms/SearchableSelect';
@@ -31,6 +32,7 @@ export const FilterPanel = memo(function FilterPanel({
     (range) => {
       onFiltersChange('yearFrom', range[0]);
       onFiltersChange('yearTo', range[1]);
+      onFiltersChange('lastXYears', undefined);
     },
     [onFiltersChange]
   );
@@ -47,6 +49,21 @@ export const FilterPanel = memo(function FilterPanel({
     (range) => {
       onFiltersChange('runtimeMin', range[0] === 0 ? undefined : range[0]);
       onFiltersChange('runtimeMax', range[1] === 400 ? undefined : range[1]);
+    },
+    [onFiltersChange]
+  );
+
+  const handleLastXYears = useCallback(
+    (value) => {
+      onFiltersChange('lastXYears', value);
+      if (value) {
+        const now = new Date().getFullYear();
+        onFiltersChange('yearFrom', now - value);
+        onFiltersChange('yearTo', now);
+      } else {
+        onFiltersChange('yearFrom', undefined);
+        onFiltersChange('yearTo', undefined);
+      }
     },
     [onFiltersChange]
   );
@@ -119,6 +136,44 @@ export const FilterPanel = memo(function FilterPanel({
           formatValue={(v) => v}
           showInputs
         />
+        <div className="runtime-presets filter-spacer-sm">
+          {[3, 5, 10, 15, 20].map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={`date-preset ${localCatalog?.filters?.lastXYears === n ? 'active' : ''}`}
+              onClick={() =>
+                handleLastXYears(localCatalog?.filters?.lastXYears === n ? undefined : n)
+              }
+            >
+              Last {n}y
+            </button>
+          ))}
+          <div className="last-x-years-input-group">
+            <input
+              type="number"
+              className="input last-x-years-input"
+              min="1"
+              max="100"
+              placeholder="Custom"
+              value={localCatalog?.filters?.lastXYears ?? ''}
+              onChange={(e) => {
+                const v = e.target.value;
+                handleLastXYears(v ? Math.max(1, Math.min(100, Number(v))) : undefined);
+              }}
+            />
+            <span className="last-x-years-label">years</span>
+          </div>
+          {localCatalog?.filters?.lastXYears && (
+            <button
+              type="button"
+              className="date-preset"
+              onClick={() => handleLastXYears(undefined)}
+            >
+              Any
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="filter-spacer">
@@ -199,6 +254,32 @@ export const FilterPanel = memo(function FilterPanel({
           showInput
         />
       </div>
+
+      <label className="checkbox-label-row" style={{ cursor: 'pointer', marginTop: '12px' }}>
+        <div
+          className={`checkbox ${localCatalog?.filters?.releasedOnly ? 'checked' : ''}`}
+          role="checkbox"
+          aria-checked={!!localCatalog?.filters?.releasedOnly}
+          tabIndex={0}
+          onClick={() => onFiltersChange('releasedOnly', !localCatalog?.filters?.releasedOnly)}
+          onKeyDown={(e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+              e.preventDefault();
+              onFiltersChange('releasedOnly', !localCatalog?.filters?.releasedOnly);
+            }
+          }}
+        >
+          {localCatalog?.filters?.releasedOnly && <Check size={14} />}
+        </div>
+        <LabelWithTooltip
+          label="Released only"
+          tooltip={
+            localCatalog?.type === 'series'
+              ? 'Only show TV series that have already started airing. Filters out announced shows with future air dates.'
+              : 'Only show movies with a digital, physical, or TV release on or before today. Filters out announced and in-production titles.'
+          }
+        />
+      </label>
     </>
   );
 });

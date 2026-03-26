@@ -73,6 +73,7 @@ export interface TmdbCatalogFilters extends BaseCatalogFilters {
   watchMonetizationType?: string;
   watchMonetizationTypes?: string[];
   releasedOnly?: boolean;
+  lastXYears?: number;
   certificationMin?: string;
   certificationMax?: string;
   datePreset?: string;

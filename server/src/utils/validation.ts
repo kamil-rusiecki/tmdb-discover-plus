@@ -115,6 +115,7 @@ export function sanitizeFilters(filters: unknown): Record<string, unknown> {
     'randomize',
     'discoverOnly',
     'releasedOnly',
+    'lastXYears',
     'cacheTTL',
   ];
 

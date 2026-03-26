@@ -9,8 +9,19 @@ export function resolveDynamicDatePreset(
   filters: Record<string, unknown> | null | undefined,
   type: string
 ): Record<string, unknown> {
-  if (!filters?.datePreset) {
+  if (!filters?.datePreset && !filters?.lastXYears) {
     return filters || {};
+  }
+
+  if (filters?.lastXYears && typeof filters.lastXYears === 'number') {
+    const resolved: Record<string, unknown> = { ...filters };
+    const currentYear = new Date().getFullYear();
+    resolved.yearFrom = currentYear - (filters.lastXYears as number);
+    resolved.yearTo = currentYear;
+    delete resolved.lastXYears;
+    if (!filters.datePreset) return resolved;
+    // Continue to also resolve datePreset if both are set
+    return resolveDynamicDatePreset(resolved, type);
   }
 
   const resolved: Record<string, unknown> = { ...filters };

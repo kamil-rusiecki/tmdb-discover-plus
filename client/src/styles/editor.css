@@ -234,7 +234,7 @@
   align-items: center;
   padding: 0;
   background: var(--accent-primary);
-  color: white;
+  color: var(--text-on-accent);
   font-size: 0.75rem;
   font-weight: 500;
   border-radius: var(--radius-full);
@@ -268,24 +268,30 @@
 
 .active-filter-chip[data-section='filters'] {
   background: #6366f1;
+  color: white;
 }
 .active-filter-chip[data-section='genres'] {
   background: var(--accent-primary);
 }
 .active-filter-chip[data-section='release'] {
   background: #8b5cf6;
+  color: white;
 }
 .active-filter-chip[data-section='streaming'] {
   background: #0ea5e9;
+  color: white;
 }
 .active-filter-chip[data-section='region'] {
   background: #f43f5e;
+  color: white;
 }
 .active-filter-chip[data-section='people'] {
   background: #ec4899;
+  color: white;
 }
 .active-filter-chip[data-section='options'] {
   background: #f59e0b;
+  color: white;
 }
 
 .active-filter-chip:hover {
@@ -312,7 +318,7 @@
 }
 
 .active-filter-chip .chip-remove svg {
-  color: white;
+  color: inherit;
 }
 
 .clear-all-btn {
@@ -346,7 +352,7 @@
   height: 20px;
   padding: 0 6px;
   background: var(--accent-primary);
-  color: white;
+  color: var(--text-on-accent);
   font-size: 0.6875rem;
   font-weight: 600;
   border-radius: var(--radius-md);

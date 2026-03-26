@@ -1,5 +1,4 @@
 import { useCallback, useMemo, memo } from 'react';
-import { Check } from 'lucide-react';
 import { CertificationCountryFilter } from '../../forms/CertificationCountryFilter';
 import { MultiSelect } from '../../forms/MultiSelect';
 import { SearchableSelect } from '../../forms/SearchableSelect';
@@ -217,32 +216,6 @@ export const ReleaseFilters = memo(function ReleaseFilters({
         </div>
       </div>
       {dateRangeError && <span className="field-error">{dateRangeError}</span>}
-
-      <label className="checkbox-label-row" style={{ cursor: 'pointer', marginTop: '12px' }}>
-        <div
-          className={`checkbox ${localCatalog?.filters?.releasedOnly ? 'checked' : ''}`}
-          role="checkbox"
-          aria-checked={!!localCatalog?.filters?.releasedOnly}
-          tabIndex={0}
-          onClick={() => onFiltersChange('releasedOnly', !localCatalog?.filters?.releasedOnly)}
-          onKeyDown={(e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-              e.preventDefault();
-              onFiltersChange('releasedOnly', !localCatalog?.filters?.releasedOnly);
-            }
-          }}
-        >
-          {localCatalog?.filters?.releasedOnly && <Check size={14} />}
-        </div>
-        <LabelWithTooltip
-          label="Released only"
-          tooltip={
-            isMovie
-              ? 'Only show movies with a digital, physical, or TV release on or before today. Filters out announced and in-production titles.'
-              : 'Only show TV series that have already started airing. Filters out announced shows with future air dates.'
-          }
-        />
-      </label>
 
       {!isMovie && (
         <div className="filter-two-col" style={{ marginTop: '16px' }}>
