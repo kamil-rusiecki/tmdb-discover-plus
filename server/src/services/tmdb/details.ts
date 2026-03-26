@@ -267,7 +267,7 @@ function mergeSeriesVideos(tmdbVideos: StremioVideo[], imdbVideos: StremioVideo[
       title: isGenericTitle && imdbEp.title ? imdbEp.title : tmdb.title,
       overview: imdbEp.overview || tmdb.overview,
       released: tmdb.released || imdbEp.released,
-      thumbnail: imdbEp.thumbnail || tmdb.thumbnail,
+      thumbnail: tmdb.thumbnail || imdbEp.thumbnail,
       runtime: tmdb.runtime || imdbEp.runtime,
       available: tmdb.available ?? imdbEp.available,
     });
@@ -325,9 +325,7 @@ export async function getSeriesEpisodes(
             ? `${imdbId}:${ep.season_number}:${ep.episode_number}`
             : `tmdb:${tmdbId}:${ep.season_number}:${ep.episode_number}`;
 
-          const thumbnail = ep.still_path
-            ? `${TMDB_IMAGE_BASE}/w500${ep.still_path}`
-            : seasonPosterMap[ep.season_number] || seriesBackdrop || undefined;
+          const thumbnail = ep.still_path ? `${TMDB_IMAGE_BASE}/w500${ep.still_path}` : undefined;
 
           return {
             id: episodeId,
@@ -407,6 +405,13 @@ export async function getSeriesEpisodes(
         });
       }
       return merged;
+    }
+  }
+
+  // Apply season poster / backdrop fallback for episodes without a thumbnail
+  for (const v of videos) {
+    if (!v.thumbnail) {
+      v.thumbnail = seasonPosterMap[v.season] || seriesBackdrop || undefined;
     }
   }
 

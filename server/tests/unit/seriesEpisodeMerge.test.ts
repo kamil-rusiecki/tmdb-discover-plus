@@ -78,20 +78,9 @@ function makeImdbSeasonResponse(imageUrl: string | null) {
 }
 
 describe('getSeriesEpisodes — thumbnail priority', () => {
-  it('prefers IMDb thumbnail over TMDB when both are available', async () => {
+  it('prefers TMDB thumbnail over IMDb when both are available', async () => {
     mockedFetch.mockResolvedValue(makeTmdbSeasonResponse('/tmdb-still.jpg'));
     mockedImdb.mockResolvedValue(makeImdbSeasonResponse(IMDB_STILL));
-
-    const videos = await getSeriesEpisodes('api-key', 123, BASE_DETAILS as any);
-    const ep = videos.find((v) => v.season === 1 && v.episode === 1);
-
-    expect(ep).toBeDefined();
-    expect(ep!.thumbnail).toBe(IMDB_STILL);
-  });
-
-  it('falls back to TMDB thumbnail when IMDb has no image', async () => {
-    mockedFetch.mockResolvedValue(makeTmdbSeasonResponse('/tmdb-still.jpg'));
-    mockedImdb.mockResolvedValue(makeImdbSeasonResponse(null));
 
     const videos = await getSeriesEpisodes('api-key', 123, BASE_DETAILS as any);
     const ep = videos.find((v) => v.season === 1 && v.episode === 1);
@@ -100,7 +89,7 @@ describe('getSeriesEpisodes — thumbnail priority', () => {
     expect(ep!.thumbnail).toBe(TMDB_STILL);
   });
 
-  it('uses IMDb thumbnail even when TMDB has no still (only backdrop fallback)', async () => {
+  it('falls back to IMDb thumbnail when TMDB has no still', async () => {
     mockedFetch.mockResolvedValue(makeTmdbSeasonResponse(null));
     mockedImdb.mockResolvedValue(makeImdbSeasonResponse(IMDB_STILL));
 
@@ -109,6 +98,17 @@ describe('getSeriesEpisodes — thumbnail priority', () => {
 
     expect(ep).toBeDefined();
     expect(ep!.thumbnail).toBe(IMDB_STILL);
+  });
+
+  it('uses TMDB thumbnail when IMDb has no image', async () => {
+    mockedFetch.mockResolvedValue(makeTmdbSeasonResponse('/tmdb-still.jpg'));
+    mockedImdb.mockResolvedValue(makeImdbSeasonResponse(null));
+
+    const videos = await getSeriesEpisodes('api-key', 123, BASE_DETAILS as any);
+    const ep = videos.find((v) => v.season === 1 && v.episode === 1);
+
+    expect(ep).toBeDefined();
+    expect(ep!.thumbnail).toBe(TMDB_STILL);
   });
 
   it('preserves TMDB-style episode id for stream resolution', async () => {
