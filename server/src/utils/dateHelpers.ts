@@ -16,8 +16,11 @@ export function resolveDynamicDatePreset(
   if (filters?.lastXYears && typeof filters.lastXYears === 'number') {
     const resolved: Record<string, unknown> = { ...filters };
     const currentYear = new Date().getFullYear();
-    resolved.yearFrom = currentYear - (filters.lastXYears as number);
-    resolved.yearTo = currentYear;
+    const isMovie = type === 'movie';
+    const fromField = isMovie ? 'releaseDateFrom' : 'airDateFrom';
+    const toField = isMovie ? 'releaseDateTo' : 'airDateTo';
+    resolved[fromField] = `${currentYear - (filters.lastXYears as number)}-01-01`;
+    resolved[toField] = `${currentYear}-12-31`;
     delete resolved.lastXYears;
     if (!filters.datePreset) return resolved;
     // Continue to also resolve datePreset if both are set

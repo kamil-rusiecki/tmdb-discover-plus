@@ -168,10 +168,8 @@ export function useActiveFilters({
       const label = presetMatch ? presetMatch.label : filters.datePreset;
       active.push({ key: 'datePreset', label: `Date: ${label}`, section: 'release' });
     } else if (
-      filters.releaseDateFrom ||
-      filters.releaseDateTo ||
-      filters.airDateFrom ||
-      filters.airDateTo
+      !filters.lastXYears &&
+      (filters.releaseDateFrom || filters.releaseDateTo || filters.airDateFrom || filters.airDateTo)
     ) {
       const DATE_TAG_LABELS = {
         today: 'Today',
@@ -400,14 +398,14 @@ export function useActiveFilters({
     }
 
     if (filters.releasedOnly) {
-      active.push({ key: 'releasedOnly', label: 'Released only', section: 'filters' });
+      active.push({ key: 'releasedOnly', label: 'Released only', section: 'release' });
     }
 
     if (filters.lastXYears) {
       active.push({
         key: 'lastXYears',
         label: `Last ${filters.lastXYears} years`,
-        section: 'filters',
+        section: 'release',
       });
     }
 
@@ -658,7 +656,13 @@ export function useActiveFilters({
           update({ releasedOnly: undefined });
           break;
         case 'lastXYears':
-          update({ lastXYears: undefined, yearFrom: undefined, yearTo: undefined });
+          update({
+            lastXYears: undefined,
+            releaseDateFrom: undefined,
+            releaseDateTo: undefined,
+            airDateFrom: undefined,
+            airDateTo: undefined,
+          });
           break;
         case 'creditedNames':
           update({ creditedNames: [] });

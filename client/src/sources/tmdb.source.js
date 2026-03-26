@@ -199,10 +199,8 @@ export const TMDB_SOURCE = {
     if (filters.datePreset) {
       active.push({ key: 'datePreset', label: `Date: ${filters.datePreset}`, section: 'release' });
     } else if (
-      filters.releaseDateFrom ||
-      filters.releaseDateTo ||
-      filters.airDateFrom ||
-      filters.airDateTo
+      !filters.lastXYears &&
+      (filters.releaseDateFrom || filters.releaseDateTo || filters.airDateFrom || filters.airDateTo)
     ) {
       const rawFrom = filters.releaseDateFrom || filters.airDateFrom || '…';
       const rawTo = filters.releaseDateTo || filters.airDateTo || '…';
@@ -410,14 +408,14 @@ export const TMDB_SOURCE = {
     }
 
     if (filters.releasedOnly) {
-      active.push({ key: 'releasedOnly', label: 'Released only', section: 'filters' });
+      active.push({ key: 'releasedOnly', label: 'Released only', section: 'release' });
     }
 
     if (filters.lastXYears) {
       active.push({
         key: 'lastXYears',
         label: `Last ${filters.lastXYears} years`,
-        section: 'filters',
+        section: 'release',
       });
     }
 

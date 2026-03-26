@@ -933,7 +933,9 @@
 }
 
 .date-preset {
-  padding: 6px 12px;
+  padding: 6px 14px;
+  min-width: 64px;
+  text-align: center;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
@@ -959,6 +961,7 @@
 
 .date-preset-clear {
   align-self: flex-start;
+  margin-top: 4px;
   padding: 4px 12px;
   background: transparent;
   border: 1px solid var(--border-color);
@@ -1050,7 +1053,7 @@
 .checkbox-label-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   cursor: pointer;
   font-size: 0.875rem;
   color: var(--text-primary);
@@ -1059,6 +1062,7 @@
 .checkbox-label-row .checkbox {
   width: 20px;
   height: 20px;
+  min-width: 20px;
   border: 2px solid var(--border-color);
   border-radius: var(--radius-sm);
   display: flex;
@@ -1069,6 +1073,15 @@
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease;
+}
+
+.checkbox-label-row .filter-label {
+  font-size: inherit;
+  color: inherit;
+  font-weight: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+  margin: 0;
 }
 
 .checkbox-label-row .checkbox:hover {
@@ -1244,11 +1257,18 @@
 }
 
 .last-x-years-input {
-  width: 64px !important;
+  width: 80px !important;
   height: 30px !important;
   padding: 4px 8px !important;
   font-size: 13px !important;
   text-align: center;
+  -moz-appearance: textfield;
+}
+
+.last-x-years-input::-webkit-outer-spin-button,
+.last-x-years-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .last-x-years-label {
