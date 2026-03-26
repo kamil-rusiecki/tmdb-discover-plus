@@ -10,6 +10,7 @@ import {
 vi.mock('../../src/services/posterService.ts', () => ({
   generatePosterUrl: () => null,
   isValidPosterConfig: () => false,
+  checkPosterExists: () => Promise.resolve(false),
 }));
 vi.mock('../../src/services/rpdb.ts', () => ({
   getRpdbRating: () => Promise.resolve(null),

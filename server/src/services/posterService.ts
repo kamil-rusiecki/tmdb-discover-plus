@@ -1,4 +1,6 @@
+import fetch from 'node-fetch';
 import { createLogger } from '../utils/logger.ts';
+import { TIMEOUTS } from '../constants.ts';
 import type {
   PosterOptions,
   PosterUrlOptions,
@@ -7,6 +9,81 @@ import type {
 } from '../types/index.ts';
 
 const log = createLogger('posterService');
+
+const POSTER_CHECK_TTL_MS = 24 * 60 * 60 * 1000;
+const POSTER_CHECK_NEGATIVE_TTL_MS = 60 * 60 * 1000;
+const POSTER_CHECK_MAX_CACHE = 2000;
+
+interface PosterCheckEntry {
+  exists: boolean;
+  ts: number;
+}
+
+const posterCheckCache = new Map<string, PosterCheckEntry>();
+
+function evictStaleEntries(): void {
+  if (posterCheckCache.size <= POSTER_CHECK_MAX_CACHE) return;
+  const now = Date.now();
+  for (const [key, entry] of posterCheckCache) {
+    const ttl = entry.exists ? POSTER_CHECK_TTL_MS : POSTER_CHECK_NEGATIVE_TTL_MS;
+    if (now - entry.ts > ttl) {
+      posterCheckCache.delete(key);
+    }
+  }
+  if (posterCheckCache.size > POSTER_CHECK_MAX_CACHE) {
+    const excess = posterCheckCache.size - POSTER_CHECK_MAX_CACHE;
+    const keys = posterCheckCache.keys();
+    for (let i = 0; i < excess; i++) {
+      const next = keys.next();
+      if (!next.done) posterCheckCache.delete(next.value);
+    }
+  }
+}
+
+export async function checkPosterExists(url: string): Promise<boolean> {
+  const cached = posterCheckCache.get(url);
+  if (cached) {
+    const ttl = cached.exists ? POSTER_CHECK_TTL_MS : POSTER_CHECK_NEGATIVE_TTL_MS;
+    if (Date.now() - cached.ts < ttl) return cached.exists;
+    posterCheckCache.delete(url);
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(TIMEOUTS.RPDB_FETCH_MS),
+      redirect: 'follow',
+    });
+
+    if (!response.ok) {
+      posterCheckCache.set(url, { exists: false, ts: Date.now() });
+      evictStaleEntries();
+      return false;
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (contentType && !contentType.startsWith('image/')) {
+      posterCheckCache.set(url, { exists: false, ts: Date.now() });
+      evictStaleEntries();
+      return false;
+    }
+
+    const contentLength = response.headers.get('content-length');
+    if (contentLength && parseInt(contentLength, 10) < 100) {
+      posterCheckCache.set(url, { exists: false, ts: Date.now() });
+      evictStaleEntries();
+      return false;
+    }
+
+    posterCheckCache.set(url, { exists: true, ts: Date.now() });
+    evictStaleEntries();
+    return true;
+  } catch {
+    posterCheckCache.set(url, { exists: false, ts: Date.now() });
+    evictStaleEntries();
+    return false;
+  }
+}
 
 const RPDB_BASE_URL = 'https://api.ratingposterdb.com';
 const TOP_POSTERS_BASE_URL = 'https://api.top-streaming.stream';

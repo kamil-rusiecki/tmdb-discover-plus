@@ -1,5 +1,5 @@
 import { createLogger } from '../../utils/logger.ts';
-import { generatePosterUrl, isValidPosterConfig } from '../posterService.ts';
+import { generatePosterUrl, isValidPosterConfig, checkPosterExists } from '../posterService.ts';
 import { getRpdbRating } from '../rpdb.ts';
 import {
   TMDB_IMAGE_BASE,
@@ -445,7 +445,9 @@ export async function toStremioFullMeta(
       type,
       imdbId: effectiveImdbId,
     });
-    if (enhancedPoster) poster = enhancedPoster;
+    if (enhancedPoster && (await checkPosterExists(enhancedPoster))) {
+      poster = enhancedPoster;
+    }
   }
 
   let logo: string | null = null;
@@ -709,7 +711,9 @@ export async function toStremioMetaPreview(
       type,
       imdbId: effectiveImdbId,
     });
-    if (enhancedPoster) poster = enhancedPoster;
+    if (enhancedPoster && (await checkPosterExists(enhancedPoster))) {
+      poster = enhancedPoster;
+    }
   }
 
   if (!poster && details.images?.posters && details.images.posters.length > 0) {

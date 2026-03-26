@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   generatePosterUrl,
   generateBackdropUrl,
   isValidPosterConfig,
   createPosterOptions,
+  checkPosterExists,
 } from '../../src/services/posterService.ts';
 
 describe('generatePosterUrl', () => {
@@ -128,5 +129,88 @@ describe('createPosterOptions', () => {
 
   it('returns null when no encrypted key', () => {
     expect(createPosterOptions({ posterService: 'rpdb' }, mockDecrypt)).toBeNull();
+  });
+});
+
+vi.mock('node-fetch', () => {
+  const fn = vi.fn();
+  return { default: fn, __esModule: true };
+});
+
+describe('checkPosterExists', () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    const mod = await import('node-fetch');
+    fetchMock = mod.default as unknown as ReturnType<typeof vi.fn>;
+    fetchMock.mockReset();
+  });
+
+  it('returns true for a valid image response', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      headers: { get: (h: string) => (h === 'content-type' ? 'image/jpeg' : null) },
+    });
+    const result = await checkPosterExists('https://example.com/poster-valid-1.jpg');
+    expect(result).toBe(true);
+  });
+
+  it('returns false for a 404 response', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      headers: { get: () => null },
+    });
+    const result = await checkPosterExists('https://example.com/poster-404.jpg');
+    expect(result).toBe(false);
+  });
+
+  it('returns false when content-type is not an image', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      headers: { get: (h: string) => (h === 'content-type' ? 'text/html' : null) },
+    });
+    const result = await checkPosterExists('https://example.com/poster-html.jpg');
+    expect(result).toBe(false);
+  });
+
+  it('returns false when content-length is too small', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      headers: {
+        get: (h: string) => {
+          if (h === 'content-type') return 'image/jpeg';
+          if (h === 'content-length') return '50';
+          return null;
+        },
+      },
+    });
+    const result = await checkPosterExists('https://example.com/poster-tiny.jpg');
+    expect(result).toBe(false);
+  });
+
+  it('returns false on network error', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('network error'));
+    const result = await checkPosterExists('https://example.com/poster-network-err.jpg');
+    expect(result).toBe(false);
+  });
+
+  it('caches positive results', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      headers: { get: (h: string) => (h === 'content-type' ? 'image/jpeg' : null) },
+    });
+    const url = 'https://example.com/poster-cache-pos.jpg';
+    await checkPosterExists(url);
+    await checkPosterExists(url);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('caches negative results', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 404, headers: { get: () => null } });
+    const url = 'https://example.com/poster-cache-neg.jpg';
+    await checkPosterExists(url);
+    await checkPosterExists(url);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
