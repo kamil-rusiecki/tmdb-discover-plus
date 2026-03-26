@@ -218,4 +218,29 @@ describe('discover — releasedOnly filter', () => {
     const call = mockedFetch.mock.calls[0][2] as Record<string, unknown>;
     expect(call).not.toHaveProperty('air_date.lte');
   });
+
+  it('clamps movie yearTo to today when releasedOnly is set and yearTo is in the future', async () => {
+    mockedFetch.mockResolvedValue({ page: 1, results: [] });
+    await discover('key', { type: 'movie', releasedOnly: true, yearFrom: 2015, yearTo: 2026 });
+    const call = mockedFetch.mock.calls[0][2] as Record<string, unknown>;
+    const today = new Date().toISOString().split('T')[0];
+    expect(call['primary_release_date.lte']).toBe(today);
+    expect(call['primary_release_date.gte']).toBe('2015-01-01');
+  });
+
+  it('clamps TV yearTo to today when releasedOnly is set and yearTo is in the future', async () => {
+    mockedFetch.mockResolvedValue({ page: 1, results: [] });
+    await discover('key', { type: 'series', releasedOnly: true, yearFrom: 2015, yearTo: 2026 });
+    const call = mockedFetch.mock.calls[0][2] as Record<string, unknown>;
+    const today = new Date().toISOString().split('T')[0];
+    expect(call['first_air_date.lte']).toBe(today);
+    expect(call['first_air_date.gte']).toBe('2015-01-01');
+  });
+
+  it('keeps past yearTo date when releasedOnly is set and yearTo is in the past', async () => {
+    mockedFetch.mockResolvedValue({ page: 1, results: [] });
+    await discover('key', { type: 'movie', releasedOnly: true, yearFrom: 2010, yearTo: 2020 });
+    const call = mockedFetch.mock.calls[0][2] as Record<string, unknown>;
+    expect(call['primary_release_date.lte']).toBe('2020-12-31');
+  });
 });

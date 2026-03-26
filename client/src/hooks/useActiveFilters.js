@@ -102,12 +102,20 @@ export function useActiveFilters({
     }
 
     if (filters.countries) {
-      const country = countries.find((c) => c.iso_3166_1 === filters.countries);
-      active.push({
-        key: 'countries',
-        label: `Country: ${country?.english_name || filters.countries}`,
-        section: 'filters',
-      });
+      const countriesArr = Array.isArray(filters.countries)
+        ? filters.countries
+        : String(filters.countries).split(',').filter(Boolean);
+      if (countriesArr.length > 0) {
+        const countryNames = countriesArr
+          .map((code) => countries.find((c) => c.iso_3166_1 === code)?.english_name || code)
+          .slice(0, 2);
+        const extra = countriesArr.length > 2 ? ` +${countriesArr.length - 2}` : '';
+        active.push({
+          key: 'countries',
+          label: `Country: ${countryNames.join(', ')}${extra}`,
+          section: 'filters',
+        });
+      }
     }
 
     if (filters.imdbCountries?.length > 0) {
@@ -522,7 +530,7 @@ export function useActiveFilters({
           update({ language: undefined });
           break;
         case 'countries':
-          update({ countries: undefined });
+          update({ countries: [] });
           break;
         case 'imdbCountries':
           update({ imdbCountries: [] });

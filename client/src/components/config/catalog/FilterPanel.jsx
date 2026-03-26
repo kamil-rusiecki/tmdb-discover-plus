@@ -1,5 +1,6 @@
-import { useCallback, memo } from 'react';
+import { useCallback, useMemo, memo } from 'react';
 import { RangeSlider, SingleSlider } from '../../forms/RangeSlider';
+import { MultiSelect } from '../../forms/MultiSelect';
 import { SearchableSelect } from '../../forms/SearchableSelect';
 import { LabelWithTooltip } from '../../forms/Tooltip';
 
@@ -18,6 +19,13 @@ export const FilterPanel = memo(function FilterPanel({
       : { movie: [], series: [] };
   const safeOriginalLanguages = Array.isArray(originalLanguages) ? originalLanguages : [];
   const safeCountries = Array.isArray(countries) ? countries : [];
+
+  const countriesValue = useMemo(() => {
+    const raw = localCatalog?.filters?.countries;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    return String(raw).split(',').filter(Boolean);
+  }, [localCatalog?.filters?.countries]);
 
   const handleYearRangeChange = useCallback(
     (range) => {
@@ -82,11 +90,11 @@ export const FilterPanel = memo(function FilterPanel({
         <div className="filter-group">
           <LabelWithTooltip
             label="Country"
-            tooltip="Filter by country of origin. Useful for finding British shows, Bollywood movies, etc."
+            tooltip="Filter by country of origin. Select multiple countries (OR logic). Useful for finding British shows, Bollywood movies, etc."
           />
-          <SearchableSelect
+          <MultiSelect
             options={safeCountries}
-            value={localCatalog?.filters?.countries || ''}
+            value={countriesValue}
             onChange={(value) => onFiltersChange('countries', value)}
             placeholder="Any"
             searchPlaceholder="Search countries..."

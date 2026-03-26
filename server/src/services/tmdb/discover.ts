@@ -197,15 +197,17 @@ export async function discover(apiKey: string, options: DiscoverOptions = {}): P
         params.with_release_type = '4';
       }
       const releaseDateKey = params.region ? 'release_date' : 'primary_release_date';
-      if (!params[`${releaseDateKey}.lte`]) {
-        params[`${releaseDateKey}.lte`] = today;
+      const lteKey = `${releaseDateKey}.lte`;
+      if (!params[lteKey] || String(params[lteKey]) > today) {
+        params[lteKey] = today;
       }
     } else {
       if (!params.with_status) {
         params.with_status = '0|3|4|5';
       }
-      if (!params['first_air_date.lte']) {
-        params['first_air_date.lte'] = today;
+      const lteKey = 'first_air_date.lte';
+      if (!params[lteKey] || String(params[lteKey]) > today) {
+        params[lteKey] = today;
       }
     }
   }
