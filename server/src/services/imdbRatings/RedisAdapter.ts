@@ -54,18 +54,14 @@ export class RedisAdapter extends ImdbRatingsAdapter {
     if (imdbIds.length === 0) return result;
 
     try {
-      const pipeline = this.client.multi();
-      for (const id of imdbIds) {
-        pipeline.hGet(RATINGS_HASH, id);
-      }
-      const replies = await pipeline.exec();
+      const replies = await this.client.hmGet(RATINGS_HASH, imdbIds);
 
       for (let i = 0; i < imdbIds.length; i++) {
         const val = replies[i];
-        if (val) result.set(imdbIds[i], String(val));
+        if (val) result.set(imdbIds[i], val);
       }
     } catch (err) {
-      log.warn('Redis pipeline HGET error', { error: (err as Error).message });
+      log.warn('Redis HMGET error', { error: (err as Error).message });
       for (const id of imdbIds) {
         const val = await this.get(id);
         if (val) result.set(id, val);

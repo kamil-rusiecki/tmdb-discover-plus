@@ -31,7 +31,6 @@ import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { addonRateLimit } from '../utils/rateLimit.ts';
 import { etagMiddleware } from '../utils/etag.ts';
 import { CachedError } from '../services/cache/CacheWrapper.ts';
 import { getCache } from '../services/cache/index.ts';
@@ -96,7 +95,6 @@ const STATIC_GENRE_MAP = (() => {
 })();
 
 const router = Router();
-router.use(addonRateLimit);
 router.use(etagMiddleware);
 
 router.param('userId', (req, res, next, value) => {
