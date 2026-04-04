@@ -16,6 +16,7 @@ vi.mock('../../src/config.ts', () => ({
   config: {
     addon: { variant: undefined },
     baseUrl: 'https://example.com',
+    cache: { maxKeys: 20000 },
     logging: { level: 'info', format: 'text' },
     nodeEnv: 'test',
   },
