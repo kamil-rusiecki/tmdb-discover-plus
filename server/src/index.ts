@@ -125,6 +125,7 @@ const CSP_POLICY = {
     'https://wsrv.nl',
     'https://simkl.in',
     'https://data.simkl.in',
+    'https://images.metahub.space',
     'data:',
   ],
   'font-src': ["'self'", 'https://fonts.gstatic.com'],
