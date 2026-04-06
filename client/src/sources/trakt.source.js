@@ -1,0 +1,303 @@
+import { lazy } from 'react';
+import {
+  normalizeTraktListType,
+  supportsTraktCalendarSettings,
+  supportsTraktPeriod,
+} from './traktCapabilities';
+
+const NON_TRAKT_KEYS = [
+  'sortBy',
+  'listType',
+  'voteCountMin',
+  'imdbOnly',
+  'displayLanguage',
+  'region',
+  'releaseType',
+  'releaseTypes',
+  'releaseDateFrom',
+  'releaseDateTo',
+  'primaryReleaseYear',
+  'includeVideo',
+  'airDateFrom',
+  'airDateTo',
+  'firstAirDateFrom',
+  'firstAirDateTo',
+  'firstAirDateYear',
+  'includeNullFirstAirDates',
+  'screenedTheatrically',
+  'timezone',
+  'withNetworks',
+  'tvStatus',
+  'tvType',
+  'withPeople',
+  'withCast',
+  'withCrew',
+  'withCompanies',
+  'withKeywords',
+  'watchRegion',
+  'watchProviders',
+  'watchMonetizationType',
+  'watchMonetizationTypes',
+  'releasedOnly',
+  'certificationMin',
+  'certificationMax',
+  'datePreset',
+  'certification',
+  'imdbListId',
+  'imdbRatingMin',
+  'imdbRatingMax',
+  'totalVotesMin',
+  'totalVotesMax',
+  'releaseDateStart',
+  'releaseDateEnd',
+  'imdbCountries',
+  'languages',
+  'keywords',
+  'awardsWon',
+  'awardsNominated',
+  'types',
+  'sortOrder',
+  'rankedList',
+  'rankedLists',
+  'excludeRankedLists',
+  'rankedListMaxRank',
+  'creditedNames',
+  'companies',
+  'certificateRating',
+  'certificateCountry',
+  'certificates',
+  'explicitContent',
+  'plot',
+  'filmingLocations',
+  'withData',
+  'inTheatersLat',
+  'inTheatersLong',
+  'inTheatersRadius',
+  'anilistSort',
+  'format',
+  'status',
+  'season',
+  'seasonYear',
+  'tags',
+  'tagCategories',
+  'countryOfOrigin',
+  'sourceMaterial',
+  'averageScoreMin',
+  'averageScoreMax',
+  'popularityMin',
+  'episodesMin',
+  'episodesMax',
+  'durationMin',
+  'durationMax',
+  'malRankingType',
+  'malSeason',
+  'malSeasonYear',
+  'malMediaType',
+  'malStatus',
+  'malSort',
+  'malRating',
+  'simklListType',
+  'simklTrendingPeriod',
+  'simklGenre',
+  'simklType',
+  'simklBestFilter',
+  'simklSort',
+];
+
+/** @implements {import('./types').SourceDescriptor} */
+export const TRAKT_SOURCE = {
+  id: 'trakt',
+  label: 'Trakt',
+  defaultSortBy: 'trending',
+
+  defaultFilters: {
+    genres: [],
+    excludeGenres: [],
+    traktListType: 'trending',
+    traktPeriod: 'weekly',
+    traktExcludeGenres: [],
+  },
+
+  movieOnlyFilterKeys: [],
+  seriesOnlyFilterKeys: ['traktStatus'],
+
+  cleanFiltersOnSwitch(currentFilters) {
+    const result = { ...currentFilters };
+    for (const key of NON_TRAKT_KEYS) {
+      delete result[key];
+    }
+    return result;
+  },
+
+  computeActiveChips(filters, refData) {
+    const {
+      traktListTypes = [],
+      traktPeriods = [],
+      traktCalendarTypes = [],
+      traktCommunityMetrics = [],
+    } = refData;
+    const active = [];
+    const normalizedListType = normalizeTraktListType(filters.traktListType);
+
+    if (normalizedListType !== 'trending') {
+      const match =
+        traktListTypes.find((t) => t.value === normalizedListType) ||
+        traktCommunityMetrics.find((m) => m.value === normalizedListType);
+      active.push({
+        key: 'traktListType',
+        label: `List: ${match?.label || normalizedListType}`,
+        section: 'filters',
+      });
+    }
+
+    if (
+      supportsTraktPeriod(normalizedListType) &&
+      filters.traktPeriod &&
+      filters.traktPeriod !== 'weekly'
+    ) {
+      const match = traktPeriods.find((p) => p.value === filters.traktPeriod);
+      active.push({
+        key: 'traktPeriod',
+        label: `Period: ${match?.label || filters.traktPeriod}`,
+        section: 'filters',
+      });
+    }
+
+    if (filters.traktCalendarType) {
+      const match = traktCalendarTypes.find((t) => t.value === filters.traktCalendarType);
+      active.push({
+        key: 'traktCalendarType',
+        label: `Feed: ${match?.label || filters.traktCalendarType}`,
+        section: 'filters',
+      });
+    }
+
+    if (filters.traktCalendarDays && supportsTraktCalendarSettings(normalizedListType)) {
+      active.push({
+        key: 'traktCalendarDays',
+        label: `${normalizedListType === 'recently_aired' ? 'Last' : 'Next'} ${filters.traktCalendarDays} days`,
+        section: 'filters',
+      });
+    }
+
+    if (filters.traktGenres && filters.traktGenres.length > 0) {
+      active.push({
+        key: 'traktGenres',
+        label: `Genres: ${filters.traktGenres.length}`,
+        section: 'genres',
+      });
+    }
+
+    if (filters.traktExcludeGenres && filters.traktExcludeGenres.length > 0) {
+      active.push({
+        key: 'traktExcludeGenres',
+        label: `Excluded: ${filters.traktExcludeGenres.length}`,
+        section: 'genres',
+      });
+    }
+
+    if (filters.traktYearMin != null || filters.traktYearMax != null) {
+      const min = filters.traktYearMin ?? 1900;
+      const max = filters.traktYearMax ?? new Date().getFullYear() + 1;
+      active.push({ key: 'traktYear', label: `Year: ${min}-${max}`, section: 'filters' });
+    }
+
+    if (filters.traktRuntimeMin != null || filters.traktRuntimeMax != null) {
+      const min = filters.traktRuntimeMin ?? 0;
+      const max = filters.traktRuntimeMax ?? 400;
+      active.push({ key: 'traktRuntime', label: `Runtime: ${min}-${max}m`, section: 'filters' });
+    }
+
+    if (filters.traktCertifications && filters.traktCertifications.length > 0) {
+      active.push({
+        key: 'traktCertifications',
+        label: `Cert: ${filters.traktCertifications.join(',')}`,
+        section: 'release',
+      });
+    }
+
+    if (filters.traktCountries && filters.traktCountries.length > 0) {
+      active.push({
+        key: 'traktCountries',
+        label: `Countries: ${filters.traktCountries.length}`,
+        section: 'filters',
+      });
+    }
+
+    if (filters.traktLanguages && filters.traktLanguages.length > 0) {
+      active.push({
+        key: 'traktLanguages',
+        label: `Languages: ${filters.traktLanguages.length}`,
+        section: 'filters',
+      });
+    }
+
+    if (filters.traktStatus && filters.traktStatus.length > 0) {
+      active.push({
+        key: 'traktStatus',
+        label: `Status: ${filters.traktStatus.length}`,
+        section: 'release',
+      });
+    }
+
+    if (filters.traktRatingMin || filters.traktRatingMax) {
+      active.push({
+        key: 'traktRating',
+        label: `Rating: ${filters.traktRatingMin || 0}-${filters.traktRatingMax || 100}`,
+        section: 'filters',
+      });
+    }
+
+    if (filters.traktVotesMin) {
+      active.push({
+        key: 'traktVotesMin',
+        label: `Trakt Votes: \u2265${filters.traktVotesMin}`,
+        section: 'ratings',
+      });
+    }
+
+    if (filters.traktImdbVotesMin) {
+      active.push({
+        key: 'traktImdbVotesMin',
+        label: `IMDb Votes: \u2265${filters.traktImdbVotesMin}`,
+        section: 'ratings',
+      });
+    }
+
+    if (filters.traktTmdbVotesMin) {
+      active.push({
+        key: 'traktTmdbVotesMin',
+        label: `TMDB Votes: \u2265${filters.traktTmdbVotesMin}`,
+        section: 'ratings',
+      });
+    }
+
+    if (filters.traktNetworkIds && filters.traktNetworkIds.length > 0) {
+      active.push({
+        key: 'traktNetworkIds',
+        label: `Networks: ${filters.traktNetworkIds.length}`,
+        section: 'filters',
+      });
+    }
+
+    if (filters.traktRtUserMeterMin || filters.traktRtUserMeterMax) {
+      active.push({
+        key: 'traktRtUserMeter',
+        label: `RT Audience: ${filters.traktRtUserMeterMin || 0}-${filters.traktRtUserMeterMax || 100}`,
+        section: 'ratings',
+      });
+    }
+
+    if (filters.randomize) {
+      active.push({ key: 'randomize', label: 'Randomized', section: 'options' });
+    }
+
+    return active;
+  },
+
+  FilterPanelComponent: lazy(() =>
+    import('../components/config/catalog/sources/trakt/TraktFilterPanel').then((m) => ({
+      default: m.TraktFilterPanel,
+    }))
+  ),
+};

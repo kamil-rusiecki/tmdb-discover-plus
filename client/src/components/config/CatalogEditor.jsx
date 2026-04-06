@@ -13,6 +13,7 @@ const SOURCE_ATTRIBUTION = {
   anilist: { label: 'AniList', url: 'https://anilist.co/' },
   mal: { label: 'MyAnimeList', url: 'https://myanimelist.net/' },
   simkl: { label: 'Simkl', url: 'https://simkl.com/' },
+  trakt: { label: 'Trakt', url: 'https://trakt.tv/' },
 };
 
 export const CatalogEditor = memo(function CatalogEditor() {
@@ -78,6 +79,18 @@ export const CatalogEditor = memo(function CatalogEditor() {
     simklTrendingPeriods,
     simklBestFilters,
     simklAnimeTypes,
+    // Trakt reference data
+    traktGenres,
+    traktListTypes,
+    traktPeriods,
+    traktCalendarTypes,
+
+    traktShowStatuses,
+    traktCertificationsMovie,
+    traktCertificationsSeries,
+    traktCommunityMetrics,
+    traktNetworks,
+    traktHasKey,
     selectedPeople,
     setSelectedPeople,
     selectedCompanies,
@@ -208,6 +221,18 @@ export const CatalogEditor = memo(function CatalogEditor() {
     simklTrendingPeriods,
     simklBestFilters,
     simklAnimeTypes,
+    // Trakt reference data
+    traktGenres,
+    traktListTypes,
+    traktPeriods,
+    traktCalendarTypes,
+
+    traktShowStatuses,
+    traktCertificationsMovie,
+    traktCertificationsSeries,
+    traktCommunityMetrics,
+    traktNetworks,
+    traktHasKey,
     handleTVNetworkSearch,
     handleTriStateGenreClick,
     genresLoading,

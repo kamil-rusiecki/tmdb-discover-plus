@@ -63,7 +63,11 @@ export const CatalogPreview = memo(function CatalogPreview({ loading, error, dat
                   (item.id?.startsWith('tmdb:') ? item.id.replace('tmdb:', '') : null);
 
                 let itemUrl, linkTitle;
-                if (imdbId) {
+                if (item.traktSlug) {
+                  const traktType = item.type === 'series' ? 'shows' : 'movies';
+                  itemUrl = `https://trakt.tv/${traktType}/${item.traktSlug}`;
+                  linkTitle = `View "${item.name}" on Trakt`;
+                } else if (imdbId) {
                   itemUrl = `https://www.imdb.com/title/${imdbId}/`;
                   linkTitle = `View "${item.name}" on IMDb`;
                 } else if (tmdbId) {

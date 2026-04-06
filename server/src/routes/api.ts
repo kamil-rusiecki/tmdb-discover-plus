@@ -11,12 +11,14 @@ import {
   deleteUserConfig,
   getApiKeyFromConfig,
   getPublicStats,
+  getTraktKeyFromConfig,
 } from '../services/configService.ts';
 import * as tmdb from '../services/tmdb/index.ts';
 import * as imdb from '../services/imdb/index.ts';
 import * as anilist from '../services/anilist/index.ts';
 import * as mal from '../services/mal/index.ts';
 import * as simkl from '../services/simkl/index.ts';
+import * as trakt from '../services/trakt/index.ts';
 import { searchCities } from '../services/geo.ts';
 import {
   getBaseUrl,
@@ -223,13 +225,61 @@ router.post('/validate-simkl-key', requireAuth, strictRateLimit, async (req, res
   }
 });
 
+router.post('/validate-trakt-key', requireAuth, strictRateLimit, async (req, res) => {
+  try {
+    const { clientId } = req.body;
+    if (!clientId || typeof clientId !== 'string') {
+      return res.json({ valid: false, error: 'Trakt Client ID is required' });
+    }
+    if (clientId.length < 10 || clientId.length > 128) {
+      return res.json({ valid: false, error: 'Invalid Trakt Client ID format' });
+    }
+    // Validate by making a lightweight API call to Trakt
+    const testUrl = 'https://api.trakt.tv/movies/trending?page=1&limit=1';
+    try {
+      const response = await fetch(testUrl, {
+        headers: {
+          'Content-Type': 'application/json',
+          'trakt-api-version': '2',
+          'trakt-api-key': clientId,
+          'User-Agent': 'TMDB-Discover-Plus/2.9.2',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (response.ok) {
+        return res.json({ valid: true });
+      } else if (response.status === 401 || response.status === 403) {
+        return res.json({
+          valid: false,
+          error: 'Trakt rejected this Client ID. Please verify it is correct.',
+        });
+      }
+      // For non-auth errors (429, 500, etc.), accept the key — it's likely valid
+      // but Trakt is temporarily unavailable
+      log.warn('Trakt validation returned non-auth error, accepting key', {
+        status: response.status,
+      });
+      return res.json({ valid: true });
+    } catch (fetchErr) {
+      // Network error (DNS, proxy, timeout) — accept the key since we can't verify
+      log.warn('Trakt validation network error, accepting key', {
+        error: (fetchErr as Error).message,
+      });
+      return res.json({ valid: true });
+    }
+  } catch (error) {
+    log.error('Trakt key validation error', { error: (error as Error).message });
+    sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
+  }
+});
+
 router.post('/source-key', requireAuth, resolveApiKey, strictRateLimit, async (req, res) => {
   try {
     const { source, key } = req.body;
     if (!source || !key || typeof key !== 'string') {
       return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'source and key are required');
     }
-    if (source !== 'mal' && source !== 'simkl') {
+    if (source !== 'mal' && source !== 'simkl' && source !== 'trakt') {
       return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'Invalid source');
     }
 
@@ -245,7 +295,12 @@ router.post('/source-key', requireAuth, resolveApiKey, strictRateLimit, async (r
       return sendError(res, 500, ErrorCodes.INTERNAL_ERROR, 'Encryption failed');
     }
 
-    const fieldName = source === 'mal' ? 'malClientIdEncrypted' : 'simklApiKeyEncrypted';
+    const fieldMap: Record<string, string> = {
+      mal: 'malClientIdEncrypted',
+      simkl: 'simklApiKeyEncrypted',
+      trakt: 'traktClientIdEncrypted',
+    };
+    const fieldName = fieldMap[source];
     const savedConfig = await saveUserConfig({
       ...userConfig,
       [fieldName]: encryptedKey,
@@ -265,13 +320,14 @@ router.get('/source-keys', requireAuth, resolveApiKey, async (req, res) => {
     const apiKey = getApiKey(req);
     const configs = await getConfigsByApiKey(apiKey);
     if (configs.length === 0) {
-      return res.json({ mal: false, simkl: false });
+      return res.json({ mal: false, simkl: false, trakt: false });
     }
 
     const userConfig = configs[0];
     res.json({
       mal: true, // Jikan API - no key needed
       simkl: !!userConfig.simklApiKeyEncrypted || !!config.simklApi.clientId,
+      trakt: !!userConfig.traktClientIdEncrypted || !!config.traktApi.clientId,
     });
   } catch (error) {
     log.error('GET /source-keys error', { error: (error as Error).message });
@@ -302,6 +358,13 @@ router.get('/configs', requireAuth, resolveApiKey, async (req, res) => {
 router.get('/reference-data', requireAuth, resolveApiKey, async (req, res) => {
   try {
     const apiKey = getApiKey(req);
+    const configs = await getConfigsByApiKey(apiKey).catch(() => []);
+    const userConfig = configs[0] || null;
+    const traktClientId =
+      config.traktApi.clientId ||
+      (userConfig ? getTraktKeyFromConfig(userConfig) : null) ||
+      undefined;
+    const traktHasKey = !!config.traktApi.clientId || !!userConfig?.traktClientIdEncrypted;
 
     const [
       movieGenres,
@@ -407,6 +470,19 @@ router.get('/reference-data', requireAuth, resolveApiKey, async (req, res) => {
         trendingPeriods: simkl.getTrendingPeriods(),
         bestFilters: simkl.getBestFilters(),
         animeTypes: simkl.getAnimeTypes(),
+      },
+      trakt: {
+        enabled: trakt.isTraktEnabled(),
+        genres: await trakt.getGenresByType(traktClientId).catch(() => trakt.getGenresByType()),
+        listTypes: trakt.getListTypes(),
+        periods: trakt.getPeriods(),
+        calendarTypes: trakt.getCalendarTypes(),
+        showStatuses: trakt.getShowStatuses(),
+        certificationsMovie: trakt.getCertifications('movie'),
+        certificationsSeries: trakt.getCertifications('series'),
+        communityMetrics: trakt.getCommunityMetrics(),
+        networks: await trakt.getNetworks(traktClientId).catch(() => []),
+        hasKey: traktHasKey,
       },
     };
 
@@ -1052,6 +1128,96 @@ router.post('/simkl/preview', requireAuth, async (req, res) => {
     res.json({ metas: previewMetas.slice(0, PREVIEW_PAGE_SIZE), totalResults: null });
   } catch (error) {
     log.error('POST /simkl/preview error', { error: (error as Error).message });
+    sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
+  }
+});
+
+router.post('/trakt/preview', requireAuth, resolveApiKey, async (req, res) => {
+  try {
+    const { filters, type } = req.body;
+    const safeFilters = filters || {};
+    const randomize = Boolean(safeFilters.randomize || safeFilters.sortBy === 'random');
+    const contentType = (type === 'series' ? 'series' : 'movie') as ContentType;
+    const metas: import('../types/stremio.ts').StremioMetaPreview[] = [];
+    let page = 1;
+
+    // Resolve Trakt Client ID: server env var → user's saved key
+    let traktClientId: string | null = config.traktApi.clientId || null;
+    if (!traktClientId) {
+      const apiKey = getApiKey(req);
+      const configs = await getConfigsByApiKey(apiKey);
+      if (configs.length > 0) {
+        traktClientId = getTraktKeyFromConfig(configs[0]);
+      }
+    }
+    if (!traktClientId) {
+      return sendError(
+        res,
+        503,
+        ErrorCodes.INTERNAL_ERROR,
+        'Trakt Client ID not configured on server.'
+      );
+    }
+
+    const excludeGenres: string[] | undefined = safeFilters.traktExcludeGenres;
+
+    if (randomize) {
+      const probe = await trakt.discover(safeFilters, contentType, 1, traktClientId);
+      const filteredItems = excludeGenres?.length
+        ? probe.items.filter(
+            (item) => !(item.genres || []).some((g: string) => excludeGenres.includes(g))
+          )
+        : probe.items;
+      if (
+        safeFilters.traktListType === 'boxoffice' ||
+        safeFilters.traktListType === 'calendar' ||
+        safeFilters.traktListType === 'recently_aired'
+      ) {
+        const previewMetas = shuffleArray(
+          trakt.batchConvertToStremioMeta(filteredItems, contentType)
+        );
+        return res.json({ metas: previewMetas.slice(0, PREVIEW_PAGE_SIZE), totalResults: null });
+      }
+      const maxPage = probe.hasMore ? 5 : 1;
+      page = Math.floor(Math.random() * maxPage) + 1;
+    }
+
+    let pages = 0;
+    while (metas.length < PREVIEW_PAGE_SIZE && pages < PREVIEW_MAX_BACKFILL) {
+      const result = await trakt.discover(safeFilters, contentType, page, traktClientId);
+      const filtered = excludeGenres?.length
+        ? result.items.filter(
+            (item) => !(item.genres || []).some((g: string) => excludeGenres.includes(g))
+          )
+        : result.items;
+      metas.push(...trakt.batchConvertToStremioMeta(filtered, contentType));
+      pages++;
+      if (!result.hasMore || result.items.length === 0) break;
+      page++;
+    }
+
+    const previewMetas = randomize ? shuffleArray(metas) : metas;
+    res.json({ metas: previewMetas.slice(0, PREVIEW_PAGE_SIZE), totalResults: null });
+  } catch (error) {
+    log.error('POST /trakt/preview error', { error: (error as Error).message });
+    sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
+  }
+});
+
+router.get('/trakt/networks', requireAuth, resolveApiKey, async (req, res) => {
+  try {
+    let traktClientId: string | null = config.traktApi.clientId || null;
+    if (!traktClientId) {
+      const apiKey = getApiKey(req);
+      const configs = await getConfigsByApiKey(apiKey);
+      if (configs.length > 0) {
+        traktClientId = getTraktKeyFromConfig(configs[0]);
+      }
+    }
+    const networks = await trakt.getNetworks(traktClientId || undefined).catch(() => []);
+    res.json({ networks });
+  } catch (error) {
+    log.error('GET /trakt/networks error', { error: (error as Error).message });
     sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
   }
 });

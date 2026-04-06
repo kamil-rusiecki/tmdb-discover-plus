@@ -15,6 +15,7 @@ export interface UserPreferences {
   disableAnilistSearch?: boolean;
   disableMalSearch?: boolean;
   disableSimklSearch?: boolean;
+  disableTraktSearch?: boolean;
   includeAdult?: boolean;
   region?: string;
   countries?: string;
@@ -166,13 +167,53 @@ export interface SimklCatalogFilters extends BaseCatalogFilters {
   simklNetwork?: string;
 }
 
-export type SourceType = 'tmdb' | 'imdb' | 'anilist' | 'mal' | 'simkl';
+export interface TraktCatalogFilters extends BaseCatalogFilters {
+  traktListType?: string;
+  traktPeriod?: string;
+  traktCalendarType?: string;
+  traktCalendarDays?: number;
+  traktListId?: string;
+  traktGenres?: string[];
+  traktExcludeGenres?: string[];
+  traktYears?: string;
+  traktYearMin?: number;
+  traktYearMax?: number;
+  traktRuntimes?: string;
+  traktRuntimeMin?: number;
+  traktRuntimeMax?: number;
+  traktCertifications?: string[];
+  traktCountries?: string[];
+  traktLanguages?: string[];
+  traktNetworkIds?: number[];
+  traktStudioIds?: string[];
+  traktStatus?: string[];
+  traktRatingMin?: number;
+  traktRatingMax?: number;
+  traktVotesMin?: number;
+  traktImdbRatingMin?: number;
+  traktImdbRatingMax?: number;
+  traktTmdbRatingMin?: number;
+  traktTmdbRatingMax?: number;
+  traktRtMeterMin?: number;
+  traktRtMeterMax?: number;
+  traktMetascoreMin?: number;
+  traktMetascoreMax?: number;
+  traktImdbVotesMin?: number;
+  traktImdbVotesMax?: number;
+  traktTmdbVotesMin?: number;
+  traktTmdbVotesMax?: number;
+  traktRtUserMeterMin?: number;
+  traktRtUserMeterMax?: number;
+}
+
+export type SourceType = 'tmdb' | 'imdb' | 'anilist' | 'mal' | 'simkl' | 'trakt';
 
 export type CatalogFilters = TmdbCatalogFilters &
   ImdbCatalogFilters &
   AnilistCatalogFilters &
   MalCatalogFilters &
-  SimklCatalogFilters;
+  SimklCatalogFilters &
+  TraktCatalogFilters;
 
 export interface CatalogFormState {
   selectedPeople?: Array<{ id: number | string; name: string; profile_path?: string }>;
@@ -205,6 +246,8 @@ export interface UserConfig {
   malClientId?: string;
   simklApiKeyEncrypted?: string;
   simklApiKey?: string;
+  traktClientIdEncrypted?: string;
+  traktClientId?: string;
   catalogs: CatalogConfig[];
   preferences: UserPreferences;
   createdAt?: Date;

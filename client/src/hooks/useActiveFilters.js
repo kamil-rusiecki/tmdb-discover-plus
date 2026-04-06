@@ -1,6 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import { DATE_PRESETS } from '../constants/datePresets';
 import { getSource } from '../sources/index';
+import {
+  normalizeTraktListType,
+  supportsTraktCalendarSettings,
+  supportsTraktPeriod,
+} from '../sources/traktCapabilities';
 
 export function useActiveFilters({
   localCatalog,
@@ -39,6 +44,10 @@ export function useActiveFilters({
   simklBestFilters = [],
   simklSortOptions = [],
   simklAnimeTypes = [],
+  traktListTypes = [],
+  traktCalendarTypes = [],
+  traktCommunityMetrics = [],
+  traktNetworks = [],
 }) {
   const isImdbSource = localCatalog?.source === 'imdb';
   const isAnilistSource = localCatalog?.source === 'anilist';
@@ -773,6 +782,104 @@ export function useActiveFilters({
       }
     }
 
+    if (source === 'trakt') {
+      const listType = normalizeTraktListType(filters.traktListType);
+      if (listType !== 'trending') {
+        const allOptions = [...traktListTypes, ...traktCommunityMetrics];
+        const typeLabel = getOptionLabel(allOptions, listType);
+        active.push({ key: 'traktListType', label: `List: ${typeLabel}`, section: 'filters' });
+      }
+      if (
+        supportsTraktPeriod(listType) &&
+        filters.traktPeriod &&
+        filters.traktPeriod !== 'weekly'
+      ) {
+        active.push({
+          key: 'traktPeriod',
+          label: `Period: ${humanize(filters.traktPeriod)}`,
+          section: 'filters',
+        });
+      }
+      if (supportsTraktCalendarSettings(listType) && filters.traktCalendarType) {
+        const calendarLabel = getOptionLabel(traktCalendarTypes, filters.traktCalendarType);
+        active.push({
+          key: 'traktCalendarType',
+          label: `Feed: ${calendarLabel}`,
+          section: 'filters',
+        });
+      }
+      if (filters.traktCalendarDays && supportsTraktCalendarSettings(listType)) {
+        const label =
+          listType === 'recently_aired'
+            ? `Last ${filters.traktCalendarDays} days`
+            : `Next ${filters.traktCalendarDays} days`;
+        active.push({ key: 'traktCalendarDays', label, section: 'filters' });
+      }
+      if (filters.traktLanguages?.length) {
+        active.push({
+          key: 'traktLanguages',
+          label: `Languages: ${filters.traktLanguages.map((c) => c.toUpperCase()).join(', ')}`,
+          section: 'filters',
+        });
+      }
+      if (filters.traktCountries?.length) {
+        active.push({
+          key: 'traktCountries',
+          label: `Countries: ${filters.traktCountries.map((c) => c.toUpperCase()).join(', ')}`,
+          section: 'filters',
+        });
+      }
+      if (filters.traktNetworkIds?.length) {
+        const safeNets = Array.isArray(traktNetworks) ? traktNetworks : [];
+        const names = filters.traktNetworkIds.map((id) => {
+          const net = safeNets.find((n) => n.ids?.trakt === id);
+          return net?.name || String(id);
+        });
+        const shown = names.slice(0, 2).join(', ');
+        const extra = names.length > 2 ? ` +${names.length - 2}` : '';
+        active.push({
+          key: 'traktNetworkIds',
+          label: `Networks: ${shown}${extra}`,
+          section: 'network',
+        });
+      }
+      if (filters.traktGenres?.length) {
+        active.push({
+          key: 'traktGenres',
+          label: `Genres: ${filters.traktGenres.length}`,
+          section: 'genres',
+        });
+      }
+      if (filters.traktExcludeGenres?.length) {
+        active.push({
+          key: 'traktExcludeGenres',
+          label: `Excluded: ${filters.traktExcludeGenres.length}`,
+          section: 'genres',
+        });
+      }
+      if (filters.traktYearMin != null || filters.traktYearMax != null) {
+        active.push({
+          key: 'traktYear',
+          label: `Year: ${filters.traktYearMin ?? '...'}\u2013${filters.traktYearMax ?? '...'}`,
+          section: 'filters',
+        });
+      }
+      if (filters.traktRatingMin || filters.traktRatingMax) {
+        active.push({
+          key: 'traktRating',
+          label: `Rating: ${filters.traktRatingMin ?? 0}\u2013${filters.traktRatingMax ?? 100}`,
+          section: 'filters',
+        });
+      }
+      if (filters.traktVotesMin) {
+        active.push({
+          key: 'traktVotesMin',
+          label: `Min Votes: ${filters.traktVotesMin}`,
+          section: 'ratings',
+        });
+      }
+    }
+
     return active;
   }, [
     localCatalog,
@@ -804,6 +911,10 @@ export function useActiveFilters({
     simklBestFilters,
     simklSortOptions,
     simklAnimeTypes,
+    traktListTypes,
+    traktCalendarTypes,
+    traktCommunityMetrics,
+    traktNetworks,
   ]);
 
   const clearFilter = useCallback(
@@ -1088,6 +1199,43 @@ export function useActiveFilters({
           break;
         case 'simklType':
           update({ simklType: undefined });
+          break;
+        // --- Trakt specific ---
+        case 'traktListType':
+          update({ traktListType: undefined });
+          break;
+        case 'traktPeriod':
+          update({ traktPeriod: undefined });
+          break;
+        case 'traktCalendarType':
+          update({ traktCalendarType: undefined });
+          break;
+        case 'traktCalendarDays':
+          update({ traktCalendarDays: undefined });
+          break;
+        case 'traktLanguages':
+          update({ traktLanguages: undefined });
+          break;
+        case 'traktCountries':
+          update({ traktCountries: undefined });
+          break;
+        case 'traktNetworkIds':
+          update({ traktNetworkIds: undefined });
+          break;
+        case 'traktGenres':
+          update({ traktGenres: undefined });
+          break;
+        case 'traktExcludeGenres':
+          update({ traktExcludeGenres: undefined });
+          break;
+        case 'traktYear':
+          update({ traktYearMin: undefined, traktYearMax: undefined });
+          break;
+        case 'traktRating':
+          update({ traktRatingMin: undefined, traktRatingMax: undefined });
+          break;
+        case 'traktVotesMin':
+          update({ traktVotesMin: undefined });
           break;
         default:
           break;

@@ -39,6 +39,7 @@ export function useCatalogEditorHandlers({
   onPreviewAnilist,
   onPreviewMal,
   onPreviewSimkl,
+  onPreviewTrakt,
   selectedPeople,
   selectedCompanies,
   selectedImdbPeople,
@@ -234,6 +235,8 @@ export function useCatalogEditorHandlers({
         data = await onPreviewMal(localCatalog.type || 'movie', localCatalog.filters || {});
       } else if (localCatalog.source === 'simkl' && onPreviewSimkl) {
         data = await onPreviewSimkl(localCatalog.type || 'movie', localCatalog.filters || {});
+      } else if (localCatalog.source === 'trakt' && onPreviewTrakt) {
+        data = await onPreviewTrakt(localCatalog.type || 'movie', localCatalog.filters || {});
       } else {
         const filters = {
           ...localCatalog.filters,
@@ -259,6 +262,7 @@ export function useCatalogEditorHandlers({
     onPreviewAnilist,
     onPreviewMal,
     onPreviewSimkl,
+    onPreviewTrakt,
     preferences?.defaultLanguage,
     selectedPeople,
     selectedCompanies,

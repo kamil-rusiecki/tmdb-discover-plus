@@ -9,6 +9,7 @@ const SOURCES = [
   { id: 'anilist', label: 'AniList', desc: 'AniList anime database', alwaysVisible: true },
   { id: 'mal', label: 'MAL', desc: 'MyAnimeList rankings', alwaysVisible: true },
   { id: 'simkl', label: 'Simkl', desc: 'Simkl anime discovery', alwaysVisible: true },
+  { id: 'trakt', label: 'Trakt', desc: 'Trakt movie & TV discovery', alwaysVisible: true },
 ];
 
 export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false }) {
@@ -50,6 +51,7 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
     anilist: 'e.g., Top Anime, Trending This Season',
     mal: 'e.g., MAL Top Ranked, Seasonal Anime',
     simkl: 'e.g., Trending Anime, Best of 2024',
+    trakt: 'e.g., Trending Movies, Most Watched',
   };
 
   return (

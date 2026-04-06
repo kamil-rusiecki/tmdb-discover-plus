@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useId, memo } from 'react';
+import { useState, useRef, useEffect, useId, memo, useMemo } from 'react';
 import { ChevronDown, Search, X } from 'lucide-react';
 
 export const SearchableSelect = memo(function SearchableSelect({
@@ -11,6 +11,7 @@ export const SearchableSelect = memo(function SearchableSelect({
   labelKey = 'name',
   valueKey = 'code',
   allowClear = true,
+  groupKey = null,
   'aria-label': ariaLabel,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,7 +30,28 @@ export const SearchableSelect = memo(function SearchableSelect({
     opt[labelKey]?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const allNavOptions = allowClear ? [{ isClear: true }, ...filteredOptions] : filteredOptions;
+  // Build grouped render items when groupKey is set
+  const { renderItems, selectableOptions } = useMemo(() => {
+    if (!groupKey) {
+      return { renderItems: null, selectableOptions: filteredOptions };
+    }
+    const items = [];
+    const selectable = [];
+    const seenGroups = new Set();
+    for (const opt of filteredOptions) {
+      const group = opt[groupKey];
+      if (group && !seenGroups.has(group)) {
+        seenGroups.add(group);
+        items.push({ _type: 'header', group });
+      }
+      const navIndex = selectable.length;
+      items.push({ _type: 'option', option: opt, navIndex });
+      selectable.push(opt);
+    }
+    return { renderItems: items, selectableOptions: selectable };
+  }, [filteredOptions, groupKey]);
+
+  const allNavOptions = allowClear ? [{ isClear: true }, ...selectableOptions] : selectableOptions;
 
   const handleOpenToggle = () => {
     const newIsOpen = !isOpen;
@@ -46,7 +68,9 @@ export const SearchableSelect = memo(function SearchableSelect({
 
   useEffect(() => {
     if (highlightedIndex >= 0 && optionsRef.current) {
-      const highlightedEl = optionsRef.current.children[highlightedIndex];
+      const highlightedEl = optionsRef.current.querySelector(
+        `[data-nav-index="${highlightedIndex}"]`
+      );
       if (highlightedEl) {
         highlightedEl.scrollIntoView({ block: 'nearest' });
       }
@@ -102,8 +126,8 @@ export const SearchableSelect = memo(function SearchableSelect({
         } else {
           handleSelect(option[valueKey]);
         }
-      } else if (filteredOptions.length === 1) {
-        handleSelect(filteredOptions[0][valueKey]);
+      } else if (selectableOptions.length === 1) {
+        handleSelect(selectableOptions[0][valueKey]);
       }
     }
   };
@@ -129,6 +153,28 @@ export const SearchableSelect = memo(function SearchableSelect({
         setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : prev));
       }
     }
+  };
+
+  const renderOptionItem = (option, navIndex) => {
+    const adjustedIndex = allowClear ? navIndex + 1 : navIndex;
+    return (
+      <div
+        key={option[valueKey]}
+        data-nav-index={adjustedIndex}
+        id={`${listboxId}-option-${adjustedIndex}`}
+        className={`searchable-select-option ${value === option[valueKey] ? 'selected' : ''} ${highlightedIndex === adjustedIndex ? 'highlighted' : ''}`}
+        onClick={() => handleSelect(option[valueKey])}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') handleSelect(option[valueKey]);
+        }}
+        onMouseMove={() => setHighlightedIndex(adjustedIndex)}
+        role="option"
+        aria-selected={value === option[valueKey]}
+        tabIndex={0}
+      >
+        {option[labelKey]}
+      </div>
+    );
   };
 
   return (
@@ -180,6 +226,7 @@ export const SearchableSelect = memo(function SearchableSelect({
           <div className="searchable-select-options" ref={optionsRef} role="listbox" id={listboxId}>
             {allowClear && (
               <div
+                data-nav-index={0}
                 className={`searchable-select-option ${!value ? 'selected' : ''} ${highlightedIndex === 0 ? 'highlighted' : ''}`}
                 id={`${listboxId}-option-0`}
                 onClick={() => handleSelect('')}
@@ -194,27 +241,22 @@ export const SearchableSelect = memo(function SearchableSelect({
                 {placeholder}
               </div>
             )}
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option, index) => {
-                const navIndex = allowClear ? index + 1 : index;
-                return (
-                  <div
-                    key={option[valueKey]}
-                    id={`${listboxId}-option-${navIndex}`}
-                    className={`searchable-select-option ${value === option[valueKey] ? 'selected' : ''} ${highlightedIndex === navIndex ? 'highlighted' : ''}`}
-                    onClick={() => handleSelect(option[valueKey])}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') handleSelect(option[valueKey]);
-                    }}
-                    onMouseMove={() => setHighlightedIndex(navIndex)}
-                    role="option"
-                    aria-selected={value === option[valueKey]}
-                    tabIndex={0}
-                  >
-                    {option[labelKey]}
-                  </div>
-                );
-              })
+            {groupKey && renderItems ? (
+              renderItems.length > 0 ? (
+                renderItems.map((item) =>
+                  item._type === 'header' ? (
+                    <div key={`group-${item.group}`} className="searchable-select-group-header">
+                      {item.group}
+                    </div>
+                  ) : (
+                    renderOptionItem(item.option, item.navIndex)
+                  )
+                )
+              ) : (
+                <div className="searchable-select-empty">{emptyMessage}</div>
+              )
+            ) : filteredOptions.length > 0 ? (
+              filteredOptions.map((option, index) => renderOptionItem(option, index))
             ) : (
               <div className="searchable-select-empty">{emptyMessage}</div>
             )}

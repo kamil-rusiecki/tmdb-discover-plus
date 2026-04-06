@@ -54,6 +54,7 @@ import { logSwallowedError } from '../utils/helpers.ts';
 import { handleAnilistCatalogRequest } from './handlers/anilistHandler.ts';
 import { handleMalCatalogRequest } from './handlers/malHandler.ts';
 import { handleSimklCatalogRequest } from './handlers/simklHandler.ts';
+import { handleTraktCatalogRequest } from './handlers/traktHandler.ts';
 
 const log = createLogger('addon');
 
@@ -625,6 +626,10 @@ async function handleCatalogRequest(
 
   if (catalogId.startsWith('simkl-')) {
     return handleSimklCatalogRequest(userId, type, catalogId, extra, res, req);
+  }
+
+  if (catalogId.startsWith('trakt-')) {
+    return handleTraktCatalogRequest(userId, type, catalogId, extra, res, req);
   }
 
   const startTime = Date.now();

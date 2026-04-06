@@ -28,6 +28,8 @@ import {
   saveUserConfig,
   getConfigsByApiKey,
   getApiKeyFromConfig,
+  getPosterKeyFromConfig,
+  getTraktKeyFromConfig,
   deleteUserConfig,
 } from '../../src/services/configService.ts';
 import { encrypt } from '../../src/utils/encryption.ts';
@@ -124,6 +126,35 @@ describe('Config CRUD lifecycle', () => {
     expect(config.configName).toBe('My Setup');
     expect(config.catalogs).toHaveLength(2);
     expect(config.preferences.defaultLanguage).toBe('es');
+  });
+
+  it('preserves encrypted source and poster keys across partial updates', async () => {
+    const encKey = encrypt(TEST_API_KEY);
+    const traktClientId = 'trakt-client-id-123456789';
+    const encTraktKey = encrypt(traktClientId);
+    const encPosterKey = encrypt('poster-key-123');
+
+    await saveUserConfig({
+      userId: USER_ID,
+      tmdbApiKeyEncrypted: encKey,
+      traktClientIdEncrypted: encTraktKey,
+      catalogs: [],
+      preferences: { posterApiKeyEncrypted: encPosterKey, defaultLanguage: 'en' },
+    });
+
+    await saveUserConfig({
+      userId: USER_ID,
+      tmdbApiKey: TEST_API_KEY,
+      configName: 'Updated',
+      catalogs: [{ name: 'Trending', type: 'series', source: 'trakt', filters: {} }],
+      preferences: { defaultLanguage: 'es' },
+    });
+
+    const config = await getUserConfig(USER_ID);
+    expect(config?.traktClientIdEncrypted).toBe(encTraktKey);
+    expect(getTraktKeyFromConfig(config)).toBe(traktClientId);
+    expect(getPosterKeyFromConfig(config)).toBe('poster-key-123');
+    expect(config?.preferences?.defaultLanguage).toBe('es');
   });
 
   it('deletes a config', async () => {

@@ -126,6 +126,24 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
         extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
       });
     }
+
+    const hasTraktCatalogs = (userConfig?.catalogs || []).some(
+      (c) => c.source === 'trakt' && c.enabled !== false
+    );
+    if (hasTraktCatalogs && userConfig?.preferences?.disableTraktSearch !== true) {
+      catalogs.push({
+        id: 'trakt-search-movie',
+        type: 'movie',
+        name: 'Trakt Search',
+        extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
+      });
+      catalogs.push({
+        id: 'trakt-search-series',
+        type: 'series',
+        name: 'Trakt Search',
+        extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
+      });
+    }
   }
 
   return {

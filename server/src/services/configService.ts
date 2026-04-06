@@ -70,11 +70,32 @@ export async function saveUserConfig(config: UserConfig): Promise<UserConfig> {
     throw new Error('Invalid user ID format');
   }
 
-  let encryptedApiKey = config.tmdbApiKeyEncrypted || null;
+  const storage = getStorage();
+  let existingConfig: UserConfig | null = null;
+  try {
+    existingConfig = await storage.getUserConfig(safeUserId);
+  } catch (err) {
+    log.warn('Failed to load existing config before save', {
+      userId: safeUserId,
+      error: (err as Error).message,
+    });
+  }
+
+  let mergedConfig: UserConfig = {
+    ...(existingConfig || {}),
+    ...config,
+    userId: safeUserId,
+    preferences: {
+      ...(existingConfig?.preferences || {}),
+      ...(config.preferences || {}),
+    },
+  };
+
+  let encryptedApiKey = mergedConfig.tmdbApiKeyEncrypted || null;
   let rawApiKey = null;
 
-  if (config.tmdbApiKey) {
-    const safeKey = sanitizeString(config.tmdbApiKey, 64);
+  if (mergedConfig.tmdbApiKey) {
+    const safeKey = sanitizeString(mergedConfig.tmdbApiKey, 64);
     if (!isValidApiKeyFormat(safeKey)) {
       throw new Error('Invalid TMDB API key format');
     }
@@ -87,34 +108,48 @@ export async function saveUserConfig(config: UserConfig): Promise<UserConfig> {
   }
 
   // Encrypt MAL client ID if provided as raw value
-  if (config.malClientId) {
-    const safeKey = sanitizeString(config.malClientId, 128);
+  if (mergedConfig.malClientId) {
+    const safeKey = sanitizeString(mergedConfig.malClientId, 128);
     if (safeKey) {
       try {
-        config.malClientIdEncrypted = encrypt(safeKey) ?? undefined;
+        mergedConfig.malClientIdEncrypted = encrypt(safeKey) ?? undefined;
       } catch (err) {
         log.error('Failed to encrypt MAL client ID', { error: (err as Error).message });
       }
     }
-    const { malClientId: _rawMalClientId, ...configWithoutMalClientId } = config;
-    config = configWithoutMalClientId;
+    const { malClientId: _rawMalClientId, ...configWithoutMalClientId } = mergedConfig;
+    mergedConfig = configWithoutMalClientId;
   }
 
   // Encrypt Simkl API key if provided as raw value
-  if (config.simklApiKey) {
-    const safeKey = sanitizeString(config.simklApiKey, 128);
+  if (mergedConfig.simklApiKey) {
+    const safeKey = sanitizeString(mergedConfig.simklApiKey, 128);
     if (safeKey) {
       try {
-        config.simklApiKeyEncrypted = encrypt(safeKey) ?? undefined;
+        mergedConfig.simklApiKeyEncrypted = encrypt(safeKey) ?? undefined;
       } catch (err) {
         log.error('Failed to encrypt Simkl API key', { error: (err as Error).message });
       }
     }
-    const { simklApiKey: _rawSimklApiKey, ...configWithoutSimklApiKey } = config;
-    config = configWithoutSimklApiKey;
+    const { simklApiKey: _rawSimklApiKey, ...configWithoutSimklApiKey } = mergedConfig;
+    mergedConfig = configWithoutSimklApiKey;
   }
 
-  const processedCatalogs = (config.catalogs || []).map((c) => {
+  // Encrypt Trakt Client ID if provided as raw value
+  if (mergedConfig.traktClientId) {
+    const safeKey = sanitizeString(mergedConfig.traktClientId, 128);
+    if (safeKey) {
+      try {
+        mergedConfig.traktClientIdEncrypted = encrypt(safeKey) ?? undefined;
+      } catch (err) {
+        log.error('Failed to encrypt Trakt Client ID', { error: (err as Error).message });
+      }
+    }
+    const { traktClientId: _rawTraktClientId, ...configWithoutTraktClientId } = mergedConfig;
+    mergedConfig = configWithoutTraktClientId;
+  }
+
+  const processedCatalogs = (mergedConfig.catalogs || []).map((c) => {
     const { displayLanguage, ...cleanFilters } = c.filters || {};
 
     // Sanitize fields that must be strings (not arrays) per Mongoose schema
@@ -134,15 +169,15 @@ export async function saveUserConfig(config: UserConfig): Promise<UserConfig> {
   });
 
   log.debug('Processed catalogs for saving', {
-    userId: config.userId,
+    userId: mergedConfig.userId,
     catalogs: processedCatalogs.map((c) => ({ name: c.name, source: c.source })),
   });
 
   try {
-    const processedPreferences = { ...(config.preferences || {}) };
+    const processedPreferences = { ...(mergedConfig.preferences || {}) };
 
-    if (config.preferences?.posterApiKey) {
-      const rawPosterKey = sanitizeString(config.preferences.posterApiKey, 128);
+    if (mergedConfig.preferences?.posterApiKey) {
+      const rawPosterKey = sanitizeString(mergedConfig.preferences.posterApiKey, 128);
       if (rawPosterKey) {
         try {
           processedPreferences.posterApiKeyEncrypted = encrypt(rawPosterKey) ?? undefined;
@@ -154,8 +189,8 @@ export async function saveUserConfig(config: UserConfig): Promise<UserConfig> {
     }
 
     const updateData = {
-      ...config,
-      configName: config.configName || '',
+      ...mergedConfig,
+      configName: mergedConfig.configName || '',
       catalogs: processedCatalogs,
       preferences: processedPreferences,
       updatedAt: new Date(),
@@ -176,7 +211,6 @@ export async function saveUserConfig(config: UserConfig): Promise<UserConfig> {
     }
     delete updateData.tmdbApiKey;
 
-    const storage = getStorage();
     const result = await storage.saveUserConfig(updateData);
 
     const configCache = getConfigCache();
@@ -333,6 +367,16 @@ export function getSimklKeyFromConfig(config: UserConfig | null): string | null 
     return decrypt(config.simklApiKeyEncrypted);
   } catch (err) {
     log.error('Failed to decrypt Simkl API key', { error: (err as Error).message });
+    return null;
+  }
+}
+
+export function getTraktKeyFromConfig(config: UserConfig | null): string | null {
+  if (!config?.traktClientIdEncrypted) return null;
+  try {
+    return decrypt(config.traktClientIdEncrypted);
+  } catch (err) {
+    log.error('Failed to decrypt Trakt Client ID', { error: (err as Error).message });
     return null;
   }
 }

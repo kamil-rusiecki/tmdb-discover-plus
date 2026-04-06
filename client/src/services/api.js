@@ -321,6 +321,24 @@ class ApiService {
     });
   }
 
+  async previewTraktCatalog(type, filters) {
+    return this.request('/trakt/preview', {
+      method: 'POST',
+      body: JSON.stringify({ type, filters }),
+    });
+  }
+
+  async getTraktNetworks() {
+    return this.request('/trakt/networks');
+  }
+
+  async validateTraktKey(clientId) {
+    return this.request('/validate-trakt-key', {
+      method: 'POST',
+      body: JSON.stringify({ clientId }),
+    });
+  }
+
   async validateMalKey(clientId) {
     return this.request('/validate-mal-key', {
       method: 'POST',

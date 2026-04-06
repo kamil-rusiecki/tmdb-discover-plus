@@ -91,6 +91,19 @@ export function useCatalogEditor() {
     simklTrendingPeriods = [],
     simklBestFilters = [],
     simklAnimeTypes = [],
+    // Trakt sources
+    previewTrakt: onPreviewTrakt,
+    traktGenres = [],
+    traktListTypes = [],
+    traktPeriods = [],
+    traktCalendarTypes = [],
+
+    traktShowStatuses = [],
+    traktCertificationsMovie = [],
+    traktCertificationsSeries = [],
+    traktCommunityMetrics = [],
+    traktNetworks = [],
+    traktHasKey = false,
   } = useTMDBData();
   const { addToast } = useAppActions();
 
@@ -286,6 +299,10 @@ export function useCatalogEditor() {
     simklBestFilters,
     simklSortOptions,
     simklAnimeTypes,
+    traktListTypes,
+    traktCalendarTypes,
+    traktCommunityMetrics,
+    traktNetworks,
   });
 
   const tvNetworkOptions = useMemo(() => {
@@ -392,6 +409,20 @@ export function useCatalogEditor() {
     simklTrendingPeriods,
     simklBestFilters,
     simklAnimeTypes,
+
+    // Trakt sources
+    onPreviewTrakt,
+    traktGenres,
+    traktListTypes,
+    traktPeriods,
+    traktCalendarTypes,
+
+    traktShowStatuses,
+    traktCertificationsMovie,
+    traktCertificationsSeries,
+    traktCommunityMetrics,
+    traktNetworks,
+    traktHasKey,
 
     selectedPeople,
     setSelectedPeople,
