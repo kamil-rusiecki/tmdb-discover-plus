@@ -8,6 +8,7 @@ import { normalizeGenreName, parseIdArray } from '../utils/helpers.ts';
 import { createLogger } from '../utils/logger.ts';
 import { getApiKeyFromConfig, updateCatalogGenres } from './configService.ts';
 import { config } from '../config.ts';
+import { SORT_OPTIONS } from './tmdb/referenceData.ts';
 import type { UserConfig, StremioManifest, ManifestCatalog, TmdbGenre } from '../types/index.ts';
 
 const log = createLogger('manifestService');
@@ -58,7 +59,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
       });
     }
 
-    if (isImdbApiEnabled() && userConfig?.preferences?.disableImdbSearch !== true) {
+    if (isImdbApiEnabled() && userConfig?.preferences?.disableImdbSearch === false) {
       catalogs.push({
         id: 'imdb-search-movie',
         type: 'movie',
@@ -76,7 +77,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
     const hasAnilistCatalogs = (userConfig?.catalogs || []).some(
       (c) => c.source === 'anilist' && c.enabled !== false
     );
-    if (hasAnilistCatalogs && userConfig?.preferences?.disableAnilistSearch !== true) {
+    if (hasAnilistCatalogs && userConfig?.preferences?.disableAnilistSearch === false) {
       catalogs.push({
         id: 'anilist-search-movie',
         type: 'movie',
@@ -94,7 +95,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
     const hasMalCatalogs = (userConfig?.catalogs || []).some(
       (c) => c.source === 'mal' && c.enabled !== false
     );
-    if (hasMalCatalogs && userConfig?.preferences?.disableMalSearch !== true) {
+    if (hasMalCatalogs && userConfig?.preferences?.disableMalSearch === false) {
       catalogs.push({
         id: 'mal-search-movie',
         type: 'movie',
@@ -112,7 +113,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
     const hasSimklCatalogs = (userConfig?.catalogs || []).some(
       (c) => c.source === 'simkl' && c.enabled !== false
     );
-    if (hasSimklCatalogs && userConfig?.preferences?.disableSimklSearch !== true) {
+    if (hasSimklCatalogs && userConfig?.preferences?.disableSimklSearch === false) {
       catalogs.push({
         id: 'simkl-search-movie',
         type: 'movie',
@@ -130,7 +131,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
     const hasTraktCatalogs = (userConfig?.catalogs || []).some(
       (c) => c.source === 'trakt' && c.enabled !== false
     );
-    if (hasTraktCatalogs && userConfig?.preferences?.disableTraktSearch !== true) {
+    if (hasTraktCatalogs && userConfig?.preferences?.disableTraktSearch === false) {
       catalogs.push({
         id: 'trakt-search-movie',
         type: 'movie',
@@ -348,4 +349,69 @@ export async function enrichManifestWithGenres(
       }
     })
   );
+}
+
+export async function enrichManifestWithExtras(
+  manifest: StremioManifest,
+  userConfig: UserConfig
+): Promise<void> {
+  if (!manifest.catalogs || !Array.isArray(manifest.catalogs) || !userConfig) return;
+
+  const apiKey = getApiKeyFromConfig(userConfig);
+  let certCache: Record<string, Record<string, { certification: string }[]>> = {};
+
+  for (const catalog of manifest.catalogs) {
+    if (catalog.id.includes('-search-')) continue;
+    if (!catalog.id.startsWith('tmdb-')) continue;
+
+    const savedCatalog = (userConfig.catalogs || []).find((c) => {
+      const idFromStored = `tmdb-${c._id || c.name.toLowerCase().replace(/\s+/g, '-')}`;
+      const idFromIdOnly = `tmdb-${String(c._id)}`;
+      return idFromStored === catalog.id || idFromIdOnly === catalog.id;
+    });
+    if (!savedCatalog) continue;
+
+    const extras: string[] = savedCatalog.filters?.stremioExtras || [];
+    if (extras.length === 0) continue;
+
+    const catalogType = catalog.type === 'series' ? 'series' : 'movie';
+    catalog.extra = catalog.extra || [];
+
+    if (extras.includes('year')) {
+      const currentYear = new Date().getFullYear();
+      const years: string[] = ['All'];
+      for (let y = currentYear + 2; y >= 1900; y--) {
+        years.push(String(y));
+      }
+      catalog.extra.push({ name: 'year', options: years, optionsLimit: 1 });
+    }
+
+    if (extras.includes('sortBy')) {
+      const sortOpts = SORT_OPTIONS[catalogType] || SORT_OPTIONS.movie;
+      catalog.extra.push({
+        name: 'sortBy',
+        options: ['All', ...sortOpts.map((s) => s.label)],
+        optionsLimit: 1,
+      });
+    }
+
+    if (extras.includes('certification')) {
+      try {
+        const country = savedCatalog.filters?.certificationCountry || 'US';
+        const cacheKey = `${catalogType}:${country}`;
+        if (!certCache[cacheKey] && apiKey) {
+          const allCerts = await tmdb.getCertifications(apiKey, catalogType);
+          certCache[cacheKey] = allCerts as Record<string, { certification: string }[]>;
+        }
+        const countryMap = certCache[cacheKey];
+        const countryCerts = countryMap?.[country] || countryMap?.['US'] || [];
+        if (countryCerts.length > 0) {
+          const certOptions = ['All', ...countryCerts.map((c) => c.certification).filter(Boolean)];
+          catalog.extra.push({ name: 'certification', options: certOptions, optionsLimit: 1 });
+        }
+      } catch (err) {
+        log.warn('Error building certification extras', { error: (err as Error).message });
+      }
+    }
+  }
 }

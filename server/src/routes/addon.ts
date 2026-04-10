@@ -26,6 +26,7 @@ import {
 } from '../utils/helpers.ts';
 import { stableStringify } from '../utils/stableStringify.ts';
 import { resolveDynamicDatePreset } from '../utils/dateHelpers.ts';
+import { SORT_OPTIONS } from '../services/tmdb/referenceData.ts';
 import { createLogger } from '../utils/logger.ts';
 import crypto from 'crypto';
 import path from 'path';
@@ -117,7 +118,11 @@ router.param('type', (req, res, next, value) => {
   next();
 });
 
-import { buildManifest, enrichManifestWithGenres } from '../services/manifestService.ts';
+import {
+  buildManifest,
+  enrichManifestWithGenres,
+  enrichManifestWithExtras,
+} from '../services/manifestService.ts';
 
 const TMDB_PAGE_SIZE = DISPLAY.TMDB_PAGE_SIZE;
 const IMDB_PAGE_SIZE = DISPLAY.IMDB_PAGE_SIZE;
@@ -164,6 +169,7 @@ router.get('/:userId/manifest.json', async (req, res) => {
 
     if (config) {
       await enrichManifestWithGenres(manifest, config);
+      await enrichManifestWithExtras(manifest, config);
 
       if (config.preferences?.shuffleCatalogs) {
         manifest.catalogs = shuffleArray(manifest.catalogs);
@@ -285,6 +291,36 @@ async function resolveGenreFilter(
     }
   } catch (err) {
     log.warn('Error mapping extra.genre to IDs', { error: (err as Error).message });
+  }
+}
+
+function resolveStremioExtras(
+  extra: Record<string, string>,
+  effectiveFilters: Record<string, unknown>,
+  type: string
+): void {
+  if (extra.year && extra.year !== 'All') {
+    const year = parseInt(extra.year, 10);
+    if (!isNaN(year)) {
+      const isMovie = type === 'movie';
+      effectiveFilters[isMovie ? 'releaseDateFrom' : 'airDateFrom'] = `${year}-01-01`;
+      effectiveFilters[isMovie ? 'releaseDateTo' : 'airDateTo'] = `${year}-12-31`;
+      delete effectiveFilters.datePreset;
+      delete effectiveFilters.lastXYears;
+    }
+  }
+
+  if (extra.sortBy && extra.sortBy !== 'All') {
+    const catalogType = type === 'series' ? 'series' : 'movie';
+    const sortOpts = SORT_OPTIONS[catalogType] || SORT_OPTIONS.movie;
+    const match = sortOpts.find((s) => s.label === extra.sortBy);
+    if (match) {
+      effectiveFilters.sortBy = match.value;
+    }
+  }
+
+  if (extra.certification && extra.certification !== 'All') {
+    effectiveFilters.certification = extra.certification;
   }
 }
 
@@ -679,6 +715,7 @@ async function handleCatalogRequest(
 
     const effectiveFilters = { ...sanitizeFiltersForSource('tmdb', catalogConfig.filters || {}) };
     await resolveGenreFilter(extra, effectiveFilters, type, apiKey);
+    resolveStremioExtras(extra, effectiveFilters, type);
     const resolvedFilters = resolveDynamicDatePreset(
       effectiveFilters,
       type
@@ -693,7 +730,7 @@ async function handleCatalogRequest(
 
     const cache = getCache();
     const configVersion = config.updatedAt ? new Date(config.updatedAt).getTime() : 0;
-    const catalogCacheKey = `catalog:${userId}:${catalogId}:${type}:${skip}:${extra.genre || ''}:${configVersion}`;
+    const catalogCacheKey = `catalog:${userId}:${catalogId}:${type}:${skip}:${extra.genre || ''}:${extra.year || ''}:${extra.sortBy || ''}:${extra.certification || ''}:${configVersion}`;
     const serverTtl = catalogServerTtl(listType);
 
     const computeCatalogMetas = async (): Promise<StremioMetaPreview[]> => {

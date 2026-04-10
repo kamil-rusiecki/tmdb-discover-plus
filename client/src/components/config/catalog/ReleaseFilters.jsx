@@ -6,8 +6,6 @@ import { SearchableSelect } from '../../forms/SearchableSelect';
 import { LabelWithTooltip } from '../../forms/Tooltip';
 import { DATE_PRESETS, PRESET_DATE_MAP } from '../../../constants/datePresets';
 
-const CURRENT_YEAR = new Date().getFullYear();
-
 export const ReleaseFilters = memo(function ReleaseFilters({
   localCatalog,
   onFiltersChange,
@@ -23,6 +21,7 @@ export const ReleaseFilters = memo(function ReleaseFilters({
   const safeReleaseTypes = Array.isArray(releaseTypes) ? releaseTypes : [];
   const safeTvStatuses = Array.isArray(tvStatuses) ? tvStatuses : [];
   const safeTvTypes = Array.isArray(tvTypes) ? tvTypes : [];
+  const currentYear = new Date().getFullYear();
 
   const certificationCountryOptions = useMemo(
     () =>
@@ -44,17 +43,19 @@ export const ReleaseFilters = memo(function ReleaseFilters({
 
   const yearOptions = useMemo(() => {
     const years = [];
-    for (let year = CURRENT_YEAR + 5; year >= 1900; year--) {
+    for (let year = currentYear + 5; year >= 1900; year--) {
       years.push({ value: year, label: String(year) });
     }
     return years;
-  }, []);
+  }, [currentYear]);
 
   const dateRangeError = useMemo(() => {
     const fromKey = isMovie ? 'releaseDateFrom' : 'airDateFrom';
     const toKey = isMovie ? 'releaseDateTo' : 'airDateTo';
     const from = localCatalog?.filters?.[fromKey];
     const to = localCatalog?.filters?.[toKey];
+    const years = localCatalog?.filters?.lastXYears;
+    if (years) return null;
     if (from && to && !from.startsWith('today') && !to.startsWith('today') && from > to)
       return '"From" date must be before "To" date';
     return null;
@@ -98,14 +99,8 @@ export const ReleaseFilters = memo(function ReleaseFilters({
       const toKey = isMovie ? 'releaseDateTo' : 'airDateTo';
       onFiltersChange('lastXYears', value);
       onFiltersChange('datePreset', undefined);
-      if (value) {
-        const now = new Date().getFullYear();
-        onFiltersChange(fromKey, `${now - value}-01-01`);
-        onFiltersChange(toKey, `${now}-12-31`);
-      } else {
-        onFiltersChange(fromKey, undefined);
-        onFiltersChange(toKey, undefined);
-      }
+      onFiltersChange(fromKey, undefined);
+      onFiltersChange(toKey, undefined);
     },
     [isMovie, onFiltersChange]
   );
@@ -171,7 +166,18 @@ export const ReleaseFilters = memo(function ReleaseFilters({
           />
           {(() => {
             const val = localCatalog?.filters?.[isMovie ? 'releaseDateFrom' : 'airDateFrom'] || '';
+            const years = localCatalog?.filters?.lastXYears;
             const tag = getDateTagLabel(val);
+
+            if (years) {
+              return (
+                <div className="date-today-badge">
+                  <span>This Year − {years} years</span>
+                  <span className="date-today-hint">Recalculates yearly</span>
+                </div>
+              );
+            }
+
             return tag ? (
               <div className="date-today-badge">
                 <span>{tag}</span>
@@ -201,7 +207,18 @@ export const ReleaseFilters = memo(function ReleaseFilters({
           />
           {(() => {
             const val = localCatalog?.filters?.[isMovie ? 'releaseDateTo' : 'airDateTo'] || '';
+            const years = localCatalog?.filters?.lastXYears;
             const tag = getDateTagLabel(val);
+
+            if (years) {
+              return (
+                <div className="date-today-badge">
+                  <span>Today</span>
+                  <span className="date-today-hint">Recalculates daily</span>
+                </div>
+              );
+            }
+
             return tag ? (
               <div className="date-today-badge">
                 <span>{tag}</span>
@@ -291,7 +308,7 @@ export const ReleaseFilters = memo(function ReleaseFilters({
               type="number"
               className="input"
               min="1900"
-              max={CURRENT_YEAR + 1}
+              max={currentYear + 1}
               placeholder="e.g. 2019"
               value={localCatalog?.filters?.firstAirDateYear || ''}
               onChange={(e) => {

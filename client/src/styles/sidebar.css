@@ -241,6 +241,65 @@
   opacity: 0.8;
 }
 
+/* Search Provider Toggles */
+.search-providers {
+  margin-top: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search-providers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-providers-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.provider-toggles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.provider-toggle {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  user-select: none;
+}
+
+.provider-toggle:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+.provider-toggle.active {
+  background: rgba(74, 158, 255, 0.1);
+  border-color: var(--accent-primary);
+  color: var(--accent-light);
+  font-weight: 600;
+}
+
 /* Catalog List */
 .catalog-list {
   display: flex;

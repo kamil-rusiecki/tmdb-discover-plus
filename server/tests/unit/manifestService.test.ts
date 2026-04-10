@@ -67,6 +67,21 @@ describe('buildManifest', () => {
     expect(manifest.catalogs.length).toBe(0);
   });
 
+  it('omits Trakt search catalogs when disableTraktSearch is not explicitly false', () => {
+    const manifest = buildManifest(
+      {
+        catalogs: [{ _id: 'trakt-list', name: 'Trakt List', type: 'movie', source: 'trakt' }],
+        preferences: { disableTraktSearch: true },
+      },
+      baseUrl
+    );
+
+    const ids = manifest.catalogs.map((catalog: any) => catalog.id);
+    expect(ids).toContain('trakt-trakt-list');
+    expect(ids).not.toContain('trakt-search-movie');
+    expect(ids).not.toContain('trakt-search-series');
+  });
+
   it('generates catalog ID from name when _id is missing', () => {
     const manifest = buildManifest(
       { catalogs: [{ name: 'My Custom List', type: 'movie' }] },

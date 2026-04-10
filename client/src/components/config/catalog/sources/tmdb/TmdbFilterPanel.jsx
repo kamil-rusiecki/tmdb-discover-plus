@@ -1,4 +1,4 @@
-import { Calendar, Play, Settings, Sparkles, Users } from 'lucide-react';
+import { Calendar, Layers, Play, Settings, Sparkles, Users } from 'lucide-react';
 import { memo } from 'react';
 import { FilterPanel } from '../../FilterPanel';
 import { FilterSection } from '../../FilterSection';
@@ -6,6 +6,7 @@ import { GenreSelector } from '../../GenreSelector';
 import { OptionsPanel } from '../../OptionsPanel';
 import { PeopleFilters } from '../../PeopleFilters';
 import { ReleaseFilters } from '../../ReleaseFilters';
+import { StremioExtras } from '../../StremioExtras';
 import { StreamFilters } from '../../StreamFilters';
 
 export const TmdbFilterPanel = memo(function TmdbFilterPanel({
@@ -213,6 +214,18 @@ export const TmdbFilterPanel = memo(function TmdbFilterPanel({
           </span>
         </div>
       )}
+
+      <FilterSection
+        id="extras"
+        title="Stremio Extras"
+        description="Expose filter dropdowns inside Stremio"
+        icon={Layers}
+        isOpen={expandedSections.extras}
+        onToggle={onToggleSection}
+        badgeCount={(localCatalog?.filters?.stremioExtras || []).length}
+      >
+        <StremioExtras localCatalog={localCatalog} onFiltersChange={onFiltersChange} />
+      </FilterSection>
     </>
   );
 });

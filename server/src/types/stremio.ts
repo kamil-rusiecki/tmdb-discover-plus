@@ -125,7 +125,7 @@ export interface StremioMetaPreview {
 }
 
 export interface ManifestCatalogExtra {
-  name: 'skip' | 'search' | 'genre';
+  name: string;
   isRequired?: boolean;
   options?: string[];
   optionsLimit?: number;

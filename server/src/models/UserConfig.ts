@@ -56,6 +56,7 @@ const catalogSchema = new mongoose.Schema(
       withCompanies: String,
       withKeywords: String,
       excludeKeywords: mongoose.Schema.Types.Mixed,
+      stremioExtras: { type: [String], default: undefined },
       watchRegion: String,
       watchProviders: [Number],
       watchMonetizationType: String,
@@ -171,6 +172,12 @@ const userConfigSchema = new mongoose.Schema({
     posterApiKeyEncrypted: { type: String, required: false },
     // Option to disable search catalogs
     disableSearch: { type: Boolean, default: false },
+    disableTmdbSearch: { type: Boolean, default: false },
+    disableImdbSearch: { type: Boolean, default: true },
+    disableAnilistSearch: { type: Boolean, default: true },
+    disableMalSearch: { type: Boolean, default: true },
+    disableSimklSearch: { type: Boolean, default: true },
+    disableTraktSearch: { type: Boolean, default: true },
   },
   // Timestamps
   createdAt: { type: Date, default: Date.now },

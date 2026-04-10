@@ -242,93 +242,110 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
               <span>Shuffle Catalogs</span>
             </label>
 
-            <label
-              className="sidebar-checkbox sidebar-checkbox--spaced"
-              title="Disable all search catalogs"
-            >
-              <input
-                type="checkbox"
-                checked={!!preferences?.disableSearch}
-                onChange={(e) =>
-                  onPreferencesChange({ ...preferences, disableSearch: e.target.checked })
-                }
-              />
-              <EyeOff size={14} />
-              <span>Disable Search</span>
-            </label>
-
-            {!preferences?.disableSearch && (
-              <div className="search-toggles">
-                <label
-                  className="sidebar-checkbox sidebar-checkbox--indent"
-                  title="Disable TMDB search catalogs"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!preferences?.disableTmdbSearch}
-                    onChange={(e) =>
-                      onPreferencesChange({ ...preferences, disableTmdbSearch: e.target.checked })
-                    }
-                  />
-                  <span>Disable TMDB Search</span>
-                </label>
-                <label
-                  className="sidebar-checkbox sidebar-checkbox--indent"
-                  title="Disable IMDb search catalogs"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!preferences?.disableImdbSearch}
-                    onChange={(e) =>
-                      onPreferencesChange({ ...preferences, disableImdbSearch: e.target.checked })
-                    }
-                  />
-                  <span>Disable IMDb Search</span>
-                </label>
-                <label
-                  className="sidebar-checkbox sidebar-checkbox--indent"
-                  title="Disable AniList search catalogs"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!preferences?.disableAnilistSearch}
-                    onChange={(e) =>
-                      onPreferencesChange({
-                        ...preferences,
-                        disableAnilistSearch: e.target.checked,
-                      })
-                    }
-                  />
-                  <span>Disable AniList Search</span>
-                </label>
-                <label
-                  className="sidebar-checkbox sidebar-checkbox--indent"
-                  title="Disable MAL search catalogs"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!preferences?.disableMalSearch}
-                    onChange={(e) =>
-                      onPreferencesChange({ ...preferences, disableMalSearch: e.target.checked })
-                    }
-                  />
-                  <span>Disable MAL Search</span>
-                </label>
-                <label
-                  className="sidebar-checkbox sidebar-checkbox--indent"
-                  title="Disable Simkl search catalogs"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!preferences?.disableSimklSearch}
-                    onChange={(e) =>
-                      onPreferencesChange({ ...preferences, disableSimklSearch: e.target.checked })
-                    }
-                  />
-                  <span>Disable Simkl Search</span>
-                </label>
+            <div className="search-providers">
+              <div className="search-providers-header">
+                <span className="search-providers-label">Search Integration</span>
               </div>
-            )}
+              <label className="sidebar-checkbox" title="Disable all search catalogs">
+                <input
+                  type="checkbox"
+                  checked={!!preferences?.disableSearch}
+                  onChange={(e) =>
+                    onPreferencesChange({ ...preferences, disableSearch: e.target.checked })
+                  }
+                />
+                <EyeOff size={14} />
+                <span>Disable All Search</span>
+              </label>
+
+              {!preferences?.disableSearch && (
+                <>
+                  <span className="search-providers-label" style={{ fontSize: '0.65rem' }}>
+                    Active Search Providers
+                  </span>
+                  <div className="provider-toggles">
+                    <button
+                      type="button"
+                      className={`provider-toggle ${preferences?.disableTmdbSearch !== true ? 'active' : ''}`}
+                      onClick={() =>
+                        onPreferencesChange({
+                          ...preferences,
+                          disableTmdbSearch: preferences?.disableTmdbSearch !== true,
+                        })
+                      }
+                      title="Toggle TMDB Search"
+                    >
+                      TMDB
+                    </button>
+                    <button
+                      type="button"
+                      className={`provider-toggle ${preferences?.disableImdbSearch === false ? 'active' : ''}`}
+                      onClick={() =>
+                        onPreferencesChange({
+                          ...preferences,
+                          disableImdbSearch: preferences?.disableImdbSearch === false,
+                        })
+                      }
+                      title="Toggle IMDb Search"
+                    >
+                      IMDb
+                    </button>
+                    <button
+                      type="button"
+                      className={`provider-toggle ${preferences?.disableAnilistSearch === false ? 'active' : ''}`}
+                      onClick={() =>
+                        onPreferencesChange({
+                          ...preferences,
+                          disableAnilistSearch: preferences?.disableAnilistSearch === false,
+                        })
+                      }
+                      title="Toggle AniList Search"
+                    >
+                      AniList
+                    </button>
+                    <button
+                      type="button"
+                      className={`provider-toggle ${preferences?.disableMalSearch === false ? 'active' : ''}`}
+                      onClick={() =>
+                        onPreferencesChange({
+                          ...preferences,
+                          disableMalSearch: preferences?.disableMalSearch === false,
+                        })
+                      }
+                      title="Toggle MAL Search"
+                    >
+                      MAL
+                    </button>
+                    <button
+                      type="button"
+                      className={`provider-toggle ${preferences?.disableSimklSearch === false ? 'active' : ''}`}
+                      onClick={() =>
+                        onPreferencesChange({
+                          ...preferences,
+                          disableSimklSearch: preferences?.disableSimklSearch === false,
+                        })
+                      }
+                      title="Toggle Simkl Search"
+                    >
+                      Simkl
+                    </button>
+                    <button
+                      type="button"
+                      className={`provider-toggle ${preferences?.disableTraktSearch === false ? 'active' : ''}`}
+                      onClick={() =>
+                        onPreferencesChange({
+                          ...preferences,
+                          disableTraktSearch: preferences?.disableTraktSearch === false,
+                        })
+                      }
+                      title="Toggle Trakt Search"
+                    >
+                      Trakt
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           <GeneralSettingsSection />

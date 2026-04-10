@@ -33,4 +33,29 @@ describe('ReleaseFilters', () => {
     listbox = screen.getByRole('listbox');
     expect(within(listbox).getAllByText('Any')).toHaveLength(1);
   });
+
+  it('updates first-air-year max when current year changes', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-04-09T12:00:00Z'));
+      const { rerender } = render(<ReleaseFilters {...baseProps} />);
+
+      expect(screen.getByPlaceholderText('e.g. 2019')).toHaveAttribute('max', '2027');
+
+      vi.setSystemTime(new Date('2027-01-15T12:00:00Z'));
+      rerender(
+        <ReleaseFilters
+          {...baseProps}
+          localCatalog={{
+            type: 'series',
+            filters: { ...baseProps.localCatalog.filters, tvStatus: '0' },
+          }}
+        />
+      );
+
+      expect(screen.getByPlaceholderText('e.g. 2019')).toHaveAttribute('max', '2028');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -47,6 +47,7 @@ export interface BaseCatalogFilters {
 export interface TmdbCatalogFilters extends BaseCatalogFilters {
   listType?: string;
   voteCountMin?: number;
+  stremioExtras?: string[];
   imdbOnly?: boolean;
   displayLanguage?: string;
   region?: string;

@@ -1494,3 +1494,57 @@
   transform: translateX(18px);
   background: white;
 }
+
+.stremio-extras-hint {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.stremio-extras-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stremio-extra-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  background: var(--card-bg, rgba(255, 255, 255, 0.04));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 140px;
+  flex: 1;
+}
+
+.stremio-extra-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.stremio-extra-chip.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--accent-color, #3b82f6);
+}
+
+.stremio-extra-chip-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #e2e8f0);
+}
+
+.stremio-extra-chip.active .stremio-extra-chip-label {
+  color: var(--accent-color, #3b82f6);
+}
+
+.stremio-extra-chip-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.3;
+}

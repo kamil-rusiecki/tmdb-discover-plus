@@ -16,6 +16,11 @@ export function useConfig(initialUserId = null) {
   const [preferences, setPreferences] = useState({
     showAdultContent: false,
     defaultLanguage: 'en',
+    disableImdbSearch: true,
+    disableAnilistSearch: true,
+    disableMalSearch: true,
+    disableSimklSearch: true,
+    disableTraktSearch: true,
   });
   const [error, setError] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -100,7 +105,15 @@ export function useConfig(initialUserId = null) {
     setUserId(null);
     setCatalogs([]);
     setConfigName('');
-    setPreferences({ showAdultContent: false, defaultLanguage: 'en' });
+    setPreferences({
+      showAdultContent: false,
+      defaultLanguage: 'en',
+      disableImdbSearch: true,
+      disableAnilistSearch: true,
+      disableMalSearch: true,
+      disableSimklSearch: true,
+      disableTraktSearch: true,
+    });
     setIsDirty(false);
   }, []);
 
@@ -108,7 +121,16 @@ export function useConfig(initialUserId = null) {
     setUserId(configData.userId);
     setCatalogs(configData.catalogs || []);
     setConfigName(configData.configName || '');
-    setPreferences(configData.preferences || {});
+    setPreferences({
+      showAdultContent: false,
+      defaultLanguage: 'en',
+      disableImdbSearch: true,
+      disableAnilistSearch: true,
+      disableMalSearch: true,
+      disableSimklSearch: true,
+      disableTraktSearch: true,
+      ...(configData.preferences || {}),
+    });
     setIsDirty(false);
   }, []);
 
