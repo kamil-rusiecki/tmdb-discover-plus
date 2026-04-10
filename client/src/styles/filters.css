@@ -1503,8 +1503,8 @@
 }
 
 .stremio-extras-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 8px;
 }
 
@@ -1519,8 +1519,7 @@
   background: var(--card-bg, rgba(255, 255, 255, 0.04));
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 140px;
-  flex: 1;
+  min-width: 0;
 }
 
 .stremio-extra-chip:hover {
