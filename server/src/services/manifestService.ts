@@ -22,6 +22,33 @@ const BASE_ADDON_NAME = 'TMDB Discover+';
 const ADDON_DESCRIPTION = 'Create custom movie and TV catalogs with powerful TMDB filters';
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf8'));
 const ADDON_VERSION = pkg.version;
+
+type StremioExtraMode = 'genre' | 'year' | 'sortBy' | 'certification';
+
+function getStremioExtraMode(filters: Record<string, unknown> | undefined): StremioExtraMode {
+  const rawMode = filters?.stremioExtraMode;
+  if (
+    rawMode === 'genre' ||
+    rawMode === 'year' ||
+    rawMode === 'sortBy' ||
+    rawMode === 'certification'
+  ) {
+    return rawMode;
+  }
+
+  const legacy = Array.isArray(filters?.stremioExtras) ? filters?.stremioExtras[0] : undefined;
+  if (
+    legacy === 'genre' ||
+    legacy === 'year' ||
+    legacy === 'sortBy' ||
+    legacy === 'certification'
+  ) {
+    return legacy;
+  }
+
+  return 'genre';
+}
+
 export function buildManifest(userConfig: UserConfig | null, baseUrl: string): StremioManifest {
   const resolvedBaseUrl = config.baseUrl || baseUrl;
   const addonName = userConfig?.configName
@@ -243,6 +270,13 @@ export async function enrichManifestWithGenres(
             return idFromStored === catalog.id || idFromIdOnly === catalog.id;
           });
 
+          const dropdownMode = getStremioExtraMode(
+            savedCatalog?.filters as Record<string, unknown> | undefined
+          );
+          if (dropdownMode !== 'genre') {
+            return;
+          }
+
           if (savedCatalog) {
             isDiscoverOnly = savedCatalog.filters?.discoverOnly === true;
           }
@@ -371,31 +405,33 @@ export async function enrichManifestWithExtras(
     });
     if (!savedCatalog) continue;
 
-    const extras: string[] = savedCatalog.filters?.stremioExtras || [];
-    if (extras.length === 0) continue;
+    const dropdownMode = getStremioExtraMode(
+      savedCatalog.filters as Record<string, unknown> | undefined
+    );
+    if (dropdownMode === 'genre') continue;
 
     const catalogType = catalog.type === 'series' ? 'series' : 'movie';
-    catalog.extra = catalog.extra || [];
+    catalog.extra = (catalog.extra || []).filter((e) => e.name !== 'genre');
 
-    if (extras.includes('year')) {
+    if (dropdownMode === 'year') {
       const currentYear = new Date().getFullYear();
       const years: string[] = ['All'];
       for (let y = currentYear + 2; y >= 1900; y--) {
         years.push(String(y));
       }
-      catalog.extra.push({ name: 'year', options: years, optionsLimit: 1 });
+      catalog.extra.push({ name: 'genre', options: years, optionsLimit: 1 });
     }
 
-    if (extras.includes('sortBy')) {
+    if (dropdownMode === 'sortBy') {
       const sortOpts = SORT_OPTIONS[catalogType] || SORT_OPTIONS.movie;
       catalog.extra.push({
-        name: 'sortBy',
+        name: 'genre',
         options: ['All', ...sortOpts.map((s) => s.label)],
         optionsLimit: 1,
       });
     }
 
-    if (extras.includes('certification')) {
+    if (dropdownMode === 'certification') {
       try {
         const country = savedCatalog.filters?.certificationCountry || 'US';
         const cacheKey = `${catalogType}:${country}`;
@@ -407,7 +443,7 @@ export async function enrichManifestWithExtras(
         const countryCerts = countryMap?.[country] || countryMap?.['US'] || [];
         if (countryCerts.length > 0) {
           const certOptions = ['All', ...countryCerts.map((c) => c.certification).filter(Boolean)];
-          catalog.extra.push({ name: 'certification', options: certOptions, optionsLimit: 1 });
+          catalog.extra.push({ name: 'genre', options: certOptions, optionsLimit: 1 });
         }
       } catch (err) {
         log.warn('Error building certification extras', { error: (err as Error).message });

@@ -27,6 +27,7 @@ vi.mock('../../src/services/imdb/index.ts', () => ({
 }));
 
 import { buildManifest } from '../../src/services/manifestService.ts';
+import { enrichManifestWithExtras } from '../../src/services/manifestService.ts';
 
 describe('buildManifest', () => {
   const baseUrl = 'https://example.com';
@@ -114,5 +115,61 @@ describe('buildManifest', () => {
   it('handles empty/null config gracefully', () => {
     expect(buildManifest(null, baseUrl).catalogs.length).toBe(2);
     expect(buildManifest({}, baseUrl).catalogs.length).toBe(2);
+  });
+
+  it('maps year mode to a single genre dropdown options list', async () => {
+    const userConfig = {
+      userId: 'user1',
+      catalogs: [
+        {
+          _id: 'tmdb-year',
+          name: 'Year Catalog',
+          type: 'movie',
+          source: 'tmdb',
+          enabled: true,
+          filters: { stremioExtraMode: 'year' },
+        },
+      ],
+      preferences: { disableSearch: true },
+    };
+
+    const manifest = buildManifest(userConfig as any, baseUrl);
+    await enrichManifestWithExtras(manifest, userConfig as any);
+
+    const target = manifest.catalogs.find((c) => c.id === 'tmdb-tmdb-year');
+    expect(target).toBeTruthy();
+    const genreExtra = target?.extra.find((e) => e.name === 'genre');
+    expect(genreExtra).toBeTruthy();
+    expect(genreExtra?.options?.[0]).toBe('All');
+    expect(genreExtra?.options).toContain('2026');
+    expect(target?.extra.some((e) => e.name === 'year')).toBe(false);
+  });
+
+  it('maps sortBy mode to a single genre dropdown options list', async () => {
+    const userConfig = {
+      userId: 'user2',
+      catalogs: [
+        {
+          _id: 'tmdb-sort',
+          name: 'Sort Catalog',
+          type: 'series',
+          source: 'tmdb',
+          enabled: true,
+          filters: { stremioExtraMode: 'sortBy' },
+        },
+      ],
+      preferences: { disableSearch: true },
+    };
+
+    const manifest = buildManifest(userConfig as any, baseUrl);
+    await enrichManifestWithExtras(manifest, userConfig as any);
+
+    const target = manifest.catalogs.find((c) => c.id === 'tmdb-tmdb-sort');
+    expect(target).toBeTruthy();
+    const genreExtra = target?.extra.find((e) => e.name === 'genre');
+    expect(genreExtra).toBeTruthy();
+    expect(genreExtra?.options?.[0]).toBe('All');
+    expect(genreExtra?.options).toContain('Most Popular');
+    expect(target?.extra.some((e) => e.name === 'sortBy')).toBe(false);
   });
 });

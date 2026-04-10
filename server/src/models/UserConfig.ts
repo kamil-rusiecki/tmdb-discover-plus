@@ -57,6 +57,7 @@ const catalogSchema = new mongoose.Schema(
       withKeywords: String,
       excludeKeywords: mongoose.Schema.Types.Mixed,
       stremioExtras: { type: [String], default: undefined },
+      stremioExtraMode: String,
       watchRegion: String,
       watchProviders: [Number],
       watchMonetizationType: String,

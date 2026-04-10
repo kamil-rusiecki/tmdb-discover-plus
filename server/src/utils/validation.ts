@@ -116,6 +116,8 @@ export function sanitizeFilters(filters: unknown): Record<string, unknown> {
     'discoverOnly',
     'releasedOnly',
     'lastXYears',
+    'stremioExtras',
+    'stremioExtraMode',
     'cacheTTL',
   ];
 

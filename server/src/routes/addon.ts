@@ -297,8 +297,36 @@ async function resolveGenreFilter(
 function resolveStremioExtras(
   extra: Record<string, string>,
   effectiveFilters: Record<string, unknown>,
-  type: string
+  type: string,
+  dropdownMode: 'genre' | 'year' | 'sortBy' | 'certification'
 ): void {
+  const dropdownValue = extra.genre;
+
+  if (dropdownMode === 'year' && dropdownValue && dropdownValue !== 'All') {
+    const year = parseInt(dropdownValue, 10);
+    if (!isNaN(year)) {
+      const isMovie = type === 'movie';
+      effectiveFilters[isMovie ? 'releaseDateFrom' : 'airDateFrom'] = `${year}-01-01`;
+      effectiveFilters[isMovie ? 'releaseDateTo' : 'airDateTo'] = `${year}-12-31`;
+      delete effectiveFilters.datePreset;
+      delete effectiveFilters.lastXYears;
+    }
+  }
+
+  if (dropdownMode === 'sortBy' && dropdownValue && dropdownValue !== 'All') {
+    const catalogType = type === 'series' ? 'series' : 'movie';
+    const sortOpts = SORT_OPTIONS[catalogType] || SORT_OPTIONS.movie;
+    const match = sortOpts.find((s) => s.label === dropdownValue);
+    if (match) {
+      effectiveFilters.sortBy = match.value;
+    }
+  }
+
+  if (dropdownMode === 'certification' && dropdownValue && dropdownValue !== 'All') {
+    effectiveFilters.certification = dropdownValue;
+  }
+
+  // Backward compatibility for previously emitted multi-extra manifests
   if (extra.year && extra.year !== 'All') {
     const year = parseInt(extra.year, 10);
     if (!isNaN(year)) {
@@ -713,9 +741,35 @@ async function handleCatalogRequest(
       return res.json({ metas: [] });
     }
 
+    const stremioExtraMode = (() => {
+      const explicit = catalogConfig?.filters?.stremioExtraMode;
+      if (
+        explicit === 'genre' ||
+        explicit === 'year' ||
+        explicit === 'sortBy' ||
+        explicit === 'certification'
+      ) {
+        return explicit;
+      }
+      const legacy = Array.isArray(catalogConfig?.filters?.stremioExtras)
+        ? catalogConfig.filters.stremioExtras[0]
+        : undefined;
+      if (
+        legacy === 'genre' ||
+        legacy === 'year' ||
+        legacy === 'sortBy' ||
+        legacy === 'certification'
+      ) {
+        return legacy;
+      }
+      return 'genre';
+    })();
+
     const effectiveFilters = { ...sanitizeFiltersForSource('tmdb', catalogConfig.filters || {}) };
-    await resolveGenreFilter(extra, effectiveFilters, type, apiKey);
-    resolveStremioExtras(extra, effectiveFilters, type);
+    if (stremioExtraMode === 'genre') {
+      await resolveGenreFilter(extra, effectiveFilters, type, apiKey);
+    }
+    resolveStremioExtras(extra, effectiveFilters, type, stremioExtraMode);
     const resolvedFilters = resolveDynamicDatePreset(
       effectiveFilters,
       type
@@ -730,7 +784,7 @@ async function handleCatalogRequest(
 
     const cache = getCache();
     const configVersion = config.updatedAt ? new Date(config.updatedAt).getTime() : 0;
-    const catalogCacheKey = `catalog:${userId}:${catalogId}:${type}:${skip}:${extra.genre || ''}:${extra.year || ''}:${extra.sortBy || ''}:${extra.certification || ''}:${configVersion}`;
+    const catalogCacheKey = `catalog:${userId}:${catalogId}:${type}:${skip}:${extra.genre || ''}:${stremioExtraMode}:${configVersion}`;
     const serverTtl = catalogServerTtl(listType);
 
     const computeCatalogMetas = async (): Promise<StremioMetaPreview[]> => {

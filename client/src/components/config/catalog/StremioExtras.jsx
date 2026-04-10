@@ -2,49 +2,54 @@ import { memo, useCallback } from 'react';
 
 const AVAILABLE_EXTRAS = [
   {
+    id: 'genre',
+    label: 'Genre (default)',
+    description: 'Standard Stremio genre dropdown',
+  },
+  {
     id: 'year',
     label: 'Year',
-    description: 'Filter by release year in Stremio',
+    description: 'Use the dropdown values as years',
   },
   {
     id: 'sortBy',
     label: 'Sort By',
-    description: 'Change sort order in Stremio',
+    description: 'Use the dropdown values as sort options',
   },
   {
     id: 'certification',
     label: 'Age Rating',
-    description: 'Filter by certification in Stremio',
+    description: 'Use the dropdown values as certifications',
   },
 ];
 
 export const StremioExtras = memo(function StremioExtras({ localCatalog, onFiltersChange }) {
-  const selected = localCatalog?.filters?.stremioExtras || [];
+  const selectedMode =
+    localCatalog?.filters?.stremioExtraMode || localCatalog?.filters?.stremioExtras?.[0] || 'genre';
 
-  const toggle = useCallback(
+  const selectMode = useCallback(
     (id) => {
-      const current = localCatalog?.filters?.stremioExtras || [];
-      const next = current.includes(id) ? current.filter((e) => e !== id) : [...current, id];
-      onFiltersChange('stremioExtras', next.length > 0 ? next : undefined);
+      onFiltersChange('stremioExtraMode', id);
+      onFiltersChange('stremioExtras', [id]);
     },
-    [localCatalog?.filters?.stremioExtras, onFiltersChange]
+    [onFiltersChange]
   );
 
   return (
     <div className="stremio-extras">
       <p className="stremio-extras-hint">
-        Expose additional filter dropdowns inside Stremio&apos;s Discover page for this catalog.
-        Genre is always included when genres are configured.
+        Choose what the single Stremio dropdown should control for this catalog. Genre is the
+        default and most compatible option.
       </p>
       <div className="stremio-extras-grid">
         {AVAILABLE_EXTRAS.map((extra) => {
-          const isSelected = selected.includes(extra.id);
+          const isSelected = selectedMode === extra.id;
           return (
             <button
               key={extra.id}
               type="button"
               className={`stremio-extra-chip ${isSelected ? 'active' : ''}`}
-              onClick={() => toggle(extra.id)}
+              onClick={() => selectMode(extra.id)}
             >
               <span className="stremio-extra-chip-label">{extra.label}</span>
               <span className="stremio-extra-chip-desc">{extra.description}</span>
