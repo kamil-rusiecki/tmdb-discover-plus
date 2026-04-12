@@ -5,7 +5,7 @@ import type { Request, Response } from 'express';
 
 const log = createLogger('rateLimit');
 
-let store: Options['store'] | undefined = undefined;
+let createStore: ((prefix: string) => Options['store']) | null = null;
 
 if (config.cache.redisUrl) {
   try {
@@ -13,9 +13,11 @@ if (config.cache.redisUrl) {
     const { createClient } = await import('redis');
     const redisClient = createClient({ url: config.cache.redisUrl });
     await redisClient.connect();
-    store = new RedisStore({
-      sendCommand: (...args: string[]) => redisClient.sendCommand(args),
-    });
+    createStore = (prefix: string) =>
+      new RedisStore({
+        sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+        prefix,
+      });
     log.info('Rate limiting backed by Redis');
   } catch (err) {
     log.warn('Redis rate-limit store unavailable, using in-memory', {
@@ -28,7 +30,6 @@ const baseOptions: Partial<Options> = {
   standardHeaders: true,
   legacyHeaders: true,
   validate: { trustProxy: true },
-  ...(store ? { store } : {}),
   skip: (req: Request) => {
     if (config.features.disableRateLimit) return true;
 
@@ -52,11 +53,15 @@ const baseOptions: Partial<Options> = {
   },
 };
 
+const withStore = (prefix: string): Partial<Options> =>
+  createStore ? { store: createStore(prefix) } : {};
+
 /**
  * Rate limit for sensitive endpoints (login, config creation)
  */
 export const strictRateLimit = rateLimit({
   ...baseOptions,
+  ...withStore('rl:strict:'),
   windowMs: 60 * 1000, // 1 minute
   limit: 60,
   message: 'Too many requests to this endpoint, please try again later',
@@ -67,6 +72,7 @@ export const strictRateLimit = rateLimit({
  */
 export const apiRateLimit = rateLimit({
   ...baseOptions,
+  ...withStore('rl:api:'),
   windowMs: 60 * 1000,
   limit: 300,
   message: 'Too many API requests, please try again later',
@@ -77,6 +83,7 @@ export const apiRateLimit = rateLimit({
  */
 export const addonRateLimit = rateLimit({
   ...baseOptions,
+  ...withStore('rl:addon:'),
   windowMs: 60 * 1000,
   limit: 1000,
   message: 'Rate limit exceeded',
@@ -84,6 +91,7 @@ export const addonRateLimit = rateLimit({
 
 export const monitoringRateLimit = rateLimit({
   ...baseOptions,
+  ...withStore('rl:monitor:'),
   windowMs: 60 * 1000,
   limit: 30,
   message: 'Too many monitoring requests, please try again later',

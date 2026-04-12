@@ -13,6 +13,11 @@ const log = createLogger('posterService');
 const POSTER_CHECK_TTL_MS = 24 * 60 * 60 * 1000;
 const POSTER_CHECK_NEGATIVE_TTL_MS = 60 * 60 * 1000;
 const POSTER_CHECK_MAX_CACHE = 2000;
+const ALLOWED_POSTER_HOSTS = new Set([
+  'api.ratingposterdb.com',
+  'api.top-streaming.stream',
+  'image.tmdb.org',
+]);
 
 interface PosterCheckEntry {
   exists: boolean;
@@ -41,6 +46,15 @@ function evictStaleEntries(): void {
 }
 
 export async function checkPosterExists(url: string): Promise<boolean> {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' || !ALLOWED_POSTER_HOSTS.has(parsed.hostname)) {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+
   const cached = posterCheckCache.get(url);
   if (cached) {
     const ttl = cached.exists ? POSTER_CHECK_TTL_MS : POSTER_CHECK_NEGATIVE_TTL_MS;

@@ -6,10 +6,30 @@ import type { ContentType } from '../../types/common.ts';
 import { generateSlug } from '../common/stremioHelpers.ts';
 
 function stripHtml(text: string): string {
-  return text
-    .replace(/<[^>]*>/g, '')
+  let out = '';
+  let inTag = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '<') {
+      inTag = true;
+      continue;
+    }
+    if (ch === '>') {
+      inTag = false;
+      continue;
+    }
+    if (!inTag) out += ch;
+  }
+
+  return out
     .replace(/&nbsp;/g, ' ')
-    .replace(/\n+/g, '\n')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\n{2,}/g, '\n')
     .trim();
 }
 

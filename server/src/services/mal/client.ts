@@ -4,6 +4,7 @@ import { TIMEOUTS, CIRCUIT_BREAKER_DEFAULTS } from '../../constants.ts';
 const log = createLogger('mal:client');
 
 const JIKAN_API_BASE = process.env['JIKAN_API_BASE'] || 'https://api.jikan.moe/v4';
+const JIKAN_API_ORIGIN = new URL(JIKAN_API_BASE).origin;
 const MIN_INTERVAL_MS = 350; // ~3 req/s to respect Jikan rate limits
 
 let lastRequestTime = 0;
@@ -67,6 +68,24 @@ function recordSuccess(): void {
   circuitBreaker.openedAt = 0;
 }
 
+function resolveJikanUrl(requestPath: string): string {
+  if (!requestPath) throw new Error('Jikan path is required');
+
+  if (requestPath.startsWith('http://') || requestPath.startsWith('https://')) {
+    const parsed = new URL(requestPath);
+    if (parsed.origin !== JIKAN_API_ORIGIN) {
+      throw Object.assign(new Error('Disallowed Jikan URL origin'), { statusCode: 400 });
+    }
+    return parsed.toString();
+  }
+
+  if (!requestPath.startsWith('/') || requestPath.startsWith('//')) {
+    throw Object.assign(new Error('Invalid Jikan API path'), { statusCode: 400 });
+  }
+
+  return `${JIKAN_API_BASE}${requestPath}`;
+}
+
 export async function jikanFetch<T>(path: string): Promise<T> {
   if (isCircuitOpen()) {
     throw Object.assign(new Error('Jikan circuit breaker open'), { statusCode: 503 });
@@ -74,7 +93,7 @@ export async function jikanFetch<T>(path: string): Promise<T> {
 
   await acquireSlot();
 
-  const url = path.startsWith('http') ? path : `${JIKAN_API_BASE}${path}`;
+  const url = resolveJikanUrl(path);
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < 3; attempt++) {

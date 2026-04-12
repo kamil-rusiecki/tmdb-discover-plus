@@ -35,7 +35,7 @@ import { fileURLToPath } from 'url';
 import { etagMiddleware } from '../utils/etag.ts';
 import { CachedError } from '../services/cache/CacheWrapper.ts';
 import { getCache } from '../services/cache/index.ts';
-import { config } from '../config.ts';
+import { config as appConfig } from '../config.ts';
 import {
   isValidUserId,
   isValidContentType,
@@ -984,7 +984,11 @@ async function handleMetaRequest(
     const cache = getCache();
     const configVersion = config.updatedAt ? new Date(config.updatedAt).getTime() : 0;
     const posterHash = posterOptions?.apiKey
-      ? crypto.createHash('sha1').update(posterOptions.apiKey).digest('hex').slice(0, 12)
+      ? crypto
+          .createHmac('sha256', appConfig.encryption.key)
+          .update(posterOptions.apiKey)
+          .digest('hex')
+          .slice(0, 16)
       : 'none';
     const metaCacheKey = buildMetaCacheKey({
       userId,

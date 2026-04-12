@@ -6,6 +6,8 @@ const log = createLogger('simkl:client');
 
 const SIMKL_API_BASE = 'https://api.simkl.com';
 const SIMKL_CDN_BASE = 'https://data.simkl.in';
+const SIMKL_API_ORIGIN = new URL(SIMKL_API_BASE).origin;
+const SIMKL_CDN_ORIGIN = new URL(SIMKL_CDN_BASE).origin;
 const MIN_INTERVAL_MS = 300;
 
 let lastRequestTime = 0;
@@ -73,6 +75,42 @@ export function getSimklApiKey(userKey?: string): string {
   return userKey || config.simklApi.clientId;
 }
 
+function resolveSimklApiUrl(requestPath: string): string {
+  if (!requestPath) throw new Error('Simkl path is required');
+
+  if (requestPath.startsWith('http://') || requestPath.startsWith('https://')) {
+    const parsed = new URL(requestPath);
+    if (parsed.origin !== SIMKL_API_ORIGIN) {
+      throw Object.assign(new Error('Disallowed Simkl URL origin'), { statusCode: 400 });
+    }
+    return parsed.toString();
+  }
+
+  if (!requestPath.startsWith('/') || requestPath.startsWith('//')) {
+    throw Object.assign(new Error('Invalid Simkl API path'), { statusCode: 400 });
+  }
+
+  return `${SIMKL_API_BASE}${requestPath}`;
+}
+
+function resolveSimklCdnUrl(requestPath: string): string {
+  if (!requestPath) throw new Error('Simkl CDN path is required');
+
+  if (requestPath.startsWith('http://') || requestPath.startsWith('https://')) {
+    const parsed = new URL(requestPath);
+    if (parsed.origin !== SIMKL_CDN_ORIGIN) {
+      throw Object.assign(new Error('Disallowed Simkl CDN URL origin'), { statusCode: 400 });
+    }
+    return parsed.toString();
+  }
+
+  if (!requestPath.startsWith('/') || requestPath.startsWith('//')) {
+    throw Object.assign(new Error('Invalid Simkl CDN path'), { statusCode: 400 });
+  }
+
+  return `${SIMKL_CDN_BASE}${requestPath}`;
+}
+
 export async function simklFetch<T>(path: string, apiKey?: string): Promise<T> {
   const key = getSimklApiKey(apiKey);
   if (!key) {
@@ -85,7 +123,7 @@ export async function simklFetch<T>(path: string, apiKey?: string): Promise<T> {
 
   await acquireSlot();
 
-  const url = path.startsWith('http') ? path : `${SIMKL_API_BASE}${path}`;
+  const url = resolveSimklApiUrl(path);
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -128,7 +166,7 @@ export async function simklFetch<T>(path: string, apiKey?: string): Promise<T> {
 }
 
 export async function simklCdnFetch<T>(path: string): Promise<T> {
-  const url = `${SIMKL_CDN_BASE}${path}`;
+  const url = resolveSimklCdnUrl(path);
   const response = await fetch(url, {
     headers: { 'User-Agent': 'TMDBDiscoverPlus/1.0' },
     signal: AbortSignal.timeout(TIMEOUTS.SIMKL_FETCH_MS),

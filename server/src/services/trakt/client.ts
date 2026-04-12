@@ -5,6 +5,7 @@ import { TIMEOUTS, CIRCUIT_BREAKER_DEFAULTS } from '../../constants.ts';
 const log = createLogger('trakt:client');
 
 const TRAKT_API_BASE = 'https://api.trakt.tv';
+const TRAKT_API_ORIGIN = new URL(TRAKT_API_BASE).origin;
 const MIN_INTERVAL_MS = 350;
 const USER_AGENT = 'TMDB-Discover-Plus/2.9.2';
 
@@ -73,6 +74,24 @@ export function getTraktClientId(userKey?: string): string {
   return userKey || config.traktApi.clientId;
 }
 
+function resolveTraktUrl(requestPath: string): string {
+  if (!requestPath) throw new Error('Trakt path is required');
+
+  if (requestPath.startsWith('http://') || requestPath.startsWith('https://')) {
+    const parsed = new URL(requestPath);
+    if (parsed.origin !== TRAKT_API_ORIGIN) {
+      throw Object.assign(new Error('Disallowed Trakt URL origin'), { statusCode: 400 });
+    }
+    return parsed.toString();
+  }
+
+  if (!requestPath.startsWith('/') || requestPath.startsWith('//')) {
+    throw Object.assign(new Error('Invalid Trakt API path'), { statusCode: 400 });
+  }
+
+  return `${TRAKT_API_BASE}${requestPath}`;
+}
+
 export async function traktFetch<T>(path: string, clientId?: string): Promise<T> {
   const key = getTraktClientId(clientId);
   if (!key) {
@@ -85,7 +104,7 @@ export async function traktFetch<T>(path: string, clientId?: string): Promise<T>
 
   await acquireSlot();
 
-  const url = path.startsWith('http') ? path : `${TRAKT_API_BASE}${path}`;
+  const url = resolveTraktUrl(path);
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < 3; attempt++) {

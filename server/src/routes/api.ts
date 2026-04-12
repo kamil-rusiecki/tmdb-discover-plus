@@ -29,7 +29,7 @@ import {
 } from '../utils/helpers.ts';
 import { resolveDynamicDatePreset } from '../utils/dateHelpers.ts';
 import { createLogger } from '../utils/logger.ts';
-import { apiRateLimit, strictRateLimit } from '../utils/rateLimit.ts';
+import { strictRateLimit } from '../utils/rateLimit.ts';
 import {
   isValidUserId,
   isValidApiKeyFormat,
@@ -70,8 +70,6 @@ router.use((req, res, next) => {
   res.set('Cloudflare-CDN-Cache-Control', 'no-store');
   next();
 });
-
-router.use(apiRateLimit);
 
 let _buildMetadata: Record<string, unknown> | null = null;
 
