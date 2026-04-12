@@ -149,6 +149,38 @@ export const CatalogEditor = memo(function CatalogEditor() {
   const isImdbCatalog = localCatalog?.source === 'imdb';
   const showImdbSourceDisabledNotice = isImdbCatalog && !imdbEnabled;
 
+  const imdbSourceDisabledNotice = (
+    <div className="imdb-quota-notice" role="alert" aria-live="polite">
+      <AlertTriangle size={16} aria-hidden="true" />
+      <span>
+        IMDb source is disabled on nightly due to resource constraints. Please use{' '}
+        <a
+          href="https://tmdb-discover-plus.elfhosted.com/"
+          style={{
+            color: 'var(--accent-primary)',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          stable
+        </a>{' '}
+        to continue using IMDb source catalogs.
+      </span>
+    </div>
+  );
+
+  if (showImdbSourceDisabledNotice) {
+    return (
+      <div className="editor-container">
+        <div className="editor-panel">
+          <div className="editor-content">{imdbSourceDisabledNotice}</div>
+        </div>
+      </div>
+    );
+  }
+
   const catalogSource = getSource(localCatalog?.source ?? 'tmdb');
   const SourceFilterPanel = catalogSource.FilterPanelComponent;
 
@@ -347,28 +379,6 @@ export const CatalogEditor = memo(function CatalogEditor() {
               <Tv size={18} /> TV Shows
             </button>
           </div>
-
-          {showImdbSourceDisabledNotice && (
-            <div className="imdb-quota-notice" role="alert" aria-live="polite">
-              <AlertTriangle size={16} aria-hidden="true" />
-              <span>
-                IMDb source is disabled on nightly due to resource constraints. Please use{' '}
-                <a
-                  href="https://tmdb-discover-plus.elfhosted.com/"
-                  style={{
-                    color: 'var(--accent-primary)',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                  }}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  stable
-                </a>{' '}
-                to continue using IMDb source catalogs.
-              </span>
-            </div>
-          )}
 
           {!(isImdbCatalog && isPresetCatalog) && (
             <ActiveFiltersBar
