@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Film, Tv, GripVertical, Trash2, Copy } from 'lucide-react';
+import { Film, Tv, GripVertical, Trash2, Copy, Sparkles } from 'lucide-react';
 
 export function SortableCatalogItem({ catalog, isActive, onSelect, onDelete, onDuplicate }) {
   const getCatalogKey = (cat) => String(cat?._id || cat?.id || cat?.name);
@@ -30,15 +30,30 @@ export function SortableCatalogItem({ catalog, isActive, onSelect, onDelete, onD
       tabIndex={0}
     >
       <div className="catalog-item-icon">
-        {catalog.type === 'series' ? <Tv size={16} /> : <Film size={16} />}
+        {catalog.type === 'anime' ? (
+          <Sparkles size={16} />
+        ) : catalog.type === 'series' ? (
+          <Tv size={16} />
+        ) : (
+          <Film size={16} />
+        )}
       </div>
       <div className="catalog-item-info">
         <div className="catalog-item-name">{catalog.name}</div>
         <div className="catalog-item-type">
-          {catalog.type === 'series' ? 'TV Shows' : 'Movies'}
-          {catalog.source === 'imdb' && (
-            <span className="catalog-item-badge catalog-item-badge--imdb">IMDb</span>
-          )}
+          {catalog.type === 'anime' ? 'Anime' : catalog.type === 'series' ? 'TV Shows' : 'Movies'}
+          <span className={`catalog-item-badge catalog-item-badge--${catalog.source || 'tmdb'}`}>
+            {{
+              tmdb: 'TMDB',
+              imdb: 'IMDb',
+              anilist: 'AniList',
+              mal: 'MAL',
+              simkl: 'Simkl',
+              trakt: 'Trakt',
+            }[catalog.source || 'tmdb'] ||
+              catalog.source ||
+              'tmdb'}
+          </span>
           {catalog.filters?.listType && catalog.filters.listType !== 'discover' && (
             <span className="catalog-item-badge">Preset</span>
           )}

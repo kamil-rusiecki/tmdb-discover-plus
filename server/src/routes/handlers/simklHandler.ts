@@ -84,7 +84,11 @@ export async function handleSimklCatalogRequest(
     const simklApiKey = config.simklApi.clientId || getSimklKeyFromConfig(userConfig) || undefined;
 
     // Search catalog
-    if (catalogId === 'simkl-search-movie' || catalogId === 'simkl-search-series') {
+    if (
+      catalogId === 'simkl-search-movie' ||
+      catalogId === 'simkl-search-series' ||
+      catalogId === 'simkl-search-anime'
+    ) {
       if (!searchQuery || !simklApiKey) {
         res.json({ metas: [] });
         return;

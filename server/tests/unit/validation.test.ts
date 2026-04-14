@@ -115,14 +115,15 @@ describe('sanitizePage', () => {
 });
 
 describe('isValidContentType', () => {
-  it('accepts movie, series, tv', () => {
+  it('accepts movie, series, anime, tv', () => {
     expect(isValidContentType('movie')).toBe(true);
     expect(isValidContentType('series')).toBe(true);
+    expect(isValidContentType('anime')).toBe(true);
     expect(isValidContentType('tv')).toBe(true);
   });
   it('rejects invalid types', () => {
-    expect(isValidContentType('anime')).toBe(false);
     expect(isValidContentType('')).toBe(false);
+    expect(isValidContentType('other')).toBe(false);
   });
 });
 

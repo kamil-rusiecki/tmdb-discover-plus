@@ -8,8 +8,10 @@ import type { ContentType } from '../../types/common.ts';
 const log = createLogger('mal:discover');
 const PAGE_SIZE = 25; // Jikan default/max page size
 
-function contentTypeToJikanType(type: ContentType): string {
-  return type === 'movie' ? 'movie' : 'tv';
+function contentTypeToJikanType(type: ContentType): string | null {
+  if (type === 'movie') return 'movie';
+  if (type === 'anime') return null;
+  return 'tv';
 }
 
 /**
@@ -35,9 +37,13 @@ export async function getRanking(
     params.set('type', rankingType);
   } else if (filterRankings.includes(rankingType)) {
     params.set('filter', rankingType);
-    params.set('type', contentTypeToJikanType(type));
+    const jikanType = contentTypeToJikanType(type);
+    if (jikanType) params.set('type', jikanType);
+  } else {
+    const jikanType = contentTypeToJikanType(type);
+    if (jikanType) params.set('type', jikanType);
   }
-  // "all" ranking: no type filter — returns the overall top anime list
+  // "all" ranking: apply selected type when possible (movie/tv), leave unscoped for anime
 
   const path = `/top/anime?${params.toString()}`;
   log.debug('Jikan ranking', { rankingType, type, page });
@@ -66,7 +72,8 @@ export async function getSeasonal(
   const params = new URLSearchParams();
   params.set('page', String(page));
   params.set('sfw', includeAdult ? 'false' : 'true');
-  params.set('filter', contentTypeToJikanType(type));
+  const jikanSeasonType = contentTypeToJikanType(type);
+  if (jikanSeasonType) params.set('filter', jikanSeasonType);
 
   const path = `/seasons/${year}/${season}?${params.toString()}`;
   log.debug('Jikan seasonal', { year, season, type, page });
@@ -94,7 +101,8 @@ export async function searchAnime(
   params.set('q', query);
   params.set('page', String(page));
   params.set('sfw', includeAdult ? 'false' : 'true');
-  params.set('type', contentTypeToJikanType(type));
+  const jikanSearchType = contentTypeToJikanType(type);
+  if (jikanSearchType) params.set('type', jikanSearchType);
   params.set('order_by', 'members');
   params.set('sort', 'desc');
 
@@ -134,8 +142,9 @@ export async function browseAnime(
   if (filters.malMediaType && filters.malMediaType.length > 0) {
     params.set('type', filters.malMediaType[0]);
   } else if (type === 'movie') {
-    params.set('type', contentTypeToJikanType(type));
-  } else {
+    const jikanBrowseType = contentTypeToJikanType(type);
+    if (jikanBrowseType) params.set('type', jikanBrowseType);
+  } else if (type === 'series') {
     shouldFilterOutMovies = true;
   }
 

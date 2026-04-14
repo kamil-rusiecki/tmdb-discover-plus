@@ -27,11 +27,12 @@ describe('generateToken / verifyToken', () => {
   it('generates and verifies a valid token', async () => {
     const { token, expiresIn } = await generateToken('test-api-key', true);
     expect(token).toBeTruthy();
-    expect(expiresIn).toBe('7d');
+    expect(expiresIn).toBe('never');
     const decoded = await verifyToken(token);
     expect(decoded).not.toBeNull();
     expect(decoded).toHaveProperty('apiKeyId');
     expect(decoded).toHaveProperty('jti');
+    expect(decoded).not.toHaveProperty('exp');
   });
 
   it('uses session expiry when rememberMe is false', async () => {

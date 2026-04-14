@@ -63,7 +63,11 @@ export async function handleAnilistCatalogRequest(
     }
 
     // Search catalog
-    if (catalogId === 'anilist-search-movie' || catalogId === 'anilist-search-series') {
+    if (
+      catalogId === 'anilist-search-movie' ||
+      catalogId === 'anilist-search-series' ||
+      catalogId === 'anilist-search-anime'
+    ) {
       if (!searchQuery) {
         res.json({ metas: [] });
         return;

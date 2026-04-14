@@ -92,7 +92,7 @@ export function ApiKeySetup({ onLogin, isSessionExpired = false, returnUserId = 
             {error && <p className="error-message">{error}</p>}
           </div>
 
-          <div className="input-group mt-4">
+          <div className="input-group mt-2">
             <label className="checkbox-label checkbox-flex">
               <input
                 type="checkbox"
@@ -100,7 +100,7 @@ export function ApiKeySetup({ onLogin, isSessionExpired = false, returnUserId = 
                 onChange={(e) => setRememberMe(e.target.checked)}
                 style={{ accentColor: 'var(--primary)' }}
               />
-              Remember me for 7 days
+              Remember me
             </label>
           </div>
 

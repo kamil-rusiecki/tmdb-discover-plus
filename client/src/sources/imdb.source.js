@@ -43,6 +43,7 @@ const TMDB_ONLY_KEYS = [
 export const IMDB_SOURCE = {
   id: 'imdb',
   label: 'IMDb',
+  supportedTypes: ['movie', 'series'],
   defaultSortBy: 'POPULARITY',
 
   defaultFilters: {

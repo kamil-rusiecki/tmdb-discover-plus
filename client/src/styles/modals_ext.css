@@ -1,0 +1,342 @@
+/* Settings Modal */
+.settings-modal {
+  max-width: 600px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex !important;
+  flex-direction: column;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.settings-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.settings-modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-modal-title-group h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.3px;
+  color: var(--text-primary);
+}
+
+.settings-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  background: var(--bg-primary);
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary);
+}
+
+.settings-section-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.settings-section-header svg {
+  color: var(--text-muted);
+}
+
+.settings-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.settings-action-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-color);
+  background: var(--bg-secondary);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  justify-content: flex-start;
+  height: auto;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+}
+
+.settings-action-card:hover {
+  background: var(--hover-color);
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.sac-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(74, 158, 255, 0.1);
+  color: var(--accent-primary);
+  padding: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sac-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sac-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sac-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+.settings-card {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: visible;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  gap: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings-row:first-child {
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.clickable-row:hover {
+  background: var(--hover-color);
+}
+
+.settings-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.settings-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: block;
+}
+
+.settings-desc {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  margin: 0;
+  display: block;
+}
+
+.settings-row-control {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  min-width: 220px;
+}
+
+.stretch-control {
+  width: 280px;
+  max-width: 100%;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+  padding: 0 20px 20px;
+  background: var(--surface-color);
+}
+
+.settings-provider-btn {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-provider-btn:hover {
+  background: var(--hover-color);
+}
+
+.settings-provider-btn.tmdb-btn.active {
+  border-color: #01b4e4;
+  color: #01b4e4;
+  background: rgba(1, 180, 228, 0.1);
+}
+.settings-provider-btn.imdb-btn.active {
+  border-color: #f5c518;
+  color: #f5c518;
+  background: rgba(245, 197, 24, 0.1);
+}
+.settings-provider-btn.trakt-btn.active {
+  border-color: #ed1c24;
+  color: #ed1c24;
+  background: rgba(237, 28, 36, 0.1);
+}
+.settings-provider-btn.anilist-btn.active {
+  border-color: #02a9ff;
+  color: #02a9ff;
+  background: rgba(2, 169, 255, 0.1);
+}
+.settings-provider-btn.mal-btn.active {
+  border-color: #2e51a2;
+  color: #2e51a2;
+  background: rgba(46, 81, 162, 0.1);
+}
+.settings-provider-btn.simkl-btn.active {
+  border-color: #0ac775;
+  color: #0ac775;
+  background: rgba(10, 199, 117, 0.1);
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-checkbox {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-color);
+  transition: 0.3s;
+  border-radius: 34px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-checkbox:checked + .toggle-slider {
+  background-color: var(--accent-primary);
+}
+
+.toggle-checkbox:checked + .toggle-negative {
+  background-color: var(--error);
+}
+
+.toggle-checkbox:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* Mobile optimizations */
+@media (max-width: 600px) {
+  .settings-modal-body {
+    padding: 16px;
+    gap: 24px;
+  }
+
+  .settings-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .settings-row-control {
+    width: 100%;
+    min-width: unset;
+    justify-content: flex-start;
+  }
+
+  .stretch-control {
+    width: 100%;
+  }
+
+  .toggle-switch-wrapper {
+    align-self: flex-start;
+  }
+}

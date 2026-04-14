@@ -97,6 +97,7 @@ const NON_SIMKL_KEYS = [
 export const SIMKL_SOURCE = {
   id: 'simkl',
   label: 'Simkl',
+  supportedTypes: ['movie', 'series', 'anime'],
   defaultSortBy: 'trending',
 
   defaultFilters: {

@@ -98,6 +98,7 @@ const NON_MAL_KEYS = [
 export const MAL_SOURCE = {
   id: 'mal',
   label: 'MAL',
+  supportedTypes: ['movie', 'series', 'anime'],
   defaultSortBy: 'all',
 
   defaultFilters: {

@@ -8,8 +8,9 @@ import type { Logger } from '../types/index.ts';
 
 const log = createLogger('security') as Logger;
 
-const JWT_EXPIRY_PERSISTENT = '7d';
+const JWT_EXPIRY_PERSISTENT = 'never';
 const JWT_EXPIRY_SESSION = '24h';
+const NON_EXPIRING_REVOKE_TTL_MS = 10 * 365 * 24 * 60 * 60 * 1000;
 
 const PBKDF2_CACHE_MAX = 1000;
 const PBKDF2_CACHE_TTL_MS = 60 * 60 * 1000;
@@ -96,9 +97,11 @@ export async function generateToken(
   rememberMe: boolean = true
 ): Promise<{ token: string; expiresIn: string }> {
   const apiKeyId = await computeApiKeyId(apiKey);
-  const expiresIn = rememberMe ? JWT_EXPIRY_PERSISTENT : JWT_EXPIRY_SESSION;
   const jti = crypto.randomUUID();
-  const token = jwt.sign({ apiKeyId, jti }, getJwtSecret(), { expiresIn });
+  const token = rememberMe
+    ? jwt.sign({ apiKeyId, jti }, getJwtSecret())
+    : jwt.sign({ apiKeyId, jti }, getJwtSecret(), { expiresIn: JWT_EXPIRY_SESSION });
+  const expiresIn = rememberMe ? JWT_EXPIRY_PERSISTENT : JWT_EXPIRY_SESSION;
   return { token, expiresIn };
 }
 
@@ -135,7 +138,7 @@ export async function verifyToken(token: string): Promise<jwt.JwtPayload | strin
 export function revokeToken(token: string): boolean {
   try {
     const decoded = jwt.decode(token);
-    if (!decoded || typeof decoded === 'string' || !decoded.jti || !decoded.exp) return false;
+    if (!decoded || typeof decoded === 'string' || !decoded.jti) return false;
     if (revokedTokens.size >= MAX_REVOKED_TOKENS) {
       const now = Date.now();
       for (const [jti, expiresAt] of revokedTokens) {
@@ -146,7 +149,7 @@ export function revokeToken(token: string): boolean {
         if (oldest) revokedTokens.delete(oldest);
       }
     }
-    const expiresAtMs = decoded.exp * 1000;
+    const expiresAtMs = decoded.exp ? decoded.exp * 1000 : Date.now() + NON_EXPIRING_REVOKE_TTL_MS;
     revokedTokens.set(decoded.jti as string, expiresAtMs);
 
     if (externalStore) {

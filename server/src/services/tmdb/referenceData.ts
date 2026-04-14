@@ -27,6 +27,7 @@ export const LIST_TYPES: Record<ContentType, ReferenceOption[]> = {
     { value: 'top_rated', label: '⭐ Top Rated', description: 'All-time highest rated' },
     { value: 'popular', label: '🌟 Popular', description: 'Currently popular shows' },
   ],
+  anime: [],
 };
 
 export const PRESET_CATALOGS: Record<ContentType, ReferenceOption[]> = {
@@ -54,6 +55,7 @@ export const PRESET_CATALOGS: Record<ContentType, ReferenceOption[]> = {
     { value: 'top_rated', label: '⭐ Top Rated', description: 'All-time highest rated' },
     { value: 'popular', label: '🌟 Popular', description: 'Currently popular shows' },
   ],
+  anime: [],
 };
 
 export const SORT_OPTIONS: Record<ContentType, ReferenceOption[]> = {
@@ -89,6 +91,7 @@ export const SORT_OPTIONS: Record<ContentType, ReferenceOption[]> = {
     { value: 'name.asc', label: 'Localized Name A → Z' },
     { value: 'name.desc', label: 'Localized Name Z → A' },
   ],
+  anime: [],
 };
 
 export const RELEASE_TYPES: ReferenceOption[] = [

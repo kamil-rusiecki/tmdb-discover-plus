@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Film, Tv, Check, Square, CheckSquare } from 'lucide-react';
+import { X, Film, Tv, Check, Square, CheckSquare, Sparkles } from 'lucide-react';
 import { useModalA11y } from '../../hooks/useModalA11y';
 
 export function ImportSelectModal({ isOpen, data, onClose, onConfirm }) {
@@ -67,6 +67,7 @@ export function ImportSelectModal({ isOpen, data, onClose, onConfirm }) {
   };
 
   const getTypeIcon = (catalog) => {
+    if (catalog.type === 'anime') return <Sparkles size={14} />;
     if (catalog.type === 'series') return <Tv size={14} />;
     return <Film size={14} />;
   };
@@ -180,7 +181,11 @@ export function ImportSelectModal({ isOpen, data, onClose, onConfirm }) {
                       </span>
                     </span>
                     <span className="text-secondary" style={{ fontSize: '12px', flexShrink: 0 }}>
-                      {catalog.type === 'series' ? 'TV' : 'Movie'}
+                      {catalog.type === 'anime'
+                        ? 'Anime'
+                        : catalog.type === 'series'
+                          ? 'TV'
+                          : 'Movie'}
                       {catalog.source === 'imdb' ? ' · IMDb' : ''}
                     </span>
                   </label>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Trash2, Loader, FolderOpen, Plus, Film, Tv, X } from 'lucide-react';
+import { ChevronDown, Trash2, Loader, FolderOpen, Plus, Film, Tv, Sparkles, X } from 'lucide-react';
 import { useConfirmDelete } from '../../hooks/useConfirmDelete';
 
 export function ConfigDropdown({
@@ -40,10 +40,11 @@ export function ConfigDropdown({
   };
 
   const getCatalogStats = (catalogs) => {
-    if (!catalogs || catalogs.length === 0) return { movies: 0, series: 0 };
+    if (!catalogs || catalogs.length === 0) return { movies: 0, series: 0, anime: 0 };
     return {
       movies: catalogs.filter((c) => c.type === 'movie').length,
       series: catalogs.filter((c) => c.type === 'series').length,
+      anime: catalogs.filter((c) => c.type === 'anime').length,
     };
   };
 
@@ -158,7 +159,7 @@ export function ConfigDropdown({
                   <div className="config-dropdown-item-stats">
                     {(() => {
                       const stats = getCatalogStats(config.catalogs);
-                      if (stats.movies === 0 && stats.series === 0) {
+                      if (stats.movies === 0 && stats.series === 0 && stats.anime === 0) {
                         return <span className="empty-stats">Empty</span>;
                       }
                       return (
@@ -171,6 +172,11 @@ export function ConfigDropdown({
                           {stats.series > 0 && (
                             <span className="stat-badge">
                               <Tv size={12} /> {stats.series}
+                            </span>
+                          )}
+                          {stats.anime > 0 && (
+                            <span className="stat-badge">
+                              <Sparkles size={12} /> {stats.anime}
                             </span>
                           )}
                         </>

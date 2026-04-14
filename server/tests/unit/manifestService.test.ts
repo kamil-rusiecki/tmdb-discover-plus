@@ -137,7 +137,7 @@ describe('buildManifest', () => {
   it('includes correct resources, types, and idPrefixes', () => {
     const manifest = buildManifest({ catalogs: [] }, baseUrl);
     expect(manifest.resources).toEqual(['catalog', 'meta']);
-    expect(manifest.types).toEqual(['movie', 'series']);
+    expect(manifest.types).toEqual(['movie', 'series', 'anime']);
     expect(manifest.idPrefixes).toEqual(['tmdb:', 'tt']);
   });
 

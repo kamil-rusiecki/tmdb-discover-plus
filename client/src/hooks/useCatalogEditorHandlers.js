@@ -16,7 +16,8 @@ function stripOppositeTypeFilters(filters, targetType, sourceId) {
 
 function pickTypeSpecificFilters(filters, type, sourceId) {
   const source = getSource(sourceId ?? 'tmdb');
-  const keys = type === 'movie' ? source.movieOnlyFilterKeys : source.seriesOnlyFilterKeys;
+  const effectiveType = type === 'anime' ? 'series' : type;
+  const keys = effectiveType === 'movie' ? source.movieOnlyFilterKeys : source.seriesOnlyFilterKeys;
   const stash = {};
   for (const key of keys) {
     if (filters[key] !== undefined) stash[key] = filters[key];
@@ -113,20 +114,18 @@ export function useCatalogEditorHandlers({
 
         const previousStash = typeFilterStashRef.current[catalogId]?.[type] || {};
 
+        const isSeriesLike = type === 'series' || type === 'anime';
+
         const awardsWon = (strippedFilters.awardsWon || []).filter((a) =>
-          type === 'series'
-            ? a !== 'best_picture_oscar' && a !== 'best_director_oscar'
-            : a !== 'emmy'
+          isSeriesLike ? a !== 'best_picture_oscar' && a !== 'best_director_oscar' : a !== 'emmy'
         );
         const awardsNominated = (strippedFilters.awardsNominated || []).filter((a) =>
-          type === 'series'
-            ? a !== 'best_picture_oscar' && a !== 'best_director_oscar'
-            : a !== 'emmy'
+          isSeriesLike ? a !== 'best_picture_oscar' && a !== 'best_director_oscar' : a !== 'emmy'
         );
 
         const filterRankedListsByType = (lists) => {
           if (!Array.isArray(lists) || lists.length === 0) return lists;
-          if (type === 'series') return [];
+          if (isSeriesLike) return [];
           return lists;
         };
 
@@ -135,7 +134,7 @@ export function useCatalogEditorHandlers({
           ...previousStash,
         };
 
-        const rankedList = type === 'series' ? undefined : nextTypeFilters.rankedList;
+        const rankedList = isSeriesLike ? undefined : nextTypeFilters.rankedList;
 
         const updated = {
           ...prev,
@@ -173,9 +172,14 @@ export function useCatalogEditorHandlers({
       setLocalCatalog((prev) => {
         const nextSource = getSource(source);
         const cleanedFilters = nextSource.cleanFiltersOnSwitch(prev.filters || {});
+        const nextType =
+          nextSource.supportedTypes && !nextSource.supportedTypes.includes(prev.type)
+            ? nextSource.supportedTypes[0]
+            : prev.type;
         const updated = {
           ...prev,
           source: nextSource.id,
+          type: nextType,
           filters: {
             ...cleanedFilters,
             sortBy: nextSource.defaultSortBy,

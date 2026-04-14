@@ -1169,12 +1169,6 @@
    IMDb Integration Styles
    ======================================== */
 
-.catalog-item-badge--imdb {
-  background: #f5c518;
-  color: #000;
-  font-weight: 700;
-}
-
 .preset-item--imdb {
   border-color: rgba(245, 197, 24, 0.3);
 }

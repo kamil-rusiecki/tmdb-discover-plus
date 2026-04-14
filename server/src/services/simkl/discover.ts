@@ -38,6 +38,7 @@ function filterByTypeAndAdult(
   const safeItems = Array.isArray(items) ? items : [];
 
   const typeFiltered = safeItems.filter((item) => {
+    if (type === 'anime') return true;
     if (type === 'movie') return item.anime_type === 'movie' || item.anime_type === 'movies';
     return item.anime_type !== 'movie' && item.anime_type !== 'movies';
   });

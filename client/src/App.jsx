@@ -24,6 +24,7 @@ import './styles/editor.css';
 import './styles/filters.css';
 import './styles/forms.css';
 import './styles/modals.css';
+import './styles/modals_ext.css';
 import './styles/preview.css';
 import './styles/social.css';
 import './styles/responsive.css';

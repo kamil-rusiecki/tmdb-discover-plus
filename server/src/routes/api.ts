@@ -12,7 +12,6 @@ import {
   getApiKeyFromConfig,
   getPublicStats,
   getTraktKeyFromConfig,
-  getPosterKeyFromConfig,
 } from '../services/configService.ts';
 import * as tmdb from '../services/tmdb/index.ts';
 import * as imdb from '../services/imdb/index.ts';
@@ -987,14 +986,14 @@ router.post('/anilist/preview', requireAuth, async (req, res) => {
     const safeFilters = filters || {};
     const hasStudioFilter = Array.isArray(safeFilters.studios) && safeFilters.studios.length > 0;
     const randomize = Boolean(safeFilters.randomize || safeFilters.sortBy === 'random');
-    const contentType = (type === 'series' ? 'series' : 'movie') as ContentType;
+    const contentType = (
+      type === 'anime' ? 'anime' : type === 'series' ? 'series' : 'movie'
+    ) as ContentType;
     const metas: import('../types/stremio.ts').StremioMetaPreview[] = [];
-    let totalResults: number | null = null;
     let page = 1;
 
     if (randomize) {
       const probe = await anilist.browse(safeFilters, contentType, 1);
-      totalResults = probe.total;
       const lastPage = Math.ceil(probe.total / 50) || 1;
       page = Math.floor(Math.random() * Math.min(lastPage, 50)) + 1;
     }
@@ -1002,7 +1001,6 @@ router.post('/anilist/preview', requireAuth, async (req, res) => {
     if (hasStudioFilter && !randomize) {
       const pageNumbers = Array.from({ length: PREVIEW_MAX_BACKFILL }, (_, i) => i + 1);
       const batched = await anilist.browseBatch(safeFilters, contentType, pageNumbers);
-      if (batched[0]) totalResults = batched[0].total;
 
       for (const result of batched) {
         metas.push(...anilist.batchConvertToStremioMeta(result.media, contentType));
@@ -1012,7 +1010,6 @@ router.post('/anilist/preview', requireAuth, async (req, res) => {
       let pages = 0;
       while (metas.length < PREVIEW_PAGE_SIZE && pages < PREVIEW_MAX_BACKFILL) {
         const result = await anilist.browse(safeFilters, contentType, page);
-        if (totalResults == null) totalResults = result.total;
         metas.push(...anilist.batchConvertToStremioMeta(result.media, contentType));
         pages++;
         if (!result.hasNextPage || result.media.length === 0) break;
@@ -1021,10 +1018,9 @@ router.post('/anilist/preview', requireAuth, async (req, res) => {
     }
 
     const previewMetas = randomize ? shuffleArray(metas) : metas;
-    const previewTotalResults = hasStudioFilter ? null : totalResults;
     res.json({
       metas: previewMetas.slice(0, PREVIEW_PAGE_SIZE),
-      totalResults: previewTotalResults,
+      totalResults: null,
     });
   } catch (error) {
     log.error('POST /anilist/preview error', { error: (error as Error).message });
@@ -1051,14 +1047,14 @@ router.post('/mal/preview', requireAuth, async (req, res) => {
     const { filters, type } = req.body;
     const safeFilters = filters || {};
     const randomize = Boolean(safeFilters.randomize || safeFilters.sortBy === 'random');
-    const contentType = (type === 'series' ? 'series' : 'movie') as ContentType;
+    const contentType = (
+      type === 'anime' ? 'anime' : type === 'series' ? 'series' : 'movie'
+    ) as ContentType;
     const metas: import('../types/stremio.ts').StremioMetaPreview[] = [];
-    let totalResults: number | null = null;
     let page = 1;
 
     if (randomize) {
       const probe = await mal.discover(safeFilters, contentType, 1);
-      totalResults = probe.total;
       const totalPages = Math.ceil(probe.total / 25) || 1;
       page = Math.floor(Math.random() * Math.min(totalPages, 20)) + 1;
     }
@@ -1066,7 +1062,6 @@ router.post('/mal/preview', requireAuth, async (req, res) => {
     let pages = 0;
     while (metas.length < PREVIEW_PAGE_SIZE && pages < PREVIEW_MAX_BACKFILL) {
       const result = await mal.discover(safeFilters, contentType, page);
-      if (totalResults == null) totalResults = result.total;
       metas.push(...mal.batchConvertToStremioMeta(result.anime, contentType));
       pages++;
       if (!result.hasMore || result.anime.length === 0) break;
@@ -1074,7 +1069,7 @@ router.post('/mal/preview', requireAuth, async (req, res) => {
     }
 
     const previewMetas = randomize ? shuffleArray(metas) : metas;
-    res.json({ metas: previewMetas.slice(0, PREVIEW_PAGE_SIZE), totalResults });
+    res.json({ metas: previewMetas.slice(0, PREVIEW_PAGE_SIZE), totalResults: null });
   } catch (error) {
     log.error('POST /mal/preview error', { error: (error as Error).message });
     sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
@@ -1098,7 +1093,9 @@ router.post('/simkl/preview', requireAuth, async (req, res) => {
         'Simkl API key not configured on server.'
       );
     }
-    const contentType = (type === 'series' ? 'series' : 'movie') as ContentType;
+    const contentType = (
+      type === 'anime' ? 'anime' : type === 'series' ? 'series' : 'movie'
+    ) as ContentType;
     const metas: import('../types/stremio.ts').StremioMetaPreview[] = [];
     let page = 1;
 
@@ -1143,19 +1140,6 @@ router.post('/trakt/preview', requireAuth, resolveApiKey, async (req, res) => {
 
     const apiKey = getApiKey(req);
     const configs = await getConfigsByApiKey(apiKey);
-    const userConfig = configs[0] || null;
-    const posterOptions =
-      userConfig?.preferences?.posterService && userConfig.preferences.posterService !== 'none'
-        ? (() => {
-            const posterApiKey = getPosterKeyFromConfig(userConfig);
-            return posterApiKey
-              ? {
-                  apiKey: posterApiKey,
-                  service: userConfig.preferences.posterService,
-                }
-              : null;
-          })()
-        : null;
 
     // Resolve Trakt Client ID: server env var → user's saved key
     let traktClientId: string | null = config.traktApi.clientId || null;
@@ -1188,7 +1172,7 @@ router.post('/trakt/preview', requireAuth, resolveApiKey, async (req, res) => {
         previewListType === 'recently_aired'
       ) {
         const previewMetas = shuffleArray(
-          trakt.batchConvertToStremioMeta(filteredItems, contentType, posterOptions)
+          trakt.batchConvertToStremioMeta(filteredItems, contentType)
         );
         return res.json({ metas: previewMetas.slice(0, PREVIEW_PAGE_SIZE), totalResults: null });
       }
@@ -1204,7 +1188,7 @@ router.post('/trakt/preview', requireAuth, resolveApiKey, async (req, res) => {
             (item) => !(item.genres || []).some((g: string) => excludeGenres.includes(g))
           )
         : result.items;
-      metas.push(...trakt.batchConvertToStremioMeta(filtered, contentType, posterOptions));
+      metas.push(...trakt.batchConvertToStremioMeta(filtered, contentType));
       pages++;
       if (!result.hasMore || result.items.length === 0) break;
       page++;

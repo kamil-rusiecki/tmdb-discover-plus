@@ -311,17 +311,33 @@
   }
 
   .sidebar-header-actions {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
     align-items: stretch;
+  }
+
+  .sidebar-header-actions .config-name-wrapper {
+    grid-column: 1 / 2;
+    display: flex;
+  }
+
+  .sidebar-header-actions .sidebar-settings-btn {
+    grid-column: 2 / 3;
+    padding: 0 16px !important;
+  }
+
+  .sidebar-header-actions .sidebar-add-btn {
+    grid-column: 1 / -1;
   }
 
   .sidebar-header-actions .config-name-input {
     text-align: center;
     padding: 8px 0;
+    width: 100%;
   }
 
   .sidebar-header .btn {
-    width: 100%;
     justify-content: center;
     padding: 10px;
   }

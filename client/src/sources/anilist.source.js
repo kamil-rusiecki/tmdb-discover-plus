@@ -88,6 +88,7 @@ const NON_ANILIST_KEYS = [
 export const ANILIST_SOURCE = {
   id: 'anilist',
   label: 'AniList',
+  supportedTypes: ['movie', 'series', 'anime'],
   defaultSortBy: 'TRENDING_DESC',
 
   defaultFilters: {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Film, Tv } from 'lucide-react';
+import { X, Film, Tv, Sparkles } from 'lucide-react';
 import { useModalA11y } from '../../hooks/useModalA11y';
 import { getSource } from '../../sources';
 
@@ -23,6 +23,18 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
   const enabledFlags = { imdbEnabled };
 
   const visibleSources = SOURCES.filter((s) => s.alwaysVisible || enabledFlags[s.enabledKey]);
+
+  const currentSource = getSource(source);
+  const supportedTypes = currentSource.supportedTypes || ['movie', 'series'];
+
+  const handleSourceSelect = (id) => {
+    setSource(id);
+    const nextSource = getSource(id);
+    const nextTypes = nextSource.supportedTypes || ['movie', 'series'];
+    if (!nextTypes.includes(type)) {
+      setType(nextTypes[0]);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -85,8 +97,27 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
-            {/* Content Type Toggle */}
+            {/* Source Selector */}
             <div className="filter-group">
+              <span className="filter-label">Source</span>
+              <div className="source-selector">
+                {visibleSources.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    className={`source-pill ${source === s.id ? 'active' : ''}`}
+                    onClick={() => handleSourceSelect(s.id)}
+                    title={s.desc}
+                  >
+                    <span className={`source-dot ${s.id}`} />
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Content Type Toggle */}
+            <div className="filter-group" style={{ marginTop: '16px' }}>
               <span className="filter-label">Content Type</span>
               <div className="content-type-toggle" style={{ marginBottom: 0 }}>
                 <button
@@ -105,25 +136,16 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
                   <Tv size={16} />
                   Series
                 </button>
-              </div>
-            </div>
-
-            {/* Source Selector */}
-            <div className="filter-group" style={{ marginTop: '16px' }}>
-              <span className="filter-label">Source</span>
-              <div className="source-selector">
-                {visibleSources.map((s) => (
+                {supportedTypes.includes('anime') && (
                   <button
-                    key={s.id}
                     type="button"
-                    className={`source-pill ${source === s.id ? 'active' : ''}`}
-                    onClick={() => setSource(s.id)}
-                    title={s.desc}
+                    className={`type-btn ${type === 'anime' ? 'active' : ''}`}
+                    onClick={() => setType('anime')}
                   >
-                    <span className={`source-dot ${s.id}`} />
-                    {s.label}
+                    <Sparkles size={16} />
+                    Anime
                   </button>
-                ))}
+                )}
               </div>
             </div>
 

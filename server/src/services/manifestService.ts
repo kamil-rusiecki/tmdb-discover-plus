@@ -229,7 +229,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
 
       return {
         id: `${prefix}-${catalog._id || catalog.name.toLowerCase().replace(/\s+/g, '-')}`,
-        type: catalog.type === 'series' ? 'series' : 'movie',
+        type: catalog.type === 'anime' ? 'anime' : catalog.type === 'series' ? 'series' : 'movie',
         name: catalog.name,
         pageSize,
         extra: [{ name: 'skip' }],
@@ -283,6 +283,12 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
         name: 'AniList Search',
         extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
       });
+      catalogs.push({
+        id: 'anilist-search-anime',
+        type: 'anime',
+        name: 'AniList Search',
+        extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
+      });
     }
 
     const hasMalCatalogs = (userConfig?.catalogs || []).some(
@@ -301,6 +307,12 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
         name: 'MAL Search',
         extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
       });
+      catalogs.push({
+        id: 'mal-search-anime',
+        type: 'anime',
+        name: 'MAL Search',
+        extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
+      });
     }
 
     const hasSimklCatalogs = (userConfig?.catalogs || []).some(
@@ -316,6 +328,12 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
       catalogs.push({
         id: 'simkl-search-series',
         type: 'series',
+        name: 'Simkl Search',
+        extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
+      });
+      catalogs.push({
+        id: 'simkl-search-anime',
+        type: 'anime',
         name: 'Simkl Search',
         extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
       });
@@ -348,7 +366,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
     logo: `${resolvedBaseUrl.replace(/\/$/, '')}/logo.png`,
     idPrefixes: ['tmdb:', 'tt'],
     resources: ['catalog', 'meta'],
-    types: ['movie', 'series'],
+    types: ['movie', 'series', 'anime'],
     catalogs,
     behaviorHints: {
       configurable: true,

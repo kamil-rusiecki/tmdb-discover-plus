@@ -41,10 +41,18 @@ export function MalFilterPanel({
   }, [malMediaTypes, type]);
 
   const availableRankingTypes = useMemo(() => {
+    if (type === 'anime') return malRankingTypes;
     if (type === 'movie')
-      return malRankingTypes.filter((r) => !['tv', 'airing', 'upcoming'].includes(r.value));
-    return malRankingTypes.filter((r) => r.value !== 'movie');
+      return malRankingTypes.filter((r) => !['all', 'tv', 'airing', 'upcoming'].includes(r.value));
+    return malRankingTypes.filter((r) => !['all', 'movie'].includes(r.value));
   }, [malRankingTypes, type]);
+
+  const rankingValue = useMemo(() => {
+    const current = filters.malRankingType || 'all';
+    if (type === 'anime') return current;
+    if (current === 'all') return type === 'movie' ? 'movie' : 'tv';
+    return current;
+  }, [filters.malRankingType, type]);
 
   const malGenreObjects = useMemo(
     () => malGenres.map((g) => ({ id: g.id, name: g.name })),
@@ -59,8 +67,7 @@ export function MalFilterPanel({
     [onFiltersChange]
   );
 
-  const getRankingBadge = () =>
-    filters.malRankingType && filters.malRankingType !== 'all' ? 1 : 0;
+  const getRankingBadge = () => (rankingValue && rankingValue !== 'all' ? 1 : 0);
 
   const getGenreBadge = () =>
     (filters.malGenres || []).length + (filters.malExcludeGenres || []).length;
@@ -109,7 +116,7 @@ export function MalFilterPanel({
           title="Ranking"
           description="Choose a MAL ranking type"
           icon={Settings}
-          isOpen={expandedSections?.ranking !== false}
+          isOpen={expandedSections?.ranking}
           onToggle={onToggleSection}
           badgeCount={getRankingBadge()}
         >
@@ -121,7 +128,7 @@ export function MalFilterPanel({
               />
               <SearchableSelect
                 options={availableRankingTypes}
-                value={filters.malRankingType || 'all'}
+                value={rankingValue}
                 onChange={(value) => onFiltersChange('malRankingType', value)}
                 placeholder="All"
                 searchPlaceholder="Search..."

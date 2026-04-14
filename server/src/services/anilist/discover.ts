@@ -23,7 +23,9 @@ interface BrowseBatchResponse {
 }
 
 function contentTypeToFormats(type: ContentType): string[] {
-  return type === 'movie' ? ['MOVIE'] : ['TV', 'TV_SHORT', 'ONA'];
+  if (type === 'movie') return ['MOVIE'];
+  if (type === 'anime') return ['TV', 'TV_SHORT', 'ONA', 'OVA', 'SPECIAL', 'MOVIE'];
+  return ['TV', 'TV_SHORT', 'ONA'];
 }
 
 function buildVariables(

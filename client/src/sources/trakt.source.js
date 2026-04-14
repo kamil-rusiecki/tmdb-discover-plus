@@ -109,6 +109,7 @@ const NON_TRAKT_KEYS = [
 export const TRAKT_SOURCE = {
   id: 'trakt',
   label: 'Trakt',
+  supportedTypes: ['movie', 'series'],
   defaultSortBy: 'calendar',
 
   defaultFilters: {

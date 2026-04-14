@@ -12,6 +12,7 @@ export const SearchableSelect = memo(function SearchableSelect({
   valueKey = 'code',
   allowClear = true,
   groupKey = null,
+  menuPlacement = 'bottom',
   'aria-label': ariaLabel,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -210,7 +211,7 @@ export const SearchableSelect = memo(function SearchableSelect({
       </div>
 
       {isOpen && (
-        <div className="searchable-select-dropdown">
+        <div className={`searchable-select-dropdown dropdown-${menuPlacement}`}>
           <div className="searchable-select-search">
             <Search size={14} />
             <input

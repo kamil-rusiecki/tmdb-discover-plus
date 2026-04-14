@@ -142,6 +142,9 @@ export const CatalogEditor = memo(function CatalogEditor() {
 
   const catalogType = localCatalog?.type || 'movie';
   const isMovie = catalogType === 'movie';
+  const isAnime = catalogType === 'anime';
+  const currentSource = getSource(localCatalog?.source || 'tmdb');
+  const supportedTypes = currentSource.supportedTypes || ['movie', 'series'];
   const currentListType = localCatalog?.filters?.listType || 'discover';
   const hasPresetOrigin = Boolean(localCatalog?.filters?.presetOrigin);
   const isPresetCatalog = currentListType && currentListType !== 'discover' && !hasPresetOrigin;
@@ -322,7 +325,9 @@ export const CatalogEditor = memo(function CatalogEditor() {
                 borderRadius: 'var(--radius-md)',
               }}
             >
-              {isMovie ? (
+              {isAnime ? (
+                <Sparkles size={20} className="text-secondary" />
+              ) : isMovie ? (
                 <Film size={20} className="text-secondary" />
               ) : (
                 <Tv size={20} className="text-secondary" />
@@ -381,13 +386,23 @@ export const CatalogEditor = memo(function CatalogEditor() {
               <Film size={18} /> Movies
             </button>
             <button
-              className={`type-btn ${!isMovie ? 'active' : ''}`}
+              className={`type-btn ${catalogType === 'series' ? 'active' : ''}`}
               onClick={() => handleTypeChange('series')}
               disabled={!supportsFullFilters}
               style={!supportsFullFilters ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
             >
               <Tv size={18} /> TV Shows
             </button>
+            {supportedTypes.includes('anime') && (
+              <button
+                className={`type-btn ${isAnime ? 'active' : ''}`}
+                onClick={() => handleTypeChange('anime')}
+                disabled={!supportsFullFilters}
+                style={!supportsFullFilters ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+              >
+                <Sparkles size={18} /> Anime
+              </button>
+            )}
           </div>
 
           {!(isImdbCatalog && isPresetCatalog) && (

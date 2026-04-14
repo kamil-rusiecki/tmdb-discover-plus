@@ -112,7 +112,7 @@ router.param('type', (req, res, next, value) => {
       res,
       400,
       ErrorCodes.VALIDATION_ERROR,
-      'Invalid content type — must be movie or series'
+      'Invalid content type — must be movie, series, or anime'
     );
   }
   next();
@@ -959,6 +959,8 @@ async function handleMetaRequest(
   req: Request
 ) {
   if ((type as string) === 'tv') type = 'series';
+  const stremioType = type;
+  const tmdbType: ContentType = type === 'anime' ? 'series' : type;
   const startTime = Date.now();
   try {
     const config = await getUserConfig(userId);
@@ -1016,7 +1018,7 @@ async function handleMetaRequest(
 
       if (/^tt\d+/i.test(requestedId)) {
         imdbId = requestedId;
-        const found = await tmdb.findByImdbId(apiKey, imdbId, type, { language });
+        const found = await tmdb.findByImdbId(apiKey, imdbId, tmdbType, { language });
         tmdbId = found?.tmdbId || null;
       } else if (requestedId.startsWith('tmdb:')) {
         tmdbId = Number(requestedId.replace('tmdb:', ''));
@@ -1026,7 +1028,7 @@ async function handleMetaRequest(
 
       if (!tmdbId) return null;
 
-      const details = (await tmdb.getDetails(apiKey, tmdbId, type, {
+      const details = (await tmdb.getDetails(apiKey, tmdbId, tmdbType, {
         language,
       })) as TmdbDetails | null;
       if (!details) return null;
@@ -1036,10 +1038,10 @@ async function handleMetaRequest(
 
       const hasLogos = (details?.images?.logos?.length ?? 0) > 0;
       const [episodesResult, allLogos] = await Promise.all([
-        type === 'series'
+        tmdbType === 'series'
           ? tmdb.getSeriesEpisodes(apiKey, tmdbId, details as TmdbDetails, { language })
           : Promise.resolve(null),
-        !hasLogos ? tmdb.getLogos(apiKey, tmdbId, type) : Promise.resolve(null),
+        !hasLogos ? tmdb.getLogos(apiKey, tmdbId, tmdbType) : Promise.resolve(null),
       ]);
 
       if (episodesResult) {
@@ -1050,7 +1052,11 @@ async function handleMetaRequest(
 
       const genreCatalogId =
         (config.catalogs || [])
-          .filter((c) => c.enabled !== false && (c.type === type || (!c.type && type === 'movie')))
+          .filter(
+            (c) =>
+              c.enabled !== false &&
+              (c.type === stremioType || c.type === tmdbType || (!c.type && tmdbType === 'movie'))
+          )
           .map((c) => buildCatalogId('tmdb', c))[0] || null;
 
       let userRegion = config.preferences?.region || config.preferences?.countries || null;
@@ -1075,7 +1081,7 @@ async function handleMetaRequest(
 
       return tmdb.toStremioFullMeta(
         details,
-        type,
+        stremioType,
         imdbId,
         requestedId,
         posterOptions,

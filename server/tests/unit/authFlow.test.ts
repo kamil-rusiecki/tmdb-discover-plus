@@ -76,9 +76,9 @@ describe('Auth flow', () => {
   });
 
   describe('Session expiry', () => {
-    it('rememberMe=true uses 7d expiry', async () => {
+    it('rememberMe=true uses non-expiring token', async () => {
       const { expiresIn } = await generateToken('key', true);
-      expect(expiresIn).toBe('7d');
+      expect(expiresIn).toBe('never');
     });
 
     it('rememberMe=false uses 24h expiry', async () => {

@@ -837,7 +837,7 @@ export function TraktFilterPanel({
         title="Sort & Filter"
         description="Browse type, option, locale, year, rating, runtime"
         icon={Settings}
-        isOpen={expandedSections?.filters !== false}
+        isOpen={expandedSections?.filters}
         onToggle={onToggleSection}
         badgeCount={getSortFilterBadge()}
       >

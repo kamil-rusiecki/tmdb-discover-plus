@@ -31,7 +31,7 @@ export function sanitizePage(page: unknown): number {
 }
 
 export function isValidContentType(type: string): boolean {
-  return type === 'movie' || type === 'series' || type === 'tv';
+  return type === 'movie' || type === 'series' || type === 'anime' || type === 'tv';
 }
 
 export function normalizeContentType(type: string): string {

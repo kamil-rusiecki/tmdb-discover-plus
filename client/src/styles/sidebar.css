@@ -401,6 +401,42 @@
   font-weight: 500;
 }
 
+.catalog-item-badge--tmdb {
+  background: linear-gradient(90deg, #90cea1 0%, #01b4e4 100%);
+  color: #000;
+  font-weight: 700;
+}
+
+.catalog-item-badge--imdb {
+  background: #f5c518;
+  color: #000;
+  font-weight: 700;
+}
+
+.catalog-item-badge--anilist {
+  background: #3db4f2;
+  color: #fff;
+  font-weight: 700;
+}
+
+.catalog-item-badge--mal {
+  background: #2e51a2;
+  color: #fff;
+  font-weight: 700;
+}
+
+.catalog-item-badge--simkl {
+  background: #0ac775;
+  color: #fff;
+  font-weight: 700;
+}
+
+.catalog-item-badge--trakt {
+  background: #ed1c24;
+  color: #fff;
+  font-weight: 700;
+}
+
 .catalog-item-badge--filter-count {
   background: var(--text-muted);
   font-size: 0.575rem;
@@ -1257,6 +1293,9 @@
 }
 .source-tab.active.simkl {
   color: #0ac775;
+}
+.source-tab.active.trakt {
+  color: #ed1c24;
 }
 
 .source-tabs-compact {

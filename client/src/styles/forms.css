@@ -321,7 +321,6 @@ input[type='date'].input::-webkit-calendar-picker-indicator {
 
 .searchable-select-dropdown {
   position: absolute;
-  top: calc(100% + 4px);
   left: 0;
   right: 0;
   background: var(--bg-secondary);
@@ -330,13 +329,35 @@ input[type='date'].input::-webkit-calendar-picker-indicator {
   box-shadow: var(--shadow-lg);
   z-index: 200;
   overflow: hidden;
+}
+
+.searchable-select-dropdown.dropdown-bottom,
+.searchable-select-dropdown:not(.dropdown-top) {
+  top: calc(100% + 4px);
   animation: dropdownFadeIn 0.15s ease;
+}
+
+.searchable-select-dropdown.dropdown-top {
+  bottom: calc(100% + 4px);
+  animation: dropdownFadeUp 0.15s ease;
 }
 
 @keyframes dropdownFadeIn {
   from {
     opacity: 0;
     transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dropdownFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
 
   to {

@@ -34,6 +34,9 @@ export function SimklFilterPanel({
     if (localCatalog?.type === 'movie') {
       return simklAnimeTypes.filter((t) => t.value === 'movies');
     }
+    if (localCatalog?.type === 'anime') {
+      return simklAnimeTypes;
+    }
     return simklAnimeTypes.filter((t) => t.value !== 'movies');
   }, [simklAnimeTypes, localCatalog?.type]);
 
@@ -71,7 +74,7 @@ export function SimklFilterPanel({
         title="Browse Type"
         description="Trending, best, by genre, premieres, or airing"
         icon={Settings}
-        isOpen={expandedSections?.browseType !== false}
+        isOpen={expandedSections?.browseType}
         onToggle={onToggleSection}
         badgeCount={getBrowseBadge()}
       >

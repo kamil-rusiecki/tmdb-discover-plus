@@ -10,15 +10,9 @@ import {
   Radio,
   Sparkles,
   ChevronDown,
-  Shuffle,
-  Download,
-  Upload,
   Trophy,
   Award,
-  EyeOff,
   Settings,
-  LayoutList,
-  Coffee,
   Heart,
 } from 'lucide-react';
 import { DiscordIcon } from '../social/DiscordButton.jsx';
@@ -27,9 +21,8 @@ import { useState, useEffect, lazy, Suspense, memo } from 'react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCatalog, useTMDBData, useAppActions } from '../../context/AppContext';
 import { CatalogListSkeleton } from '../layout/Skeleton';
-import { GeneralSettingsSection } from './GeneralSettingsSection';
 import { DonateModal } from '../modals/DonateModal';
-import { PosterSettingsSection } from './PosterSettingsSection';
+import { SettingsModal } from '../modals/SettingsModal';
 import { ImportSelectModal } from '../modals/ImportSelectModal';
 import { ExportSelectModal } from '../modals/ExportSelectModal';
 
@@ -58,7 +51,6 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
     configName,
     setConfigName: onConfigNameChange,
     preferences,
-    setPreferences: onPreferencesChange,
     handleAddPresetCatalog: onAddPresetCatalog,
     handleDeleteCatalog: onDeleteCatalog,
     handleDuplicateCatalog: onDuplicateCatalog,
@@ -84,10 +76,10 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
   const isMobile = useIsMobile();
   const [moviePresetsCollapsed, setMoviePresetsCollapsed] = useState(isMobile);
   const [tvPresetsCollapsed, setTvPresetsCollapsed] = useState(isMobile);
-  const [sidebarTab, setSidebarTab] = useState('catalogs');
   const [importData, setImportData] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isDonateOpen, setIsDonateOpen] = useState(false);
 
   useEffect(() => {
@@ -127,6 +119,14 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
             />
           </div>
           <button
+            className="btn btn-secondary btn-sm sidebar-settings-btn"
+            onClick={() => setShowSettingsModal(true)}
+            title="Global Settings"
+            style={{ padding: '0 8px' }}
+          >
+            <Settings size={16} />
+          </button>
+          <button
             className="btn btn-primary btn-sm sidebar-add-btn"
             onClick={onAddCatalog}
             title="Add custom catalog"
@@ -159,362 +159,158 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
         </div>
       </div>
 
-      <div className="sidebar-tabs">
-        <button
-          className={`sidebar-tab ${sidebarTab === 'catalogs' ? 'active' : ''}`}
-          onClick={() => setSidebarTab('catalogs')}
-        >
-          <LayoutList size={14} />
-          Catalogs
-        </button>
-        <button
-          className={`sidebar-tab ${sidebarTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setSidebarTab('settings')}
-        >
-          <Settings size={14} />
-          Settings
-        </button>
+      <div className="catalog-list">
+        {safeCatalogs.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              <Film size={32} />
+            </div>
+            <p>No catalogs yet</p>
+            <p className="text-sm">Add a custom catalog or use presets below</p>
+          </div>
+        ) : (
+          <Suspense fallback={<CatalogListSkeleton count={safeCatalogs.length || 3} />}>
+            <DraggableCatalogList
+              catalogs={safeCatalogs}
+              activeCatalog={activeCatalog}
+              onSelectCatalog={onSelectCatalog}
+              onDeleteCatalog={onDeleteCatalog}
+              onDuplicateCatalog={onDuplicateCatalog}
+              onReorderCatalogs={onReorderCatalogs}
+              getCatalogKey={getCatalogKey}
+            />
+          </Suspense>
+        )}
       </div>
 
-      {sidebarTab === 'settings' && (
-        <>
-          <div className="sidebar-controls">
-            <div className="sidebar-actions-row">
-              <button
-                className="btn btn-secondary btn-sm sidebar-action-btn"
-                title="Export configuration"
-                onClick={() => setShowExportModal(true)}
-              >
-                <Upload size={14} />
-                <span>Export</span>
-              </button>
+      <div className="sidebar-section">
+        <h4 className="sidebar-section-title">Quick Add Presets</h4>
 
-              <label
-                className="btn btn-secondary btn-sm sidebar-action-btn"
-                title="Import configuration"
-              >
-                <Download size={14} />
-                <span>Import</span>
-                <input
-                  type="file"
-                  accept=".json"
-                  className="hidden-file-input"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      try {
-                        const imported = JSON.parse(event.target.result);
-                        if (
-                          imported?.catalogs?.length ||
-                          imported?.preferences ||
-                          imported?.configName
-                        ) {
-                          setImportData(imported);
-                          setShowImportModal(true);
-                        } else {
-                          if (addToast) addToast('No catalogs or settings found in file', 'error');
-                        }
-                      } catch (err) {
-                        console.error('Import failed', err);
-                        if (addToast) addToast('Failed to parse JSON file', 'error');
-                      }
-                      e.target.value = '';
-                    };
-                    reader.readAsText(file);
-                  }}
-                />
-              </label>
-            </div>
-
-            <label
-              className="sidebar-checkbox"
-              title="Randomize catalog order every time Stremio loads"
+        {imdbEnabled && (
+          <div className="source-tabs" style={{ marginBottom: '12px' }}>
+            <button
+              type="button"
+              className={`source-tab ${globalSource === 'tmdb' ? 'active tmdb' : ''}`}
+              onClick={() => setGlobalSource('tmdb')}
             >
-              <input
-                type="checkbox"
-                checked={!!preferences?.shuffleCatalogs}
-                onChange={(e) =>
-                  onPreferencesChange({ ...preferences, shuffleCatalogs: e.target.checked })
-                }
-              />
-              <Shuffle size={14} />
-              <span>Shuffle Catalogs</span>
-            </label>
-
-            <div className="search-providers">
-              <div className="search-providers-header">
-                <span className="search-providers-label">Search Integration</span>
-              </div>
-              <label className="sidebar-checkbox" title="Disable all search catalogs">
-                <input
-                  type="checkbox"
-                  checked={!!preferences?.disableSearch}
-                  onChange={(e) =>
-                    onPreferencesChange({ ...preferences, disableSearch: e.target.checked })
-                  }
-                />
-                <EyeOff size={14} />
-                <span>Disable All Search</span>
-              </label>
-
-              {!preferences?.disableSearch && (
-                <>
-                  <span className="search-providers-label" style={{ fontSize: '0.65rem' }}>
-                    Active Search Providers
-                  </span>
-                  <div className="provider-toggles">
-                    <button
-                      type="button"
-                      className={`provider-toggle ${preferences?.disableTmdbSearch !== true ? 'active' : ''}`}
-                      onClick={() =>
-                        onPreferencesChange({
-                          ...preferences,
-                          disableTmdbSearch: preferences?.disableTmdbSearch !== true,
-                        })
-                      }
-                      title="Toggle TMDB Search"
-                    >
-                      TMDB
-                    </button>
-                    <button
-                      type="button"
-                      className={`provider-toggle ${preferences?.disableImdbSearch === false ? 'active' : ''}`}
-                      onClick={() =>
-                        onPreferencesChange({
-                          ...preferences,
-                          disableImdbSearch: preferences?.disableImdbSearch === false,
-                        })
-                      }
-                      title="Toggle IMDb Search"
-                    >
-                      IMDb
-                    </button>
-                    <button
-                      type="button"
-                      className={`provider-toggle ${preferences?.disableAnilistSearch === false ? 'active' : ''}`}
-                      onClick={() =>
-                        onPreferencesChange({
-                          ...preferences,
-                          disableAnilistSearch: preferences?.disableAnilistSearch === false,
-                        })
-                      }
-                      title="Toggle AniList Search"
-                    >
-                      AniList
-                    </button>
-                    <button
-                      type="button"
-                      className={`provider-toggle ${preferences?.disableMalSearch === false ? 'active' : ''}`}
-                      onClick={() =>
-                        onPreferencesChange({
-                          ...preferences,
-                          disableMalSearch: preferences?.disableMalSearch === false,
-                        })
-                      }
-                      title="Toggle MAL Search"
-                    >
-                      MAL
-                    </button>
-                    <button
-                      type="button"
-                      className={`provider-toggle ${preferences?.disableSimklSearch === false ? 'active' : ''}`}
-                      onClick={() =>
-                        onPreferencesChange({
-                          ...preferences,
-                          disableSimklSearch: preferences?.disableSimklSearch === false,
-                        })
-                      }
-                      title="Toggle Simkl Search"
-                    >
-                      Simkl
-                    </button>
-                    <button
-                      type="button"
-                      className={`provider-toggle ${preferences?.disableTraktSearch === false ? 'active' : ''}`}
-                      onClick={() =>
-                        onPreferencesChange({
-                          ...preferences,
-                          disableTraktSearch: preferences?.disableTraktSearch === false,
-                        })
-                      }
-                      title="Toggle Trakt Search"
-                    >
-                      Trakt
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+              <Film size={14} /> TMDB
+            </button>
+            <button
+              type="button"
+              className={`source-tab ${globalSource === 'imdb' ? 'active imdb' : ''}`}
+              onClick={() => setGlobalSource('imdb')}
+            >
+              <Award size={14} /> IMDb
+            </button>
           </div>
+        )}
 
-          <GeneralSettingsSection />
-
-          <PosterSettingsSection />
-        </>
-      )}
-
-      {sidebarTab === 'catalogs' && (
-        <>
-          <div className="catalog-list">
-            {safeCatalogs.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <Film size={32} />
-                </div>
-                <p>No catalogs yet</p>
-                <p className="text-sm">Add a custom catalog or use presets below</p>
-              </div>
-            ) : (
-              <Suspense fallback={<CatalogListSkeleton count={safeCatalogs.length || 3} />}>
-                <DraggableCatalogList
-                  catalogs={safeCatalogs}
-                  activeCatalog={activeCatalog}
-                  onSelectCatalog={onSelectCatalog}
-                  onDeleteCatalog={onDeleteCatalog}
-                  onDuplicateCatalog={onDuplicateCatalog}
-                  onReorderCatalogs={onReorderCatalogs}
-                  getCatalogKey={getCatalogKey}
-                />
-              </Suspense>
-            )}
+        {/* Unified Movie Presets */}
+        <div className={`preset-group ${moviePresetsCollapsed ? 'collapsed' : ''}`}>
+          <div
+            className="preset-group-header"
+            onClick={() => setMoviePresetsCollapsed(!moviePresetsCollapsed)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setMoviePresetsCollapsed(!moviePresetsCollapsed);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <Film size={14} />
+            <span>Movies</span>
+            <ChevronDown size={14} className="chevron" />
           </div>
+          <div className="preset-list">
+            {(globalSource === 'tmdb'
+              ? safePresetCatalogs.movie || []
+              : imdbPresetCatalogs.filter((p) => p.type === 'movie')
+            ).map((preset) => {
+              const source = globalSource === 'tmdb' ? 'tmdb' : 'imdb';
+              const type = 'movie';
+              const isAdded = safeCatalogs.some(
+                (c) =>
+                  (source === 'imdb' ? c.source === 'imdb' : !c.source || c.source === 'tmdb') &&
+                  (c.filters?.listType === preset.value ||
+                    c.filters?.presetOrigin === preset.value) &&
+                  c.type === type
+              );
+              const IconComponent =
+                presetIcons[preset.value] ||
+                (source === 'imdb' && preset.value === 'top250' ? Trophy : Star);
 
-          <div className="sidebar-section">
-            <h4 className="sidebar-section-title">Quick Add Presets</h4>
-
-            {imdbEnabled && (
-              <div className="source-tabs" style={{ marginBottom: '12px' }}>
+              return (
                 <button
-                  type="button"
-                  className={`source-tab ${globalSource === 'tmdb' ? 'active tmdb' : ''}`}
-                  onClick={() => setGlobalSource('tmdb')}
+                  key={`${source}-${preset.value}`}
+                  className={`preset-item ${source === 'imdb' ? 'preset-item--imdb' : ''} ${isAdded ? 'added' : ''}`}
+                  onClick={() => !isAdded && onAddPresetCatalog(type, preset, source)}
+                  disabled={isAdded}
+                  title={isAdded ? 'Already added' : preset.description}
                 >
-                  <Film size={14} /> TMDB
+                  <IconComponent size={14} />
+                  <span>{preset.label.replace(/^[^\s]+\s/, '')}</span>
+                  {!isAdded && <Plus size={14} className="preset-add-icon" />}
                 </button>
-                <button
-                  type="button"
-                  className={`source-tab ${globalSource === 'imdb' ? 'active imdb' : ''}`}
-                  onClick={() => setGlobalSource('imdb')}
-                >
-                  <Award size={14} /> IMDb
-                </button>
-              </div>
-            )}
-
-            {/* Unified Movie Presets */}
-            <div className={`preset-group ${moviePresetsCollapsed ? 'collapsed' : ''}`}>
-              <div
-                className="preset-group-header"
-                onClick={() => setMoviePresetsCollapsed(!moviePresetsCollapsed)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setMoviePresetsCollapsed(!moviePresetsCollapsed);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-              >
-                <Film size={14} />
-                <span>Movies</span>
-                <ChevronDown size={14} className="chevron" />
-              </div>
-              <div className="preset-list">
-                {(globalSource === 'tmdb'
-                  ? safePresetCatalogs.movie || []
-                  : imdbPresetCatalogs.filter((p) => p.type === 'movie')
-                ).map((preset) => {
-                  const source = globalSource === 'tmdb' ? 'tmdb' : 'imdb';
-                  const type = 'movie';
-                  const isAdded = safeCatalogs.some(
-                    (c) =>
-                      (source === 'imdb'
-                        ? c.source === 'imdb'
-                        : !c.source || c.source === 'tmdb') &&
-                      (c.filters?.listType === preset.value ||
-                        c.filters?.presetOrigin === preset.value) &&
-                      c.type === type
-                  );
-                  const IconComponent =
-                    presetIcons[preset.value] ||
-                    (source === 'imdb' && preset.value === 'top250' ? Trophy : Star);
-
-                  return (
-                    <button
-                      key={`${source}-${preset.value}`}
-                      className={`preset-item ${source === 'imdb' ? 'preset-item--imdb' : ''} ${isAdded ? 'added' : ''}`}
-                      onClick={() => !isAdded && onAddPresetCatalog(type, preset, source)}
-                      disabled={isAdded}
-                      title={isAdded ? 'Already added' : preset.description}
-                    >
-                      <IconComponent size={14} />
-                      <span>{preset.label.replace(/^[^\s]+\s/, '')}</span>
-                      {!isAdded && <Plus size={14} className="preset-add-icon" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Unified TV Presets */}
-            <div className={`preset-group ${tvPresetsCollapsed ? 'collapsed' : ''}`}>
-              <div
-                className="preset-group-header"
-                onClick={() => setTvPresetsCollapsed(!tvPresetsCollapsed)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setTvPresetsCollapsed(!tvPresetsCollapsed);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-              >
-                <Tv size={14} />
-                <span>TV Shows</span>
-                <ChevronDown size={14} className="chevron" />
-              </div>
-              <div className="preset-list">
-                {(globalSource === 'tmdb'
-                  ? safePresetCatalogs.series || []
-                  : imdbPresetCatalogs.filter((p) => p.type === 'series')
-                ).map((preset) => {
-                  const source = globalSource === 'tmdb' ? 'tmdb' : 'imdb';
-                  const type = 'series';
-                  const isAdded = safeCatalogs.some(
-                    (c) =>
-                      (source === 'imdb'
-                        ? c.source === 'imdb'
-                        : !c.source || c.source === 'tmdb') &&
-                      (c.filters?.listType === preset.value ||
-                        c.filters?.presetOrigin === preset.value) &&
-                      c.type === type
-                  );
-                  const IconComponent =
-                    presetIcons[preset.value] ||
-                    (source === 'imdb' && preset.value === 'top250' ? Trophy : Star);
-
-                  return (
-                    <button
-                      key={`${source}-${preset.value}`}
-                      className={`preset-item ${source === 'imdb' ? 'preset-item--imdb' : ''} ${isAdded ? 'added' : ''}`}
-                      onClick={() => !isAdded && onAddPresetCatalog(type, preset, source)}
-                      disabled={isAdded}
-                      title={isAdded ? 'Already added' : preset.description}
-                    >
-                      <IconComponent size={14} />
-                      <span>{preset.label.replace(/^[^\s]+\s/, '')}</span>
-                      {!isAdded && <Plus size={14} className="preset-add-icon" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+              );
+            })}
           </div>
-        </>
-      )}
+        </div>
+
+        {/* Unified TV Presets */}
+        <div className={`preset-group ${tvPresetsCollapsed ? 'collapsed' : ''}`}>
+          <div
+            className="preset-group-header"
+            onClick={() => setTvPresetsCollapsed(!tvPresetsCollapsed)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setTvPresetsCollapsed(!tvPresetsCollapsed);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            <Tv size={14} />
+            <span>TV Shows</span>
+            <ChevronDown size={14} className="chevron" />
+          </div>
+          <div className="preset-list">
+            {(globalSource === 'tmdb'
+              ? safePresetCatalogs.series || []
+              : imdbPresetCatalogs.filter((p) => p.type === 'series')
+            ).map((preset) => {
+              const source = globalSource === 'tmdb' ? 'tmdb' : 'imdb';
+              const type = 'series';
+              const isAdded = safeCatalogs.some(
+                (c) =>
+                  (source === 'imdb' ? c.source === 'imdb' : !c.source || c.source === 'tmdb') &&
+                  (c.filters?.listType === preset.value ||
+                    c.filters?.presetOrigin === preset.value) &&
+                  c.type === type
+              );
+              const IconComponent =
+                presetIcons[preset.value] ||
+                (source === 'imdb' && preset.value === 'top250' ? Trophy : Star);
+
+              return (
+                <button
+                  key={`${source}-${preset.value}`}
+                  className={`preset-item ${source === 'imdb' ? 'preset-item--imdb' : ''} ${isAdded ? 'added' : ''}`}
+                  onClick={() => !isAdded && onAddPresetCatalog(type, preset, source)}
+                  disabled={isAdded}
+                  title={isAdded ? 'Already added' : preset.description}
+                >
+                  <IconComponent size={14} />
+                  <span>{preset.label.replace(/^[^\s]+\s/, '')}</span>
+                  {!isAdded && <Plus size={14} className="preset-add-icon" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       {showImportModal && importData && (
         <ImportSelectModal
@@ -554,6 +350,15 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
           }}
         />
       )}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        onShowExport={setShowExportModal}
+        onImportData={(data) => {
+          setImportData(data);
+          setShowImportModal(true);
+        }}
+      />
       <DonateModal isOpen={isDonateOpen} onClose={() => setIsDonateOpen(false)} />
     </aside>
   );

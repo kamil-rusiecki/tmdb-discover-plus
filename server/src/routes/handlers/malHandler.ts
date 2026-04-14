@@ -61,7 +61,11 @@ export async function handleMalCatalogRequest(
     }
 
     // Search catalog
-    if (catalogId === 'mal-search-movie' || catalogId === 'mal-search-series') {
+    if (
+      catalogId === 'mal-search-movie' ||
+      catalogId === 'mal-search-series' ||
+      catalogId === 'mal-search-anime'
+    ) {
       if (!searchQuery) {
         res.json({ metas: [] });
         return;

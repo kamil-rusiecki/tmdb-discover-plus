@@ -28,6 +28,7 @@
  * @typedef {Object} SourceDescriptor
  * @property {string} id
  * @property {string} label
+ * @property {string[]} supportedTypes
  * @property {string} defaultSortBy
  * @property {Object} defaultFilters
  * @property {string[]} movieOnlyFilterKeys

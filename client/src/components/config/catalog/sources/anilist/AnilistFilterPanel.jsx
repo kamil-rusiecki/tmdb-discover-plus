@@ -110,6 +110,9 @@ export function AnilistFilterPanel({
   );
 
   const availableFormatOptions = useMemo(() => {
+    if (type === 'anime') {
+      return anilistFormatOptions;
+    }
     if (type === 'movie') {
       return anilistFormatOptions.filter((f) => f.value === 'MOVIE' || f.value === 'SPECIAL');
     }
@@ -194,7 +197,7 @@ export function AnilistFilterPanel({
         title="Sort & Format"
         description="Sort order, format, and airing status"
         icon={Settings}
-        isOpen={expandedSections?.sort !== false}
+        isOpen={expandedSections?.sort}
         onToggle={onToggleSection}
         badgeCount={getSortBadge()}
       >
@@ -245,7 +248,7 @@ export function AnilistFilterPanel({
         title="Genres"
         description="Select genres to include or exclude"
         icon={Sparkles}
-        isOpen={expandedSections?.genres !== false}
+        isOpen={expandedSections?.genres}
         onToggle={onToggleSection}
         badgeCount={getGenreBadge()}
       >
