@@ -163,6 +163,22 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
     []
   );
 
+  const normalizeKeyword = useCallback(
+    (value) =>
+      String(value || '')
+        .trim()
+        .toLowerCase(),
+    []
+  );
+
+  const hasKeyword = useCallback(
+    (values, keyword) => {
+      const target = normalizeKeyword(keyword);
+      return values.some((value) => normalizeKeyword(value) === target);
+    },
+    [normalizeKeyword]
+  );
+
   const applyRankConstraint = useCallback(
     ({ mode, type, maxRank }) => {
       if (!isMovieCatalog || !type) return;
@@ -210,19 +226,21 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
   const handleKeywordToggle = useCallback(
     (keyword) => {
       const current = filters.keywords || [];
-      const next = current.includes(keyword)
-        ? current.filter((k) => k !== keyword)
-        : [...current, keyword];
+      const target = normalizeKeyword(keyword);
+      const exists = current.some((k) => normalizeKeyword(k) === target);
+      const next = exists
+        ? current.filter((k) => normalizeKeyword(k) !== target)
+        : [...current, String(keyword || '').trim()];
       onFiltersChange('keywords', next);
     },
-    [filters.keywords, onFiltersChange]
+    [filters.keywords, normalizeKeyword, onFiltersChange]
   );
 
   const handleAddKeyword = () => {
     const kw = keywordInput.trim();
     if (!kw) return;
     const current = filters.keywords || [];
-    if (!current.includes(kw)) {
+    if (!hasKeyword(current, kw)) {
       onFiltersChange('keywords', [...current, kw]);
     }
     setKeywordInput('');
@@ -231,19 +249,21 @@ export const ImdbFilterPanel = memo(function ImdbFilterPanel({
   const handleExcludeKeywordToggle = useCallback(
     (keyword) => {
       const current = filters.excludeKeywords || [];
-      const next = current.includes(keyword)
-        ? current.filter((k) => k !== keyword)
-        : [...current, keyword];
+      const target = normalizeKeyword(keyword);
+      const exists = current.some((k) => normalizeKeyword(k) === target);
+      const next = exists
+        ? current.filter((k) => normalizeKeyword(k) !== target)
+        : [...current, String(keyword || '').trim()];
       onFiltersChange('excludeKeywords', next);
     },
-    [filters.excludeKeywords, onFiltersChange]
+    [filters.excludeKeywords, normalizeKeyword, onFiltersChange]
   );
 
   const handleAddExcludeKeyword = () => {
     const kw = excludeKeywordInput.trim();
     if (!kw) return;
     const current = filters.excludeKeywords || [];
-    if (!current.includes(kw)) {
+    if (!hasKeyword(current, kw)) {
       onFiltersChange('excludeKeywords', [...current, kw]);
     }
     setExcludeKeywordInput('');

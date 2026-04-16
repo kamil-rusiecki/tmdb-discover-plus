@@ -244,7 +244,7 @@
 }
 
 /* Mobile Actions Layout (Top Bar) */
-@media (max-width: 1023px) {
+@media (max-width: 767px) {
   /* Ensure parent allows wrapping/full width if needed, though we target toolbar directly */
 
   /* Target toolbar directly */
@@ -259,6 +259,7 @@
 
   /* Main container adjustment to allow wrapping */
   .main > .container > div:first-child {
+    display: flex;
     flex-direction: column;
     align-items: flex-start !important;
   }
@@ -310,36 +311,10 @@
     text-align: center;
   }
 
-  .sidebar-header-actions {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-    align-items: stretch;
-  }
-
-  .sidebar-header-actions .config-name-wrapper {
-    grid-column: 1 / 2;
-    display: flex;
-  }
-
-  .sidebar-header-actions .sidebar-settings-btn {
-    grid-column: 2 / 3;
-    padding: 0 16px !important;
-  }
-
-  .sidebar-header-actions .sidebar-add-btn {
-    grid-column: 1 / -1;
-  }
-
   .sidebar-header-actions .config-name-input {
     text-align: center;
     padding: 8px 0;
     width: 100%;
-  }
-
-  .sidebar-header .btn {
-    justify-content: center;
-    padding: 10px;
   }
 
   .catalog-item {
@@ -551,7 +526,7 @@
   display: none;
 }
 
-@media (max-width: 1199px) {
+@media (max-width: 767px) {
   .mobile-preview-btn-container {
     display: block;
     padding: 24px 0 0;

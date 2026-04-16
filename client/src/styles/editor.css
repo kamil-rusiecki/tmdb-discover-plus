@@ -110,7 +110,7 @@
 }
 
 /* Desktop: Side-by-side layout for editor and preview */
-@media (min-width: 1200px) {
+@media (min-width: 1800px) {
   .editor-container {
     flex-direction: row;
     gap: 20px;

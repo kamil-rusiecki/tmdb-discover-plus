@@ -260,8 +260,10 @@ export function useCatalogEditorHandlers({
         data = await onPreview(localCatalog.type || 'movie', filters);
       }
       setPreviewData(data);
+      return true;
     } catch (err) {
       setPreviewError(err.message);
+      return false;
     } finally {
       setPreviewLoading(false);
     }

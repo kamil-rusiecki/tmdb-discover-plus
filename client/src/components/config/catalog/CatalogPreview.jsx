@@ -1,8 +1,16 @@
 import { useState, useEffect, useRef, memo } from 'react';
-import { Eye, Loader, RefreshCw, ImageOff, Star, CheckCircle } from 'lucide-react';
+import { Eye, Loader, RefreshCw, ImageOff, Star, CheckCircle, X } from 'lucide-react';
 import { PreviewGridSkeleton } from '../../layout/Skeleton';
 
-export const CatalogPreview = memo(function CatalogPreview({ loading, error, data, onRetry }) {
+export const CatalogPreview = memo(function CatalogPreview({
+  loading,
+  error,
+  data,
+  onRetry,
+  isModal,
+  isOpen,
+  onClose,
+}) {
   const [showUpdated, setShowUpdated] = useState(false);
   const prevDataRef = useRef(null);
 
@@ -16,8 +24,18 @@ export const CatalogPreview = memo(function CatalogPreview({ loading, error, dat
     prevDataRef.current = data;
   }, [data]);
 
-  return (
-    <div className={`preview-panel-container ${showUpdated ? 'preview-updated' : ''}`}>
+  const content = (
+    <div
+      className={`preview-panel-container ${showUpdated ? 'preview-updated' : ''} ${isModal ? 'preview-is-modal' : ''}`}
+      style={
+        isModal
+          ? {
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }
+          : {}
+      }
+    >
       <div className="preview-section">
         <div className="preview-inner">
           <div className="preview-header">
@@ -122,4 +140,53 @@ export const CatalogPreview = memo(function CatalogPreview({ loading, error, dat
       </div>
     </div>
   );
+
+  if (isModal) {
+    if (!isOpen) return null;
+    return (
+      <div
+        className="modal-overlay preview-modal-overlay"
+        onClick={onClose}
+        style={{
+          zIndex: 1000,
+          position: 'fixed',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+        }}
+      >
+        <div
+          className="preview-modal-container"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: '1000px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <button
+            className="btn btn-ghost btn-icon"
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              zIndex: 10,
+              padding: '6px',
+            }}
+          >
+            <X size={20} />
+          </button>
+          {content}
+        </div>
+      </div>
+    );
+  }
+
+  return content;
 });

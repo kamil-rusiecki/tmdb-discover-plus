@@ -54,6 +54,26 @@ function mapContentTypeToImdbTypes(type: ContentType): string[] {
   return ['movie', 'tvMovie'];
 }
 
+function normalizeKeywordParam(keyword: string): string {
+  return String(keyword || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-');
+}
+
+function normalizeKeywordList(keywords: string[] | undefined): string[] {
+  if (!keywords?.length) return [];
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+  for (const keyword of keywords) {
+    const value = normalizeKeywordParam(keyword);
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    normalized.push(value);
+  }
+  return normalized;
+}
+
 function flattenNestedTitles(entries: unknown[]): unknown[] {
   return entries.map((entry) => {
     if (entry && typeof entry === 'object') {
@@ -113,10 +133,11 @@ export async function advancedSearch(
   if (params.languages?.length) queryParams.languages = params.languages;
   if (params.countries?.length) queryParams.countries = params.countries;
   if (params.imdbCountries?.length) queryParams.countries = params.imdbCountries;
-  if (params.keywords?.length)
-    queryParams.keywords = params.keywords.map((k) => k.replace(/\s+/g, '-'));
-  if (params.excludeKeywords?.length)
-    queryParams.excludeKeywords = params.excludeKeywords.map((k) => k.replace(/\s+/g, '-'));
+  const normalizedKeywords = normalizeKeywordList(params.keywords);
+  if (normalizedKeywords.length) queryParams.keywords = normalizedKeywords;
+
+  const normalizedExcludeKeywords = normalizeKeywordList(params.excludeKeywords);
+  if (normalizedExcludeKeywords.length) queryParams.excludeKeywords = normalizedExcludeKeywords;
 
   const filterAwardsByContentType = (awards: string[] | undefined): string[] | undefined => {
     if (!awards?.length) return undefined;

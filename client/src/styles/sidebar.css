@@ -11,7 +11,7 @@
 
 @media (min-width: 768px) and (max-width: 1023px) {
   .sidebar {
-    padding: 16px;
+    padding: 20px;
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -22,7 +22,7 @@
 
 @media (min-width: 1024px) {
   .sidebar {
-    padding: 20px;
+    padding: 24px;
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -304,32 +304,111 @@
 .catalog-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 24px;
 }
 
 .catalog-item {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  cursor: pointer;
+  cursor: default;
+  overflow: hidden;
   transition:
     border-color var(--transition-fast) var(--ease-out-expo),
     background-color var(--transition-fast) var(--ease-out-expo);
 }
 
+.catalog-item-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  background: transparent;
+  transition: background-color var(--transition-fast) var(--ease-out-expo);
+}
+
 .catalog-item:hover {
   border-color: var(--border-light);
+}
+
+.catalog-item:hover .catalog-item-main {
   background: var(--bg-hover);
 }
 
 .catalog-item.active {
   border-color: var(--accent-primary);
-  background: rgba(124, 58, 237, 0.1);
+  background: rgba(124, 58, 237, 0.06);
+}
+
+.catalog-item.active .catalog-item-main {
+  background: transparent;
+}
+
+.catalog-item-expanded {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  animation: expandDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes expandDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    max-height: 40px;
+    opacity: 1;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
+.btn-action-minimal {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-action-minimal:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-action-minimal.text-danger-hover:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.action-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--border-color);
+  opacity: 0.5;
 }
 
 .catalog-item-icon {
@@ -350,7 +429,7 @@
 }
 
 .catalog-item-name {
-  font-size: 0.8125rem;
+  font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -358,13 +437,28 @@
 }
 
 .catalog-item-type {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.catalog-item-type > span:not(.catalog-item-badge) {
+  flex-shrink: 0;
 }
 
 .catalog-item-actions {
   display: flex;
   gap: 2px;
+  opacity: 0.3;
+  transition: opacity 0.2s ease;
+}
+
+.catalog-item:hover .catalog-item-actions,
+.catalog-item.active .catalog-item-actions {
+  opacity: 1;
 }
 
 .catalog-item-actions .btn-icon {
@@ -391,14 +485,18 @@
 }
 
 .catalog-item-badge {
-  display: inline-block;
-  font-size: 0.625rem;
-  padding: 2px 6px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.55rem;
+  padding: 1px 5px;
   background: var(--accent-primary);
   color: white;
-  border-radius: var(--radius-sm);
-  margin-left: 8px;
-  font-weight: 500;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  height: 16px;
+  line-height: 1;
 }
 
 .catalog-item-badge--tmdb {
@@ -558,12 +656,35 @@
 
 .sidebar-header-actions {
   display: flex;
+  flex-wrap: wrap;
   width: 100%;
   gap: 8px;
 }
 
+.config-name-wrapper {
+  flex: 1 1 100%;
+}
+
+.sidebar-settings-btn {
+  flex: 1 1 auto;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.sidebar-settings-btn .settings-text {
+  display: inline;
+}
+
 .sidebar-add-btn {
-  padding: 0 8px;
+  flex: 1 1 auto;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .sidebar-actions-row {
@@ -610,19 +731,25 @@
 .preset-group-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  gap: 8px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
   color: var(--text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   cursor: pointer;
   user-select: none;
-  padding: 4px 0;
-  transition: color 0.2s ease;
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .preset-group-header:hover {
   color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .preset-group-header .chevron {
@@ -655,13 +782,14 @@
 .preset-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 10px;
+  padding: 10px 14px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  font-size: 0.8125rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
   color: var(--text-primary);
+  font-weight: 500;
   cursor: pointer;
   transition:
     border-color var(--transition-fast) var(--ease-out-expo),
@@ -1252,11 +1380,11 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 8px;
+  padding: 10px 12px;
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 0.8125rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   border-radius: calc(var(--radius-md) - 2px);

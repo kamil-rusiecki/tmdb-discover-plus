@@ -404,7 +404,15 @@ export function useActiveFilters({
       });
     }
 
-    if (selectedKeywords.length > 0) {
+    if (isImdb && filters.keywords?.length > 0) {
+      const names = filters.keywords.slice(0, 2);
+      const extra = filters.keywords.length > 2 ? ` +${filters.keywords.length - 2}` : '';
+      active.push({
+        key: 'keywords',
+        label: `Keywords: ${names.join(', ')}${extra}`,
+        section: 'keywords',
+      });
+    } else if (selectedKeywords.length > 0) {
       const names = selectedKeywords.slice(0, 2).map((k) => k.name);
       const extra = selectedKeywords.length > 2 ? ` +${selectedKeywords.length - 2}` : '';
       active.push({
@@ -414,7 +422,16 @@ export function useActiveFilters({
       });
     }
 
-    if (excludeKeywords.length > 0) {
+    if (isImdb && filters.excludeKeywords?.length > 0) {
+      const names = filters.excludeKeywords.slice(0, 2);
+      const extra =
+        filters.excludeKeywords.length > 2 ? ` +${filters.excludeKeywords.length - 2}` : '';
+      active.push({
+        key: 'excludeKeywords',
+        label: `Exclude: ${names.join(', ')}${extra}`,
+        section: 'keywords',
+      });
+    } else if (excludeKeywords.length > 0) {
       active.push({
         key: 'excludeKeywords',
         label: `Exclude ${excludeKeywords.length} keyword(s)`,
@@ -1065,9 +1082,15 @@ export function useActiveFilters({
           if (setSelectedImdbExcludeCompanies) setSelectedImdbExcludeCompanies([]);
           break;
         case 'keywords':
+          if (isImdbSource) {
+            update({ keywords: [] });
+          }
           setSelectedKeywords([]);
           break;
         case 'excludeKeywords':
+          if (isImdbSource) {
+            update({ excludeKeywords: [] });
+          }
           setExcludeKeywords([]);
           break;
         case 'includeAdult':

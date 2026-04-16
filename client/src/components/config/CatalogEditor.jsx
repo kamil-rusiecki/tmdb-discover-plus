@@ -1,11 +1,12 @@
-import { AlertTriangle, Eye, Film, Loader, Sparkles, Tv } from 'lucide-react';
-import { memo, Suspense } from 'react';
+import { AlertTriangle, Eye, Film, Loader, Sparkles, Tv, X } from 'lucide-react';
+import { memo, Suspense, useState } from 'react';
 import { ActiveFiltersBar } from './catalog/ActiveFiltersBar';
 import { CatalogPreview } from './catalog/CatalogPreview';
 
 import { useCatalogEditor } from '../../hooks/useCatalogEditor';
 import { useCatalogEditorHandlers } from '../../hooks/useCatalogEditorHandlers';
 import { getSource } from '../../sources/index';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const SOURCE_ATTRIBUTION = {
   tmdb: { label: 'TMDB', url: 'https://www.themoviedb.org/' },
@@ -17,6 +18,9 @@ const SOURCE_ATTRIBUTION = {
 };
 
 export const CatalogEditor = memo(function CatalogEditor() {
+  const isMobileSize = useIsMobile(1800);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+
   const state = useCatalogEditor();
   const handlers = useCatalogEditorHandlers(state);
 
@@ -125,6 +129,13 @@ export const CatalogEditor = memo(function CatalogEditor() {
     loadPreview,
     handleTVNetworkSearch,
   } = handlers;
+
+  const handlePreviewClick = async () => {
+    const success = await loadPreview();
+    if (success && isMobileSize) {
+      setIsPreviewModalOpen(true);
+    }
+  };
 
   if (!catalog) {
     return (
@@ -368,7 +379,11 @@ export const CatalogEditor = memo(function CatalogEditor() {
             </div>
           </div>
           <div className="editor-actions">
-            <button className="btn btn-secondary" onClick={loadPreview} disabled={previewLoading}>
+            <button
+              className="btn btn-secondary"
+              onClick={handlePreviewClick}
+              disabled={previewLoading}
+            >
               {previewLoading ? <Loader size={16} className="animate-spin" /> : <Eye size={16} />}
               Preview
             </button>
@@ -421,7 +436,7 @@ export const CatalogEditor = memo(function CatalogEditor() {
           <div className="mobile-preview-btn-container">
             <button
               className="btn btn-secondary mobile-preview-btn"
-              onClick={loadPreview}
+              onClick={handlePreviewClick}
               disabled={previewLoading}
             >
               {previewLoading ? <Loader size={16} className="animate-spin" /> : <Eye size={16} />}
@@ -437,6 +452,9 @@ export const CatalogEditor = memo(function CatalogEditor() {
         data={previewData}
         onRetry={loadPreview}
         onLoadPreview={loadPreview}
+        isModal={isMobileSize}
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
       />
     </div>
   );

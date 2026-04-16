@@ -119,19 +119,19 @@ export const CatalogSidebar = memo(function CatalogSidebar() {
             />
           </div>
           <button
-            className="btn btn-secondary btn-sm sidebar-settings-btn"
-            onClick={() => setShowSettingsModal(true)}
-            title="Global Settings"
-            style={{ padding: '0 8px' }}
-          >
-            <Settings size={16} />
-          </button>
-          <button
             className="btn btn-primary btn-sm sidebar-add-btn"
             onClick={onAddCatalog}
             title="Add custom catalog"
           >
             <Plus size={16} /> <span>New Catalog</span>
+          </button>
+          <button
+            className="btn btn-secondary btn-sm sidebar-settings-btn"
+            onClick={() => setShowSettingsModal(true)}
+            title="Global Preferences"
+          >
+            <Settings size={16} />
+            <span className="settings-text">Preferences</span>
           </button>
         </div>
       </div>
