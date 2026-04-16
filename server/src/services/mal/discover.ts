@@ -8,6 +8,25 @@ import type { ContentType } from '../../types/common.ts';
 const log = createLogger('mal:discover');
 const PAGE_SIZE = 25; // Jikan default/max page size
 
+function isRecoverableJikanError(error: unknown): boolean {
+  const statusCode =
+    typeof error === 'object' && error !== null && 'statusCode' in error
+      ? Number((error as { statusCode?: number }).statusCode)
+      : undefined;
+  const message = error instanceof Error ? error.message : String(error || '');
+  const isJikanError =
+    message.includes('Jikan API error') || message.includes('Jikan circuit breaker');
+  if (message.includes('Jikan API error')) return true;
+  const messageStatus = Number(message.match(/Jikan API error:\s*(\d{3})/)?.[1]);
+  const effectiveStatus = Number.isFinite(statusCode) ? statusCode : messageStatus;
+  const normalizedStatus = typeof effectiveStatus === 'number' ? effectiveStatus : Number.NaN;
+
+  return (
+    isJikanError &&
+    (normalizedStatus === 429 || (Number.isFinite(normalizedStatus) && normalizedStatus >= 500))
+  );
+}
+
 function contentTypeToJikanType(type: ContentType): string | null {
   if (type === 'movie') return 'movie';
   if (type === 'anime') return null;
@@ -39,11 +58,16 @@ export async function getRanking(
     params.set('filter', rankingType);
     const jikanType = contentTypeToJikanType(type);
     if (jikanType) params.set('type', jikanType);
+  } else if (rankingType === 'all') {
+    // Default "all" should still be type-aware for movie/series catalogs
+    // so each catalog type gets different baseline results.
+    const jikanType = contentTypeToJikanType(type);
+    if (jikanType) params.set('type', jikanType);
   } else {
     const jikanType = contentTypeToJikanType(type);
     if (jikanType) params.set('type', jikanType);
   }
-  // "all" ranking: apply selected type when possible (movie/tv), leave unscoped for anime
+  // For unknown ranking values, we also scope by selected content type.
 
   const path = `/top/anime?${params.toString()}`;
   log.debug('Jikan ranking', { rankingType, type, page });
@@ -212,31 +236,43 @@ export async function discover(
 ): Promise<{ anime: MalAnime[]; hasMore: boolean; total: number }> {
   const includeAdult = filters.includeAdult;
 
-  if (filters.malSeason && filters.malSeasonYear) {
-    return getSeasonal(
-      filters.malSeasonYear,
-      filters.malSeason,
-      filters.malSort,
-      type,
-      page,
-      includeAdult
-    );
+  try {
+    if (filters.malSeason && filters.malSeasonYear) {
+      return await getSeasonal(
+        filters.malSeasonYear,
+        filters.malSeason,
+        filters.malSort,
+        type,
+        page,
+        includeAdult
+      );
+    }
+
+    const hasAdvancedFilters =
+      (filters.malGenres && filters.malGenres.length > 0) ||
+      (filters.malExcludeGenres && filters.malExcludeGenres.length > 0) ||
+      (filters.malStatus && filters.malStatus.length > 0) ||
+      (filters.malMediaType && filters.malMediaType.length > 0) ||
+      filters.malRating ||
+      (filters.malScoreMin != null && filters.malScoreMin > 0) ||
+      (filters.malScoreMax != null && filters.malScoreMax < 10) ||
+      filters.malOrderBy;
+
+    if (hasAdvancedFilters) {
+      return await browseAnime(filters, type, page, includeAdult);
+    }
+
+    const rankingType = filters.malRankingType || 'all';
+    return await getRanking(rankingType, type, page, includeAdult);
+  } catch (error) {
+    if (isRecoverableJikanError(error)) {
+      log.warn('Jikan unavailable; returning empty MAL discover result', {
+        type,
+        page,
+        rankingType: filters.malRankingType || 'all',
+      });
+      return { anime: [], hasMore: false, total: 0 };
+    }
+    throw error;
   }
-
-  const hasAdvancedFilters =
-    (filters.malGenres && filters.malGenres.length > 0) ||
-    (filters.malExcludeGenres && filters.malExcludeGenres.length > 0) ||
-    (filters.malStatus && filters.malStatus.length > 0) ||
-    (filters.malMediaType && filters.malMediaType.length > 0) ||
-    filters.malRating ||
-    (filters.malScoreMin != null && filters.malScoreMin > 0) ||
-    (filters.malScoreMax != null && filters.malScoreMax < 10) ||
-    filters.malOrderBy;
-
-  if (hasAdvancedFilters) {
-    return browseAnime(filters, type, page, includeAdult);
-  }
-
-  const rankingType = filters.malRankingType || 'all';
-  return getRanking(rankingType, type, page, includeAdult);
 }
