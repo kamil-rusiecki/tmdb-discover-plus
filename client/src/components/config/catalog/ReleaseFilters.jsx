@@ -1,10 +1,14 @@
-import { useCallback, useMemo, memo } from 'react';
+import { useCallback, useMemo, useEffect, memo } from 'react';
 import { Check } from 'lucide-react';
+import { getTimeZones } from '@vvo/tzdb';
 import { CertificationCountryFilter } from '../../forms/CertificationCountryFilter';
 import { MultiSelect } from '../../forms/MultiSelect';
 import { SearchableSelect } from '../../forms/SearchableSelect';
 import { LabelWithTooltip } from '../../forms/Tooltip';
 import { DATE_PRESETS, PRESET_DATE_MAP } from '../../../constants/datePresets';
+
+const TZDB_TIMEZONES = getTimeZones();
+const TZDB_BY_NAME = new Map(TZDB_TIMEZONES.map((tz) => [tz.name, tz]));
 
 export const ReleaseFilters = memo(function ReleaseFilters({
   localCatalog,
@@ -17,11 +21,28 @@ export const ReleaseFilters = memo(function ReleaseFilters({
   certOptions,
   certCountries,
 }) {
+  const TV_RELEASE_TYPE_VALUES = useMemo(() => new Set([1, 4, 6]), []);
+
   const safeCountries = Array.isArray(countries) ? countries : [];
-  const safeReleaseTypes = Array.isArray(releaseTypes) ? releaseTypes : [];
+  const safeReleaseTypes = useMemo(() => {
+    const list = Array.isArray(releaseTypes) ? releaseTypes : [];
+    if (isMovie) return list;
+    return list.filter((item) => TV_RELEASE_TYPE_VALUES.has(Number(item?.value)));
+  }, [releaseTypes, isMovie, TV_RELEASE_TYPE_VALUES]);
   const safeTvStatuses = Array.isArray(tvStatuses) ? tvStatuses : [];
   const safeTvTypes = Array.isArray(tvTypes) ? tvTypes : [];
   const currentYear = new Date().getFullYear();
+
+  useEffect(() => {
+    if (isMovie) return;
+    const selected = Array.isArray(localCatalog?.filters?.releaseTypes)
+      ? localCatalog.filters.releaseTypes
+      : [];
+    const cleaned = selected.filter((value) => TV_RELEASE_TYPE_VALUES.has(Number(value)));
+    if (cleaned.length !== selected.length) {
+      onFiltersChange('releaseTypes', cleaned);
+    }
+  }, [isMovie, localCatalog?.filters?.releaseTypes, onFiltersChange, TV_RELEASE_TYPE_VALUES]);
 
   const certificationCountryOptions = useMemo(
     () =>
@@ -48,6 +69,93 @@ export const ReleaseFilters = memo(function ReleaseFilters({
     }
     return years;
   }, [currentYear]);
+
+  const timezoneOptions = useMemo(() => {
+    const hasSupportedValuesOf =
+      typeof Intl !== 'undefined' && typeof Intl.supportedValuesOf === 'function';
+    const supported = hasSupportedValuesOf ? Intl.supportedValuesOf('timeZone') : [];
+    const current =
+      typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function'
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : undefined;
+    const selected = localCatalog?.filters?.timezone;
+
+    const merged = Array.from(
+      new Set([
+        ...TZDB_TIMEZONES.map((tz) => tz.name),
+        ...(Array.isArray(supported) ? supported : []),
+        'UTC',
+        current,
+        selected,
+      ])
+    )
+      .filter((tz) => typeof tz === 'string' && tz.trim().length > 0)
+      .sort((a, b) => String(a).localeCompare(String(b)));
+
+    const locale =
+      typeof navigator !== 'undefined' && navigator.language ? navigator.language : 'en-US';
+    const searchableAreaPrefixes = new Set([
+      'Africa',
+      'America',
+      'Antarctica',
+      'Arctic',
+      'Asia',
+      'Atlantic',
+      'Australia',
+      'Europe',
+      'Pacific',
+      'UTC',
+    ]);
+
+    const getTimeZoneNames = (tz) => {
+      const variants = ['long', 'short', 'longGeneric', 'shortGeneric'];
+      const names = [];
+      for (const variant of variants) {
+        try {
+          const parts = new Intl.DateTimeFormat(locale, {
+            timeZone: tz,
+            timeZoneName: variant,
+          }).formatToParts(new Date());
+          const name = parts.find((p) => p.type === 'timeZoneName')?.value;
+          if (name) names.push(name);
+        } catch {
+          // Ignore unsupported variants/locales.
+        }
+      }
+      return Array.from(new Set(names));
+    };
+
+    return merged.map((tz) => {
+      const tzdbMeta = TZDB_BY_NAME.get(String(tz));
+      const parts = String(tz).split('/').filter(Boolean);
+      const area = parts[0] || '';
+      const pathTerms = parts
+        .slice(1)
+        .map((p) => p.replace(/_/g, ' '))
+        .filter(Boolean);
+      const friendlyName = getTimeZoneNames(tz);
+      const areaTerm = searchableAreaPrefixes.has(area) ? area : '';
+      const searchText = [
+        areaTerm,
+        ...pathTerms,
+        ...(Array.isArray(tzdbMeta?.mainCities) ? tzdbMeta.mainCities : []),
+        tzdbMeta?.countryName,
+        tzdbMeta?.countryCode,
+        tzdbMeta?.alternativeName,
+        ...(Array.isArray(tzdbMeta?.group) ? tzdbMeta.group : []),
+        ...friendlyName,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return {
+        value: tz,
+        label: tz,
+        searchText,
+      };
+    });
+  }, [localCatalog?.filters?.timezone]);
 
   const dateRangeError = useMemo(() => {
     const fromKey = isMovie ? 'releaseDateFrom' : 'airDateFrom';
@@ -286,6 +394,7 @@ export const ReleaseFilters = memo(function ReleaseFilters({
               label="Show Premiered To"
               tooltip="Latest premiere date to include. Shows that first aired before or on this date."
             />
+            <span className="filter-label-hint">Latest first-air date to include</span>
             <input
               type="date"
               className={`input${premiereRangeError ? ' field-invalid' : ''}`}
@@ -304,6 +413,7 @@ export const ReleaseFilters = memo(function ReleaseFilters({
               label="First Air Year"
               tooltip="Filter by the year the show first aired (TMDB first_air_date_year)."
             />
+            <span className="filter-label-hint">Year the series premiered</span>
             <input
               type="number"
               className="input"
@@ -320,89 +430,105 @@ export const ReleaseFilters = memo(function ReleaseFilters({
           <div className="filter-group">
             <LabelWithTooltip
               label="Timezone"
-              tooltip="Timezone for date calculations (e.g., America/New_York)."
+              tooltip="IANA timezone used for date math (e.g., America/New_York). This affects how relative date windows (Today, Last X years, Released only) are calculated."
             />
-            <input
-              type="text"
-              className="input"
-              placeholder="e.g. America/New_York"
+            <span className="filter-label-hint">
+              Use IANA format: Area/City (example: America/New_York)
+            </span>
+            <SearchableSelect
+              options={timezoneOptions}
               value={localCatalog?.filters?.timezone || ''}
-              onChange={(e) =>
-                onFiltersChange('timezone', e.target.value ? e.target.value.trim() : undefined)
-              }
+              onChange={(value) => onFiltersChange('timezone', value || undefined)}
+              placeholder="Any timezone (UTC default)"
+              searchPlaceholder="Search timezone..."
+              labelKey="label"
+              valueKey="value"
+              searchLabel={false}
+              searchKeys={['searchText']}
+              aria-label="Timezone"
             />
           </div>
         </div>
       )}
 
-      {isMovie ? (
-        <>
-          <div className="filter-group" style={{ marginTop: '16px' }}>
-            <LabelWithTooltip
-              label="Release Region"
-              tooltip="Filter by when content was released in a specific country. Useful since movies often premiere at different times worldwide."
-            />
-            <span className="filter-label-hint">
-              Use regional release dates instead of worldwide premiere
-            </span>
-            <SearchableSelect
-              options={safeCountries}
-              value={localCatalog?.filters?.region || ''}
-              onChange={(value) => {
-                onFiltersChange('region', value);
-                if (value) onFiltersChange('certificationCountry', value);
-                if (!value) {
-                  onFiltersChange('releaseTypes', []);
-                  onFiltersChange('certificationCountry', undefined);
-                }
-              }}
-              placeholder="Worldwide"
-              searchPlaceholder="Search countries..."
-              labelKey="english_name"
-              valueKey="iso_3166_1"
-            />
-          </div>
-          <div className="filter-two-col" style={{ marginTop: '16px' }}>
-            <div className="filter-group">
-              <LabelWithTooltip
-                label="Primary Release Year"
-                tooltip="Filter by the year of a movie's primary (worldwide) release."
-              />
-              <SearchableSelect
-                options={yearOptions}
-                value={localCatalog?.filters?.primaryReleaseYear || ''}
-                onChange={(value) => {
-                  onFiltersChange('primaryReleaseYear', value ? Number(value) : undefined);
-                }}
-                placeholder="Any year"
-                searchPlaceholder="Search year..."
-                labelKey="label"
-                valueKey="value"
-              />
-            </div>
-            <div className="filter-group">
-              <LabelWithTooltip
-                label="Release Type"
-                tooltip="How the movie was released: Theatrical (cinemas), Digital (streaming/download), Physical (DVD/Blu-ray), TV broadcast, etc. Requires a region to be selected."
-              />
-              <MultiSelect
-                options={safeReleaseTypes}
-                value={localCatalog?.filters?.releaseTypes || []}
-                onChange={(value) => onFiltersChange('releaseTypes', value)}
-                placeholder={!localCatalog?.filters?.region ? 'Select region first' : 'All types'}
-                labelKey="label"
-                valueKey="value"
-                disabled={!localCatalog?.filters?.region}
-              />
-              {!localCatalog?.filters?.region && (
-                <span className="filter-label-hint warning">
-                  Select a region above to filter by release type
-                </span>
-              )}
-            </div>
-          </div>
-        </>
-      ) : (
+      <div className="filter-group" style={{ marginTop: '16px' }}>
+        <LabelWithTooltip
+          label={isMovie ? 'Release Region' : 'Regional Appearance'}
+          tooltip={
+            isMovie
+              ? 'Filter by when content was released in a specific country. Useful since movies often premiere at different times worldwide.'
+              : 'Filter TV series by regional appearance rules to better surface content available in a specific market.'
+          }
+        />
+        <span className="filter-label-hint">
+          {isMovie
+            ? 'Use regional release dates instead of worldwide premiere'
+            : 'Use region-specific availability rules instead of a global default'}
+        </span>
+        <SearchableSelect
+          options={safeCountries}
+          value={localCatalog?.filters?.region || ''}
+          onChange={(value) => {
+            onFiltersChange('region', value);
+            if (isMovie && value) onFiltersChange('certificationCountry', value);
+            if (!value) {
+              onFiltersChange('releaseTypes', []);
+              if (isMovie) onFiltersChange('certificationCountry', undefined);
+            }
+          }}
+          placeholder="Worldwide"
+          searchPlaceholder="Search countries..."
+          labelKey="english_name"
+          valueKey="iso_3166_1"
+        />
+      </div>
+
+      {isMovie && (
+        <div className="filter-group" style={{ marginTop: '16px' }}>
+          <LabelWithTooltip
+            label="Primary Release Year"
+            tooltip="Filter by the year of a movie's primary (worldwide) release."
+          />
+          <SearchableSelect
+            options={yearOptions}
+            value={localCatalog?.filters?.primaryReleaseYear || ''}
+            onChange={(value) => {
+              onFiltersChange('primaryReleaseYear', value ? Number(value) : undefined);
+            }}
+            placeholder="Any year"
+            searchPlaceholder="Search year..."
+            labelKey="label"
+            valueKey="value"
+          />
+        </div>
+      )}
+
+      <div className="filter-group" style={{ marginTop: '16px' }}>
+        <LabelWithTooltip
+          label={isMovie ? 'Release Type' : 'Regional Appearance Type'}
+          tooltip={
+            isMovie
+              ? 'How the movie was released: Theatrical (cinemas), Digital (streaming/download), Physical (DVD/Blu-ray), TV broadcast, etc. Requires a region to be selected.'
+              : 'How the series appears regionally (for example by release channel/type). Requires a region to be selected.'
+          }
+        />
+        <MultiSelect
+          options={safeReleaseTypes}
+          value={localCatalog?.filters?.releaseTypes || []}
+          onChange={(value) => onFiltersChange('releaseTypes', value)}
+          placeholder={!localCatalog?.filters?.region ? 'Select region first' : 'All types'}
+          labelKey="label"
+          valueKey="value"
+          disabled={!localCatalog?.filters?.region}
+        />
+        {!localCatalog?.filters?.region && (
+          <span className="filter-label-hint warning">
+            Select a region above to filter by release type
+          </span>
+        )}
+      </div>
+
+      {!isMovie && (
         <div className="filter-two-col" style={{ marginTop: '16px' }}>
           <div className="filter-group">
             <LabelWithTooltip

@@ -121,20 +121,19 @@ export async function discover(apiKey: string, options: DiscoverOptions = {}): P
   if (runtimeMin) params['with_runtime.gte'] = runtimeMin;
   if (runtimeMax) params['with_runtime.lte'] = runtimeMax;
 
-  if (mediaType === 'movie') {
-    if (region) params.region = region;
+  if (region) params.region = region;
+  if (releaseType) {
+    params.with_release_type = releaseType;
+  } else if (releaseTypes.length > 0) {
+    params.with_release_type = releaseTypes.join('|');
+  }
 
+  if (mediaType === 'movie') {
     const hasReleaseTypeFilter = releaseTypes.length > 0 || Boolean(releaseType);
     const useRegionalRelease = Boolean(region) || hasReleaseTypeFilter;
     const dateKey = useRegionalRelease ? 'release_date' : 'primary_release_date';
     if (releaseDateFrom) params[`${dateKey}.gte`] = releaseDateFrom;
     if (releaseDateTo) params[`${dateKey}.lte`] = releaseDateTo;
-
-    if (releaseType) {
-      params.with_release_type = releaseType;
-    } else if (releaseTypes.length > 0) {
-      params.with_release_type = releaseTypes.join('|');
-    }
   }
 
   if (certifications.length > 0) {

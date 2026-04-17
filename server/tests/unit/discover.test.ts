@@ -114,6 +114,16 @@ describe('discover', () => {
       expect.objectContaining({ certification: 'PG-13|R', certification_country: 'US' })
     );
   });
+
+  it('passes region and release type for series discovery', async () => {
+    mockedFetch.mockResolvedValue({ page: 1, results: [] });
+    await discover('key', { type: 'series', region: 'DE', releaseTypes: ['4'] });
+    expect(mockedFetch).toHaveBeenCalledWith(
+      '/discover/tv',
+      'key',
+      expect.objectContaining({ region: 'DE', with_release_type: '4' })
+    );
+  });
 });
 
 describe('fetchSpecialList', () => {

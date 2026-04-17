@@ -12,6 +12,8 @@ export const SearchableSelect = memo(function SearchableSelect({
   valueKey = 'code',
   allowClear = true,
   groupKey = null,
+  searchKeys = [],
+  searchLabel = true,
   menuPlacement = 'bottom',
   'aria-label': ariaLabel,
 }) {
@@ -27,9 +29,21 @@ export const SearchableSelect = memo(function SearchableSelect({
   const selectedOption = safeOptions.find((opt) => opt[valueKey] === value);
   const displayValue = selectedOption ? selectedOption[labelKey] : '';
 
-  const filteredOptions = safeOptions.filter((opt) =>
-    opt[labelKey]?.toLowerCase().includes(search.toLowerCase())
-  );
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredOptions = safeOptions.filter((opt) => {
+    if (!normalizedSearch) return true;
+
+    if (searchLabel) {
+      const primaryValue = String(opt?.[labelKey] || '').toLowerCase();
+      if (primaryValue.includes(normalizedSearch)) return true;
+    }
+
+    return (Array.isArray(searchKeys) ? searchKeys : []).some((key) =>
+      String(opt?.[key] || '')
+        .toLowerCase()
+        .includes(normalizedSearch)
+    );
+  });
 
   // Build grouped render items when groupKey is set
   const { renderItems, selectableOptions } = useMemo(() => {

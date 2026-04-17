@@ -58,4 +58,61 @@ describe('ReleaseFilters', () => {
       vi.useRealTimers();
     }
   });
+
+  it('shows regional appearance controls for series', () => {
+    render(
+      <ReleaseFilters
+        {...baseProps}
+        countries={[{ iso_3166_1: 'US', english_name: 'United States' }]}
+        releaseTypes={[{ value: 4, label: 'Digital' }]}
+      />
+    );
+
+    expect(screen.getByText('Regional Appearance')).toBeInTheDocument();
+    expect(screen.getByText('Regional Appearance Type')).toBeInTheDocument();
+    expect(screen.getByText('Select a region above to filter by release type')).toBeInTheDocument();
+  });
+
+  it('restricts series regional appearance type options to Premiere, Digital and TV', () => {
+    render(
+      <ReleaseFilters
+        {...baseProps}
+        countries={[{ iso_3166_1: 'US', english_name: 'United States' }]}
+        localCatalog={{ type: 'series', filters: { region: 'US' } }}
+        releaseTypes={[
+          { value: 1, label: 'Premiere' },
+          { value: 2, label: 'Limited Theatrical' },
+          { value: 3, label: 'Theatrical' },
+          { value: 4, label: 'Digital' },
+          { value: 5, label: 'Physical' },
+          { value: 6, label: 'TV' },
+        ]}
+      />
+    );
+
+    fireEvent.click(screen.getByText('All types'));
+    expect(screen.getByText('Premiere')).toBeInTheDocument();
+    expect(screen.getByText('Digital')).toBeInTheDocument();
+    expect(screen.getByText('TV')).toBeInTheDocument();
+    expect(screen.queryByText('Limited Theatrical')).not.toBeInTheDocument();
+    expect(screen.queryByText('Theatrical')).not.toBeInTheDocument();
+    expect(screen.queryByText('Physical')).not.toBeInTheDocument();
+  });
+
+  it('shows helper text for Show Premiered To and renders timezone as searchable select', () => {
+    render(<ReleaseFilters {...baseProps} />);
+
+    expect(screen.getByText('Latest first-air date to include')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /timezone/i })).toBeInTheDocument();
+  });
+
+  it('allows searching timezone by country name', () => {
+    render(<ReleaseFilters {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: /timezone/i }));
+    const searchInput = screen.getByPlaceholderText('Search timezone...');
+    fireEvent.change(searchInput, { target: { value: 'india' } });
+
+    expect(screen.getByText('Asia/Kolkata')).toBeInTheDocument();
+  });
 });

@@ -270,16 +270,20 @@ export function useActiveFilters({
       });
     }
 
-    if (isMovieType && filters.region) {
+    if (filters.region) {
       const regionLabel =
         countries.find((c) => c.iso_3166_1 === filters.region)?.english_name || filters.region;
-      active.push({ key: 'region', label: `Release region: ${regionLabel}`, section: 'release' });
+      active.push({
+        key: 'region',
+        label: `${isMovieType ? 'Release region' : 'Regional appearance'}: ${regionLabel}`,
+        section: 'release',
+      });
     }
 
-    if (isMovieType && filters.releaseTypes?.length > 0) {
+    if (filters.releaseTypes?.length > 0) {
       active.push({
         key: 'releaseTypes',
-        label: `${filters.releaseTypes.length} release type(s)`,
+        label: `${filters.releaseTypes.length} ${isMovieType ? 'release type(s)' : 'regional type(s)'}`,
         section: 'release',
       });
     }
