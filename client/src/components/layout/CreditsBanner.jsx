@@ -11,14 +11,20 @@ export function CreditsBanner({ addonVariant = null }) {
       <div className="credits-banner-content">
         <p>
           This is the public instance of TMDB Discover+, sponsored by{' '}
-          <a href="https://store.elfhosted.com/" target="_blank" rel="noreferrer">
-            ElfHosted
-          </a>{' '}
-          ❤️ <br />
+          <span className="nowrap">
+            <a href="https://store.elfhosted.com/" target="_blank" rel="noreferrer">
+              ElfHosted
+            </a>{' '}
+            ❤️
+          </span>
+        </p>
+        <p>
           See our FREE{' '}
-          <a href="https://stremio-addons-guide.elfhosted.com" target="_blank" rel="noreferrer">
-            Stremio Addons Guide
-          </a>{' '}
+          <span className="nowrap">
+            <a href="https://stremio-addons-guide.elfhosted.com" target="_blank" rel="noreferrer">
+              Stremio Addons Guide
+            </a>
+          </span>{' '}
           for more great addons and features!
         </p>
       </div>

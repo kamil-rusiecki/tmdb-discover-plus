@@ -335,13 +335,13 @@
   }
 
   .catalog-item-actions {
-    gap: 8px; /* Easier to tap on mobile */
+    gap: 4px; /* Easier to tap on mobile */
   }
 
   .catalog-item-actions .btn-icon {
-    padding: 10px;
-    min-width: 44px;
-    height: 44px;
+    padding: 8px;
+    min-width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;

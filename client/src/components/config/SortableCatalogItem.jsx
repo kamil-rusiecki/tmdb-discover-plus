@@ -1,10 +1,8 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Film, Tv, GripVertical, Trash2, Copy, Sparkles } from 'lucide-react';
-import { useIsMobile } from '../../hooks/useIsMobile';
 
 export function SortableCatalogItem({ catalog, isActive, onSelect, onDelete, onDuplicate }) {
-  const isMobile = useIsMobile(1200);
   const getCatalogKey = (cat) => String(cat?._id || cat?.id || cat?.name);
   const id = getCatalogKey(catalog);
 
@@ -79,40 +77,37 @@ export function SortableCatalogItem({ catalog, isActive, onSelect, onDelete, onD
             onClick={(e) => e.stopPropagation()}
             {...attributes}
             {...listeners}
-            style={!isMobile ? { marginRight: '4px' } : undefined}
           >
             <GripVertical size={16} />
           </button>
-          {!isMobile && (
-            <>
-              <button
-                className="btn btn-ghost btn-icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDuplicate(catalog._id);
-                }}
-                title="Duplicate catalog"
-                type="button"
-              >
-                <Copy size={16} />
-              </button>
-              <button
-                className="btn btn-ghost btn-icon text-danger"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(catalog._id);
-                }}
-                title="Delete catalog"
-                type="button"
-                style={{ color: '#ef4444' }}
-              >
-                <Trash2 size={16} />
-              </button>
-            </>
-          )}
+          <div className="catalog-item-desktop-actions">
+            <button
+              className="btn btn-ghost btn-icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate(catalog._id);
+              }}
+              title="Duplicate catalog"
+              type="button"
+            >
+              <Copy size={16} />
+            </button>
+            <button
+              className="btn btn-ghost btn-icon text-danger"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(catalog._id);
+              }}
+              title="Delete catalog"
+              type="button"
+              style={{ color: '#ef4444' }}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
         </div>
       </div>
-      {isMobile && isActive && (
+      {isActive && (
         <div className="catalog-item-expanded">
           <button
             className="btn-action-minimal"

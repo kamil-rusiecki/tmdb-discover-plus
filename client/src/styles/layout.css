@@ -688,6 +688,8 @@
 /* Credits Banner */
 .credits-banner {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   gap: 16px;
   padding: 12px 20px;
@@ -708,8 +710,8 @@
 }
 
 .credits-banner-logo {
-  height: 64px;
-  width: 64px;
+  height: 56px;
+  width: 56px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -719,10 +721,18 @@
   flex-direction: column;
   gap: 4px;
   line-height: 1.5;
+  flex: 1 1 250px;
+  align-items: center;
+  text-align: center;
 }
 
 .credits-banner-content p {
   margin: 0;
+  text-wrap: pretty;
+}
+
+.credits-banner-content .nowrap {
+  white-space: nowrap;
 }
 
 .credits-banner-content a {
