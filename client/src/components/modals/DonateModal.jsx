@@ -93,36 +93,6 @@ export function DonateModal({ isOpen, onClose }) {
             </a>
 
             <a
-              href="https://buymeacoffee.com/semi.column"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="donate-btn donate-bmc"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                background: 'var(--surface-color)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-primary)',
-                transition: 'all 0.2s ease',
-                fontWeight: '500',
-              }}
-            >
-              <Coffee size={20} />
-              <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', flex: 1 }}>
-                <span>Buy Me a Coffee</span>
-                <span
-                  style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'normal' }}
-                >
-                  One-time donations
-                </span>
-              </div>
-            </a>
-
-            <a
               href="https://ko-fi.com/semicolumn"
               target="_blank"
               rel="noopener noreferrer"

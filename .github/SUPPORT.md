@@ -73,7 +73,6 @@ If you're having issues with TMDB data:
 If TMDB Discover+ has been helpful, consider supporting development:
 
 - [Ko-fi](https://ko-fi.com/semicolumn)
-- [Buy Me A Coffee](https://buymeacoffee.com/semi.column)
 - Star the repository on GitHub
 
 Thank you for being part of the community!

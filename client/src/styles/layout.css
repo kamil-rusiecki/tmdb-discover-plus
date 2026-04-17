@@ -336,29 +336,6 @@
   color: #000;
 }
 
-/* Buy Me a Coffee widget (header sizing overrides)
-   The widget injects its own styles; we use higher specificity + !important for layout fit. */
-.bmc-header-button {
-  display: inline-flex;
-  align-items: center;
-}
-
-.bmc-header-button .bmc-btn {
-  height: 40px !important;
-  min-width: 0 !important;
-  padding: 0 14px !important;
-  border-radius: var(--radius-full) !important;
-}
-
-.bmc-header-button .bmc-btn svg {
-  height: 22px !important;
-}
-
-.bmc-header-button .bmc-btn-text {
-  font-size: 0.8125rem !important;
-  line-height: 1 !important;
-}
-
 /* Main Content */
 .main {
   flex: 1;
@@ -758,44 +735,6 @@
 .credits-banner-content a:hover {
   text-decoration: underline;
   opacity: 0.8;
-}
-
-/* Buy Me A Coffee Native Button */
-.bmc-native-button {
-  display: inline-block;
-  padding: 8px 16px;
-  background-color: #ffdd00;
-  color: #000000;
-  border-radius: 12px;
-  text-decoration: none;
-  font-family: var(--font-outfit), sans-serif;
-  font-weight: 700;
-  font-size: 14px;
-  transition: all var(--transition-short) ease;
-  box-shadow: 0 4px 12px rgba(255, 221, 0, 0.2);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.bmc-native-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(255, 221, 0, 0.3);
-  background-color: #ffea00;
-  text-decoration: none;
-  color: #000000;
-}
-
-.bmc-native-button:active {
-  transform: translateY(0);
-}
-
-.bmc-button-content {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.bmc-icon {
-  margin-top: -2px;
 }
 
 @media (max-width: 1199px) {

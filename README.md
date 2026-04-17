@@ -37,9 +37,6 @@
   <a href="https://ko-fi.com/semicolumn">
     <img src="https://img.shields.io/badge/Ko--fi-Support%20Development-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi" />
   </a>
-  <a href="https://buymeacoffee.com/semi.column">
-    <img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee" />
-  </a>
 </p>
 
 ---
