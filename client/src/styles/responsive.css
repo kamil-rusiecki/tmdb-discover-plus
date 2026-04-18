@@ -39,6 +39,10 @@
 }
 
 /* Mobile Container */
+.mobile-support-under-actions {
+  display: none;
+}
+
 @media (max-width: 767px) {
   .container {
     padding: 0 var(--space-4);
@@ -241,10 +245,6 @@
   .builder-title-area p.text-secondary {
     display: none;
   }
-}
-
-.mobile-support-under-actions {
-  display: none;
 }
 
 /* Mobile Actions Layout (Top Bar) */
