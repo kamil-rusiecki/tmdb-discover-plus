@@ -60,6 +60,8 @@ import { handleAnilistCatalogRequest } from './handlers/anilistHandler.ts';
 import { handleMalCatalogRequest } from './handlers/malHandler.ts';
 import { handleSimklCatalogRequest } from './handlers/simklHandler.ts';
 import { handleTraktCatalogRequest } from './handlers/traktHandler.ts';
+import { getEntryByPrefixedId } from '../services/animeIdMap/index.ts';
+import { resolveRequestedMetaId } from '../utils/metaIdResolution.ts';
 
 const log = createLogger('addon');
 
@@ -995,17 +997,13 @@ async function handleMetaRequest(
           : 'miss';
 
     const computeMeta = async (): Promise<Partial<StremioMeta> | null> => {
-      let tmdbId = null;
-      let imdbId = null;
+      const resolvedId = resolveRequestedMetaId(requestedId, getEntryByPrefixedId);
+      let tmdbId = resolvedId.tmdbId;
+      let imdbId = resolvedId.imdbId;
 
-      if (/^tt\d+/i.test(requestedId)) {
-        imdbId = requestedId;
+      if (!tmdbId && resolvedId.requiresImdbLookup && imdbId) {
         const found = await tmdb.findByImdbId(apiKey, imdbId, tmdbType, { language });
         tmdbId = found?.tmdbId || null;
-      } else if (requestedId.startsWith('tmdb:')) {
-        tmdbId = Number(requestedId.replace('tmdb:', ''));
-      } else if (/^\d+$/.test(requestedId)) {
-        tmdbId = Number(requestedId);
       }
 
       if (!tmdbId) return null;

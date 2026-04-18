@@ -138,7 +138,7 @@ describe('buildManifest', () => {
     const manifest = buildManifest({ catalogs: [] }, baseUrl);
     expect(manifest.resources).toEqual(['catalog', 'meta']);
     expect(manifest.types).toEqual(['movie', 'series', 'anime']);
-    expect(manifest.idPrefixes).toEqual(['tmdb:', 'tt']);
+    expect(manifest.idPrefixes).toEqual(['tmdb:', 'tt', 'mal:', 'kitsu:', 'anilist:', 'anidb:']);
   });
 
   it('sets pageSize to 20 for all catalogs', () => {

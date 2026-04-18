@@ -26,6 +26,7 @@ let byKitsuId = new Map<number, AnimeIdEntry>();
 let byImdbId = new Map<string, AnimeIdEntry>();
 let bySimklId = new Map<number, AnimeIdEntry>();
 let byTmdbId = new Map<number, AnimeIdEntry>();
+let byAnidbId = new Map<number, AnimeIdEntry>();
 let initialized = false;
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -36,14 +37,16 @@ function buildIndexes(entries: AnimeIdEntry[]): void {
   const newByImdb = new Map<string, AnimeIdEntry>();
   const newBySimkl = new Map<number, AnimeIdEntry>();
   const newByTmdb = new Map<number, AnimeIdEntry>();
+  const newByAnidb = new Map<number, AnimeIdEntry>();
 
   for (const entry of entries) {
     if (entry.anilist_id) newByAnilist.set(entry.anilist_id, entry);
     if (entry.mal_id) newByMal.set(entry.mal_id, entry);
     if (entry.kitsu_id) newByKitsu.set(entry.kitsu_id, entry);
-    if (entry.imdb_id) newByImdb.set(entry.imdb_id, entry);
+    if (entry.imdb_id) newByImdb.set(entry.imdb_id.toLowerCase(), entry);
     if (entry.simkl_id) newBySimkl.set(entry.simkl_id, entry);
     if (entry.themoviedb_id) newByTmdb.set(entry.themoviedb_id, entry);
+    if (entry.anidb_id) newByAnidb.set(entry.anidb_id, entry);
   }
 
   byAnilistId = newByAnilist;
@@ -52,6 +55,7 @@ function buildIndexes(entries: AnimeIdEntry[]): void {
   byImdbId = newByImdb;
   bySimklId = newBySimkl;
   byTmdbId = newByTmdb;
+  byAnidbId = newByAnidb;
 
   log.info('anime ID map indexes built', {
     total: entries.length,
@@ -61,6 +65,7 @@ function buildIndexes(entries: AnimeIdEntry[]): void {
     imdb: newByImdb.size,
     simkl: newBySimkl.size,
     tmdb: newByTmdb.size,
+    anidb: newByAnidb.size,
   });
 }
 
@@ -162,11 +167,53 @@ export function getEntryBySimklId(id: number): AnimeIdEntry | undefined {
 }
 
 export function getEntryByImdbId(id: string): AnimeIdEntry | undefined {
-  return byImdbId.get(id);
+  return byImdbId.get(id.toLowerCase());
 }
 
 export function getEntryByTmdbId(id: number): AnimeIdEntry | undefined {
   return byTmdbId.get(id);
+}
+
+export function getEntryByKitsuId(id: number): AnimeIdEntry | undefined {
+  return byKitsuId.get(id);
+}
+
+export function getEntryByAnidbId(id: number): AnimeIdEntry | undefined {
+  return byAnidbId.get(id);
+}
+
+function parsePrefixedNumericId(stremioId: string, prefix: string): number | null {
+  if (!stremioId.startsWith(prefix)) return null;
+  const parsed = Number.parseInt(stremioId.slice(prefix.length), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+export function getEntryByPrefixedId(stremioId: string): AnimeIdEntry | undefined {
+  const normalized = String(stremioId || '')
+    .trim()
+    .toLowerCase();
+  if (!normalized) return undefined;
+
+  if (/^tt\d+$/i.test(normalized)) {
+    return getEntryByImdbId(normalized);
+  }
+
+  const tmdbId = parsePrefixedNumericId(normalized, 'tmdb:');
+  if (tmdbId != null) return getEntryByTmdbId(tmdbId);
+
+  const anilistId = parsePrefixedNumericId(normalized, 'anilist:');
+  if (anilistId != null) return getEntryByAnilistId(anilistId);
+
+  const malId = parsePrefixedNumericId(normalized, 'mal:');
+  if (malId != null) return getEntryByMalId(malId);
+
+  const kitsuId = parsePrefixedNumericId(normalized, 'kitsu:');
+  if (kitsuId != null) return getEntryByKitsuId(kitsuId);
+
+  const anidbId = parsePrefixedNumericId(normalized, 'anidb:');
+  if (anidbId != null) return getEntryByAnidbId(anidbId);
+
+  return undefined;
 }
 
 export function getMapStats(): { initialized: boolean; sizes: Record<string, number> } {
@@ -179,6 +226,7 @@ export function getMapStats(): { initialized: boolean; sizes: Record<string, num
       imdb: byImdbId.size,
       simkl: bySimklId.size,
       tmdb: byTmdbId.size,
+      anidb: byAnidbId.size,
     },
   };
 }

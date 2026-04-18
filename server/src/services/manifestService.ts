@@ -33,6 +33,7 @@ type ManifestExtra = NonNullable<ManifestCatalog['extra']>[number];
 const STREMIO_EXTRA_MODES: StremioExtraMode[] = ['genre', 'year', 'sortBy', 'certification'];
 const TMDB_STREMIO_EXTRA_MODES: StremioExtraMode[] = ['genre', 'year', 'sortBy', 'certification'];
 const GENRE_ONLY_STREMIO_EXTRA_MODES: StremioExtraMode[] = ['genre'];
+const SUPPORTED_ID_PREFIXES = ['tmdb:', 'tt', 'mal:', 'kitsu:', 'anilist:', 'anidb:'];
 
 const MIN_DROPDOWN_YEAR = 1900;
 
@@ -369,7 +370,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
     description: ADDON_DESCRIPTION,
     version: ADDON_VERSION,
     logo: `${resolvedBaseUrl.replace(/\/$/, '')}/logo.png`,
-    idPrefixes: ['tmdb:', 'tt'],
+    idPrefixes: SUPPORTED_ID_PREFIXES,
     resources: ['catalog', 'meta'],
     types: ['movie', 'series', 'anime'],
     catalogs,
