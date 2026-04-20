@@ -23,7 +23,7 @@ body:
       label: Which instance are you using?
       options:
         - Stable (ElfHosted)
-        - Nightly (BeamUp)
+        - Nightly
         - Self-hosted
     validations:
       required: true

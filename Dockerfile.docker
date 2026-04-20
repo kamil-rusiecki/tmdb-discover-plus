@@ -62,12 +62,12 @@ RUN chown -R nodejs:nodejs /app
 USER nodejs
 
 # Environment variables with defaults
-# NOTE: Do NOT set PORT here - Dokku/BeamUp will inject PORT at runtime
-# The app must read process.env.PORT (defaults to 5000 on Dokku)
+# NOTE: Do NOT set PORT here - the runtime platform should inject PORT
+# The app must read process.env.PORT (defaults to 5000 if not provided)
 ENV NODE_ENV=production
 ENV LOG_LEVEL=info
 
-# Health check - Dokku sets PORT to 5000 by default
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-5000}/health || exit 1
 

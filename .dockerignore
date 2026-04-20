@@ -47,8 +47,6 @@ tests/
 !README.md
 
 # Misc
-.beamupignore
-beamup.json
 
 # Docker
 Dockerfile

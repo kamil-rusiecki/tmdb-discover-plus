@@ -40,10 +40,12 @@ vi.mock('../../src/services/mal/index.ts', () => ({
 }));
 
 vi.mock('../../src/services/simkl/index.ts', () => ({
+  isSimklEnabled: vi.fn(() => true),
   getGenres: vi.fn(() => ['Action', 'Horror', 'Thriller']),
 }));
 
 vi.mock('../../src/services/trakt/index.ts', () => ({
+  isTraktEnabled: vi.fn(() => true),
   getGenresByType: vi.fn(async () => ({
     movie: [
       { slug: 'action', name: 'Action' },
@@ -100,6 +102,26 @@ describe('buildManifest', () => {
     expect(catalogIds).not.toContain('tmdb-disabled');
   });
 
+  it('preserves catalog order from saved configuration', () => {
+    const manifest = buildManifest(
+      {
+        catalogs: [
+          { _id: 'third', name: 'Third', type: 'movie', source: 'tmdb', enabled: true },
+          { _id: 'first', name: 'First', type: 'series', source: 'imdb', enabled: true },
+          { _id: 'second', name: 'Second', type: 'movie', source: 'trakt', enabled: true },
+        ],
+        preferences: { disableSearch: true },
+      },
+      baseUrl
+    );
+
+    expect(manifest.catalogs.map((catalog: any) => catalog.id)).toEqual([
+      'tmdb-third',
+      'imdb-first',
+      'trakt-second',
+    ]);
+  });
+
   it('omits search catalogs when disableSearch is true', () => {
     const manifest = buildManifest({ catalogs: [], preferences: { disableSearch: true } }, baseUrl);
     expect(manifest.catalogs.length).toBe(0);
@@ -118,6 +140,65 @@ describe('buildManifest', () => {
     expect(ids).toContain('trakt-trakt-list');
     expect(ids).not.toContain('trakt-search-movie');
     expect(ids).not.toContain('trakt-search-series');
+  });
+
+  it('includes Trakt search catalogs when Trakt search is enabled, even without Trakt catalogs', () => {
+    const manifest = buildManifest(
+      {
+        catalogs: [{ _id: 'tmdb-list', name: 'TMDB List', type: 'movie', source: 'tmdb' }],
+        preferences: { disableTraktSearch: false },
+      },
+      baseUrl
+    );
+
+    const ids = manifest.catalogs.map((catalog: any) => catalog.id);
+    expect(ids).toContain('trakt-search-movie');
+    expect(ids).toContain('trakt-search-series');
+  });
+
+  it('includes AniList search catalogs when AniList search is enabled, even without AniList catalogs', () => {
+    const manifest = buildManifest(
+      {
+        catalogs: [{ _id: 'tmdb-list', name: 'TMDB List', type: 'movie', source: 'tmdb' }],
+        preferences: { disableAnilistSearch: false },
+      },
+      baseUrl
+    );
+
+    const ids = manifest.catalogs.map((catalog: any) => catalog.id);
+    expect(ids).toContain('anilist-search-movie');
+    expect(ids).toContain('anilist-search-series');
+    expect(ids).toContain('anilist-search-anime');
+  });
+
+  it('includes MAL search catalogs when MAL search is enabled, even without MAL catalogs', () => {
+    const manifest = buildManifest(
+      {
+        catalogs: [{ _id: 'tmdb-list', name: 'TMDB List', type: 'movie', source: 'tmdb' }],
+        preferences: { disableMalSearch: false },
+      },
+      baseUrl
+    );
+
+    const ids = manifest.catalogs.map((catalog: any) => catalog.id);
+    expect(ids).toContain('mal-search-movie');
+    expect(ids).toContain('mal-search-series');
+    expect(ids).toContain('mal-search-anime');
+  });
+
+  it('includes Simkl search catalogs when Simkl search is enabled, even without Simkl catalogs', () => {
+    const manifest = buildManifest(
+      {
+        catalogs: [{ _id: 'tmdb-list', name: 'TMDB List', type: 'movie', source: 'tmdb' }],
+        preferences: { disableSimklSearch: false },
+      },
+      baseUrl
+    );
+
+    const ids = manifest.catalogs.map((catalog: any) => catalog.id);
+    expect(ids).toContain('simkl-search-movie');
+    expect(ids).toContain('simkl-search-series');
+    expect(ids).toContain('simkl-search-anime');
   });
 
   it('generates catalog ID from name when _id is missing', () => {
@@ -150,7 +231,9 @@ describe('buildManifest', () => {
   });
 
   it('handles empty/null config gracefully', () => {
-    expect(buildManifest(null, baseUrl).catalogs.length).toBe(2);
+    const nullConfigManifest = buildManifest(null, baseUrl);
+    expect(nullConfigManifest.catalogs.length).toBe(2);
+    expect(nullConfigManifest.version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(buildManifest({}, baseUrl).catalogs.length).toBe(2);
   });
 

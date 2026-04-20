@@ -90,12 +90,11 @@ Whether you're hunting for:
 
 Choose the instance that best fits your needs:
 
-| Instance                                                                | Channel    | Status      | Description                                                                     |
-| ----------------------------------------------------------------------- | ---------- | ----------- | ------------------------------------------------------------------------------- |
-| **[ElfHosted](https://tmdb-discover-plus.elfhosted.com/)**              | 🟢 Stable  | Production  | ✅ **Recommended for daily use**<br/>PostgreSQL + Redis for optimal performance |
-| **[BeamUp](https://84f50d1c22e7-tmdb-discover-plus.baby-beamup.club/)** | 🟡 Nightly | Development | ⚠️ Latest features, may be unstable<br/>MongoDB + Memory cache                  |
+| Instance                                                   | Channel   | Status     | Description                                                                     |
+| ---------------------------------------------------------- | --------- | ---------- | ------------------------------------------------------------------------------- |
+| **[ElfHosted](https://tmdb-discover-plus.elfhosted.com/)** | 🟢 Stable | Production | ✅ **Recommended for daily use**<br/>PostgreSQL + Redis for optimal performance |
 
-> **💡 Tip:** Both instances are free to use! The stable instance is recommended for most users.
+> **💡 Tip:** The stable instance is free to use and recommended for most users.
 
 ---
 
@@ -247,18 +246,6 @@ npm start
 
 ### Cloud Deployment
 
-#### BeamUp (Free - Stremio's Official Hosting)
-
-```bash
-# Install BeamUp CLI
-npm install -g beamup-cli
-beamup config
-
-# Build and deploy
-npm run build
-beamup
-```
-
 #### Render / Railway / Fly.io
 
 1. Fork this repository
@@ -403,7 +390,6 @@ Try these steps:
 Yes! Use one of our public instances:
 
 - **Stable:** [tmdb-discover-plus.elfhosted.com](https://tmdb-discover-plus.elfhosted.com/)
-- **Nightly:** [BeamUp instance](https://84f50d1c22e7-tmdb-discover-plus.baby-beamup.club/)
 
 No installation required!
 
@@ -693,7 +679,6 @@ We're committed to providing a welcoming and inspiring community for all. Please
 These addons work great with TMDB Discover+:
 
 - **[Torrentio](https://torrentio.strem.fun/)** - Torrent streams
-- **[The Movie Database +](https://94c8cb9f702d-tmdb.baby-beamup.club/)** - TMDB metadata addon
 - **[Comet](https://github.com/g0ldyy/comet)** - Debrid streams
 - **[MediaFusion](https://mediafusion.elfhosted.com/)** - Multiple streaming sources
 
@@ -746,7 +731,6 @@ Built with amazing open-source technologies and services:
 - **[Stremio](https://www.stremio.com/)** - The media center platform that makes it all possible
 - **[Lucide](https://lucide.dev/)** - Beautiful, consistent icons
 - **[ElfHosted](https://elfhosted.com/)** - Reliable hosting for the stable instance
-- **[BeamUp](https://beamup.dev/)** - Stremio's official hosting platform for the nightly instance
 - **[RPDB](https://ratingposterdb.com/)** - High-quality posters and ratings
 
 Special thanks to:

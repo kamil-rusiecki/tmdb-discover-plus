@@ -4,12 +4,12 @@ All variables are defined in `server/src/config.ts`. Only `JWT_SECRET` and `ENCR
 
 ## Core
 
-| Variable      | Description                                                                                                                                | Default         |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------- |
-| `PORT`        | HTTP server listen port                                                                                                                    | `7000`          |
-| `NODE_ENV`    | Runtime environment (`production`, `development`, `test`, `nightly`)                                                                       | `production`    |
-| `BASE_URL`    | Public base URL for manifest/install links. Auto-detected from `Host` header if unset. Required on BeamUp where headers are not forwarded. | _(auto-detect)_ |
-| `TRUST_PROXY` | Express `trust proxy` setting — number of hops or `true`                                                                                   | `1`             |
+| Variable      | Description                                                                                                                                                                    | Default         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- |
+| `PORT`        | HTTP server listen port                                                                                                                                                        | `7000`          |
+| `NODE_ENV`    | Runtime environment (`production`, `development`, `test`, `nightly`)                                                                                                           | `production`    |
+| `BASE_URL`    | Public base URL for manifest/install links. Auto-detected from `Host` header if unset. Set this explicitly when running behind proxies that do not preserve the original host. | _(auto-detect)_ |
+| `TRUST_PROXY` | Express `trust proxy` setting — number of hops or `true`                                                                                                                       | `1`             |
 
 ## Auth & Security
 
@@ -125,11 +125,11 @@ ENCRYPTION_KEY=<random-64-hex>
 LOG_LEVEL=info
 ```
 
-### BeamUp (Nightly)
+### Nightly (example)
 
 ```env
 ADDON_VARIANT=nightly
-BASE_URL=https://84f50d1c22e7-tmdb-discover-plus.baby-beamup.club
+BASE_URL=https://nightly.example.com
 MONGODB_URI=mongodb+srv://...
 JWT_SECRET=<random-64-hex>
 ENCRYPTION_KEY=<random-64-hex>

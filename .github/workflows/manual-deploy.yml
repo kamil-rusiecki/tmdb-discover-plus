@@ -7,14 +7,6 @@ on:
         description: 'Type "deploy" to confirm deployment'
         required: true
         default: ''
-      target:
-        description: 'Deployment target'
-        required: true
-        default: 'oracle'
-        type: choice
-        options:
-          - oracle
-          - beamup
 
 permissions:
   contents: write
@@ -31,7 +23,7 @@ jobs:
           exit 1
 
   deploy:
-    name: Deploy to ${{ github.event.inputs.target }}
+    name: Deploy to Oracle VM
     runs-on: ubuntu-latest
     needs: validate
     steps:
@@ -40,38 +32,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        if: ${{ github.event.inputs.target == 'beamup' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
-
-      - name: Install dependencies
-        if: ${{ github.event.inputs.target == 'beamup' }}
-        run: |
-          npm ci
-          cd server && npm ci
-          cd ../client && npm ci
-
-      - name: Build client
-        if: ${{ github.event.inputs.target == 'beamup' }}
-        run: cd client && npm run build
-
-      - name: Configure Git
-        if: ${{ github.event.inputs.target == 'beamup' }}
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-
-      - name: Add built files to deploy commit
-        if: ${{ github.event.inputs.target == 'beamup' }}
-        run: |
-          git add -f client/dist/
-          git commit -m "Build for deployment [skip ci]" --allow-empty
-
       - name: Setup SSH for Oracle VM
-        if: ${{ github.event.inputs.target == 'oracle' }}
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.ORACLE_VM_SSH_KEY }}" > ~/.ssh/oracle_vm_key
@@ -79,7 +40,6 @@ jobs:
           ssh-keyscan -H "${{ secrets.ORACLE_VM_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Deploy to Oracle VM
-        if: ${{ github.event.inputs.target == 'oracle' }}
         env:
           ORACLE_VM_HOST: ${{ secrets.ORACLE_VM_HOST }}
           ORACLE_VM_USER: ${{ secrets.ORACLE_VM_USER }}
@@ -121,33 +81,12 @@ jobs:
           echo "Manual deploy completed on Oracle VM"
           EOF
 
-      - name: Setup SSH for BeamUp
-        if: ${{ github.event.inputs.target == 'beamup' }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.BEAMUP_SSH_KEY }}" > ~/.ssh/beamup_key
-          chmod 600 ~/.ssh/beamup_key
-          ssh-keyscan -H a.baby-beamup.club >> ~/.ssh/known_hosts 2>/dev/null || true
-
-      - name: Deploy to BeamUp
-        if: ${{ github.event.inputs.target == 'beamup' }}
-        env:
-          GIT_SSH_COMMAND: 'ssh -i ~/.ssh/beamup_key -o StrictHostKeyChecking=no'
-        run: |
-          git remote add beamup dokku@a.baby-beamup.club:84f50d1c22e7-tmdb-discover-plus || true
-          git push beamup HEAD:main --force
-
       - name: Deployment Summary
         run: |
           echo "## 🚀 Manual Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ github.event.inputs.target }}" = "oracle" ]; then
-            echo "**Target:** Oracle VM" >> $GITHUB_STEP_SUMMARY
-            echo "**URL:** https://tmdb-discover-plus.duckdns.org/" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "**Target:** BeamUp" >> $GITHUB_STEP_SUMMARY
-            echo "**URL:** http://84f50d1c22e7-tmdb-discover-plus.baby-beamup.club/" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "**Target:** Oracle VM" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://tmdb-discover-plus.duckdns.org/" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

@@ -40,4 +40,4 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**ElfHosted (Stable):** Will auto-deploy from this release" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**BeamUp (Nightly):** Deploys automatically on every push to main via the nightly workflow" >> $GITHUB_STEP_SUMMARY
+          echo "**Nightly:** Deploys automatically on every push to main via the nightly workflow" >> $GITHUB_STEP_SUMMARY

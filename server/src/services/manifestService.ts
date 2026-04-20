@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import * as tmdb from './tmdb/index.ts';
 import * as imdb from './imdb/index.ts';
@@ -36,6 +37,34 @@ const GENRE_ONLY_STREMIO_EXTRA_MODES: StremioExtraMode[] = ['genre'];
 const SUPPORTED_ID_PREFIXES = ['tmdb:', 'tt', 'mal:', 'kitsu:', 'anilist:', 'anidb:'];
 
 const MIN_DROPDOWN_YEAR = 1900;
+
+function buildManifestVersion(userConfig: UserConfig | null): string {
+  if (!userConfig) {
+    return ADDON_VERSION;
+  }
+
+  const signaturePayload = {
+    variant: ADDON_VARIANT || 'stable',
+    configName: userConfig.configName || '',
+    catalogs: (userConfig.catalogs || []).map((catalog) => ({
+      id: catalog._id,
+      name: catalog.name,
+      type: catalog.type,
+      source: catalog.source || 'tmdb',
+      enabled: catalog.enabled !== false,
+      filters: catalog.filters || {},
+    })),
+    preferences: userConfig.preferences || {},
+  };
+
+  const hash = crypto
+    .createHash('sha256')
+    .update(JSON.stringify(signaturePayload))
+    .digest('hex')
+    .slice(0, 12);
+
+  return `${ADDON_VERSION}+${hash}`;
+}
 
 function parseNumericYear(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -273,10 +302,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
       });
     }
 
-    const hasAnilistCatalogs = (userConfig?.catalogs || []).some(
-      (c) => c.source === 'anilist' && c.enabled !== false
-    );
-    if (hasAnilistCatalogs && userConfig?.preferences?.disableAnilistSearch === false) {
+    if (userConfig?.preferences?.disableAnilistSearch === false) {
       catalogs.push({
         id: 'anilist-search-movie',
         type: 'movie',
@@ -297,10 +323,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
       });
     }
 
-    const hasMalCatalogs = (userConfig?.catalogs || []).some(
-      (c) => c.source === 'mal' && c.enabled !== false
-    );
-    if (hasMalCatalogs && userConfig?.preferences?.disableMalSearch === false) {
+    if (userConfig?.preferences?.disableMalSearch === false) {
       catalogs.push({
         id: 'mal-search-movie',
         type: 'movie',
@@ -321,10 +344,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
       });
     }
 
-    const hasSimklCatalogs = (userConfig?.catalogs || []).some(
-      (c) => c.source === 'simkl' && c.enabled !== false
-    );
-    if (hasSimklCatalogs && userConfig?.preferences?.disableSimklSearch === false) {
+    if (simkl.isSimklEnabled() && userConfig?.preferences?.disableSimklSearch === false) {
       catalogs.push({
         id: 'simkl-search-movie',
         type: 'movie',
@@ -345,10 +365,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
       });
     }
 
-    const hasTraktCatalogs = (userConfig?.catalogs || []).some(
-      (c) => c.source === 'trakt' && c.enabled !== false
-    );
-    if (hasTraktCatalogs && userConfig?.preferences?.disableTraktSearch === false) {
+    if (trakt.isTraktEnabled() && userConfig?.preferences?.disableTraktSearch === false) {
       catalogs.push({
         id: 'trakt-search-movie',
         type: 'movie',
@@ -368,7 +385,7 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
     id: ADDON_ID,
     name: addonName,
     description: ADDON_DESCRIPTION,
-    version: ADDON_VERSION,
+    version: buildManifestVersion(userConfig),
     logo: `${resolvedBaseUrl.replace(/\/$/, '')}/logo.png`,
     idPrefixes: SUPPORTED_ID_PREFIXES,
     resources: ['catalog', 'meta'],

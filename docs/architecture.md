@@ -82,7 +82,7 @@ Abstract `StorageInterface` with three concrete adapters, selected by `DATABASE_
 | Adapter           | Backend              | Use Case                  |
 | ----------------- | -------------------- | ------------------------- |
 | `PostgresAdapter` | PostgreSQL via `pg`  | ElfHosted, Docker Compose |
-| `MongoAdapter`    | MongoDB via Mongoose | BeamUp                    |
+| `MongoAdapter`    | MongoDB via Mongoose | Nightly                   |
 | `MemoryAdapter`   | In-process `Map`     | Development, testing      |
 
 **What's stored:** User configurations containing encrypted TMDB API keys, catalog definitions (filter sets), preferences (language, adult content, poster service), and a PBKDF2-derived `apiKeyId` for ownership verification.
