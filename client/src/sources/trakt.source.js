@@ -289,6 +289,24 @@ export const TRAKT_SOURCE = {
       });
     }
 
+    if (filters.traktAiredEpisodesMin != null || filters.traktAiredEpisodesMax != null) {
+      const min = filters.traktAiredEpisodesMin ?? '...';
+      const max = filters.traktAiredEpisodesMax ?? '...';
+      active.push({
+        key: 'traktAiredEpisodes',
+        label: `Aired Episodes: ${min}-${max}`,
+        section: 'filters',
+      });
+    }
+
+    if (filters.traktExcludeSingleSeason) {
+      active.push({
+        key: 'traktExcludeSingleSeason',
+        label: 'Hide New / Single-Season Shows',
+        section: 'filters',
+      });
+    }
+
     if (filters.traktImdbVotesMin) {
       active.push({
         key: 'traktImdbVotesMin',

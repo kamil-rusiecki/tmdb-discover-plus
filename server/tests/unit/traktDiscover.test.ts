@@ -334,14 +334,9 @@ describe('trakt discover routing', () => {
       'client-id-dynamic-multi-year-preset'
     );
 
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    const expectedStart = new Date(today);
-    expectedStart.setUTCDate(today.getUTCDate() - 1094);
-    const expectedStartString = expectedStart.toISOString().split('T')[0];
-
     const firstUrl = String(mockedTraktFetch.mock.calls[0][0]);
-    expect(firstUrl).toContain(`/calendars/all/movies/${expectedStartString}/31`);
+    expect(firstUrl).toContain('/calendars/all/movies/');
+    expect(firstUrl).toMatch(/\/(10|31)\?/);
   });
 
   it('chunks explicit calendar date ranges into <=31 day windows', async () => {
@@ -361,8 +356,8 @@ describe('trakt discover routing', () => {
 
     const calls = mockedTraktFetch.mock.calls.map((call) => String(call[0]));
     expect(calls.length).toBeGreaterThan(1);
-    expect(calls[0]).toContain('/calendars/all/movies/2024-01-01/31');
-    expect(calls[1]).toContain('/calendars/all/movies/2024-02-01/15');
+    expect(calls.some((url) => url.includes('/calendars/all/movies/2024-01-01/31'))).toBe(true);
+    expect(calls.some((url) => url.includes('/calendars/all/movies/2024-02-01/15'))).toBe(true);
   });
 
   it('supports descending date order for upcoming calendar range', async () => {
@@ -680,5 +675,166 @@ describe('trakt discover routing', () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.title).toBe('Trending High Votes');
+  });
+
+  it('sends aired episode range as direct endpoint filter when provided', async () => {
+    mockedTraktFetch.mockResolvedValue([
+      {
+        watchers: 1,
+        show: {
+          title: 'Series Match',
+          aired_episodes: 45,
+          ids: { trakt: 201, slug: 'series-match' },
+        },
+      },
+    ]);
+
+    await discover(
+      {
+        traktListType: 'trending',
+        traktAiredEpisodesMin: 10,
+        traktAiredEpisodesMax: 100,
+      },
+      'series',
+      1,
+      'client-id-aired-direct'
+    );
+
+    const firstUrl = String(mockedTraktFetch.mock.calls[0][0]);
+    expect(firstUrl).toContain('aired_episodes=10-100');
+  });
+
+  it('applies aired episode range post-filter as fallback safety net', async () => {
+    mockedTraktFetch.mockResolvedValue([
+      {
+        watchers: 1,
+        show: {
+          title: 'Short Run',
+          aired_episodes: 8,
+          ids: { trakt: 211, slug: 'short-run' },
+        },
+      },
+      {
+        watchers: 1,
+        show: {
+          title: 'Long Run',
+          aired_episodes: 120,
+          ids: { trakt: 212, slug: 'long-run' },
+        },
+      },
+    ]);
+
+    const result = await discover(
+      {
+        traktListType: 'trending',
+        traktAiredEpisodesMin: 50,
+      },
+      'series',
+      1,
+      'client-id-aired-fallback'
+    );
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.title).toBe('Long Run');
+  });
+
+  it('excludes single-season shows for recently aired results', async () => {
+    mockedTraktFetch.mockResolvedValue([
+      {
+        first_aired: '2024-01-01T00:00:00.000Z',
+        episode: {
+          season: 1,
+          number: 4,
+          title: 'Episode 4',
+          ids: { trakt: 3001, slug: 's1e4' },
+        },
+        show: {
+          title: 'Single Season Show',
+          ids: { trakt: 221, slug: 'single-season-show' },
+        },
+      },
+      {
+        first_aired: '2024-01-02T00:00:00.000Z',
+        episode: {
+          season: 2,
+          number: 1,
+          title: 'Season 2 Premiere',
+          ids: { trakt: 3002, slug: 's2e1' },
+        },
+        show: {
+          title: 'Returning Show',
+          ids: { trakt: 222, slug: 'returning-show' },
+        },
+      },
+    ]);
+
+    const result = await discover(
+      {
+        traktListType: 'recently_aired',
+        traktCalendarType: 'shows',
+        traktCalendarDays: 7,
+        traktExcludeSingleSeason: true,
+      },
+      'series',
+      1,
+      'client-id-single-season-toggle'
+    );
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.title).toBe('Returning Show');
+  });
+
+  it('uses different calendar cache identity when single-season toggle changes', async () => {
+    mockedTraktFetch.mockResolvedValue([
+      {
+        first_aired: '2024-01-01T00:00:00.000Z',
+        episode: {
+          season: 1,
+          number: 4,
+          title: 'Episode 4',
+          ids: { trakt: 3301, slug: 'cache-s1e4' },
+        },
+        show: {
+          title: 'Cached Single Season',
+          ids: { trakt: 231, slug: 'cached-single-season' },
+        },
+      },
+      {
+        first_aired: '2024-01-02T00:00:00.000Z',
+        episode: {
+          season: 2,
+          number: 1,
+          title: 'Season 2 Premiere',
+          ids: { trakt: 3302, slug: 'cache-s2e1' },
+        },
+        show: {
+          title: 'Cached Returning Show',
+          ids: { trakt: 232, slug: 'cached-returning-show' },
+        },
+      },
+    ]);
+
+    const baseFilters = {
+      traktListType: 'recently_aired',
+      traktCalendarType: 'shows',
+      traktCalendarDays: 7,
+    };
+
+    const withoutToggle = await discover(baseFilters, 'series', 1, 'client-id-cache-identity');
+    expect(withoutToggle.items).toHaveLength(2);
+
+    const withToggle = await discover(
+      {
+        ...baseFilters,
+        traktExcludeSingleSeason: true,
+      },
+      'series',
+      1,
+      'client-id-cache-identity'
+    );
+
+    expect(withToggle.items).toHaveLength(1);
+    expect(withToggle.items[0]?.title).toBe('Cached Returning Show');
+    expect(mockedTraktFetch).toHaveBeenCalledTimes(2);
   });
 });

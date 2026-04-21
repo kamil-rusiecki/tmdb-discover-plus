@@ -195,6 +195,9 @@ export interface TraktCatalogFilters extends BaseCatalogFilters {
   traktRatingMin?: number;
   traktRatingMax?: number;
   traktVotesMin?: number;
+  traktAiredEpisodesMin?: number;
+  traktAiredEpisodesMax?: number;
+  traktExcludeSingleSeason?: boolean;
   traktImdbRatingMin?: number;
   traktImdbRatingMax?: number;
   traktTmdbRatingMin?: number;

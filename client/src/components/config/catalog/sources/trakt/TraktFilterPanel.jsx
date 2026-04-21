@@ -457,6 +457,25 @@ export function TraktFilterPanel({
   }, [activeBrowseType, filters.traktYearMin, filters.traktYearMax, onFiltersChange]);
 
   useEffect(() => {
+    if (!isMovie) return;
+
+    if (filters.traktAiredEpisodesMin != null || filters.traktAiredEpisodesMax != null) {
+      onFiltersChange('traktAiredEpisodesMin', undefined);
+      onFiltersChange('traktAiredEpisodesMax', undefined);
+    }
+
+    if (filters.traktExcludeSingleSeason) {
+      onFiltersChange('traktExcludeSingleSeason', undefined);
+    }
+  }, [
+    isMovie,
+    filters.traktAiredEpisodesMin,
+    filters.traktAiredEpisodesMax,
+    filters.traktExcludeSingleSeason,
+    onFiltersChange,
+  ]);
+
+  useEffect(() => {
     if (!showCalendarControls) return;
 
     const selectedDays = Number(filters.traktCalendarDays || defaultCalendarDays);
@@ -668,6 +687,13 @@ export function TraktFilterPanel({
     if (showCoreRatingVoteFilters && (filters.traktRatingMin || filters.traktRatingMax)) count++;
     if (showAdvancedFilters && (filters.traktRuntimeMin != null || filters.traktRuntimeMax != null))
       count++;
+    if (
+      showAdvancedFilters &&
+      !isMovie &&
+      (filters.traktAiredEpisodesMin != null || filters.traktAiredEpisodesMax != null)
+    )
+      count++;
+    if (showAdvancedFilters && !isMovie && filters.traktExcludeSingleSeason) count++;
     return count;
   };
 
@@ -1062,6 +1088,57 @@ export function TraktFilterPanel({
               onFiltersChange('traktRuntimeMax', max < 400 ? max : undefined);
             }}
           />
+        )}
+
+        {showAdvancedFilters && !isMovie && (
+          <>
+            <RangeSlider
+              label="Aired Episodes"
+              min={0}
+              max={1000}
+              step={1}
+              value={[filters.traktAiredEpisodesMin ?? 0, filters.traktAiredEpisodesMax ?? 1000]}
+              onChange={([min, max]) => {
+                onFiltersChange('traktAiredEpisodesMin', min > 0 ? min : undefined);
+                onFiltersChange('traktAiredEpisodesMax', max < 1000 ? max : undefined);
+              }}
+            />
+
+            <div style={{ marginTop: '16px' }}>
+              <div
+                className={`released-only-card ${filters.traktExcludeSingleSeason ? 'active' : ''}`}
+                role="switch"
+                aria-checked={!!filters.traktExcludeSingleSeason}
+                tabIndex={0}
+                onClick={() =>
+                  onFiltersChange(
+                    'traktExcludeSingleSeason',
+                    !filters.traktExcludeSingleSeason || undefined
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    onFiltersChange(
+                      'traktExcludeSingleSeason',
+                      !filters.traktExcludeSingleSeason || undefined
+                    );
+                  }
+                }}
+              >
+                <div className="released-only-content">
+                  <span className="released-only-title">Hide New / Single-Season Shows</span>
+                  <span className="released-only-desc">
+                    Exclude brand new series, premieres, or miniseries that only have one season
+                    available.
+                  </span>
+                </div>
+                <div className="released-only-toggle">
+                  <div className="released-only-thumb" />
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
         {!showAdvancedFilters && (

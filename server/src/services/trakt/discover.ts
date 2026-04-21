@@ -27,6 +27,7 @@ const MAX_CALENDAR_RANGE_DAYS = 3650;
 const MAX_RECENTLY_AIRED_DAYS = 3650;
 const MAX_CALENDAR_EXPLICIT_RANGE_DAYS = 3650;
 const DEFAULT_CALENDAR_WINDOW_DAYS = 30;
+const CALENDAR_CHUNK_BATCH_SIZE = 6;
 const CALENDAR_CACHE_TTL_MS = 5 * 60 * 1000;
 const calendarCache = new Map<string, { items: (TraktMovie | TraktShow)[]; ts: number }>();
 const FILTERABLE_LIST_TYPES = new Set([
@@ -389,6 +390,11 @@ function buildFilterParams(filters: TraktCatalogFilters): string {
   if (filters.traktVotesMin != null) {
     params.push(`votes=${filters.traktVotesMin}-`);
   }
+  if (filters.traktAiredEpisodesMin != null || filters.traktAiredEpisodesMax != null) {
+    params.push(
+      `aired_episodes=${filters.traktAiredEpisodesMin ?? 0}-${filters.traktAiredEpisodesMax ?? ''}`
+    );
+  }
   if (filters.traktImdbRatingMin != null || filters.traktImdbRatingMax != null) {
     params.push(
       `imdb_ratings=${filters.traktImdbRatingMin ?? 0}-${filters.traktImdbRatingMax ?? 10}`
@@ -442,6 +448,52 @@ function unwrapShows(items: TraktTrendingShow[]): TraktShow[] {
   return items.map((i) => i.show);
 }
 
+function toPositiveInteger(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  const normalized = Math.trunc(value);
+  return normalized > 0 ? normalized : undefined;
+}
+
+function resolveSeasonCount(show: TraktShow): number | undefined {
+  const seasonsValue = (
+    show as TraktShow & {
+      seasons?: unknown;
+      stats?: { seasons?: unknown };
+    }
+  ).seasons;
+
+  if (Array.isArray(seasonsValue)) {
+    return seasonsValue.length > 0 ? seasonsValue.length : undefined;
+  }
+
+  const directCount = toPositiveInteger(seasonsValue);
+  if (directCount != null) return directCount;
+
+  const statsCount = toPositiveInteger(
+    (
+      show as TraktShow & {
+        stats?: { seasons?: unknown };
+      }
+    ).stats?.seasons
+  );
+  if (statsCount != null) return statsCount;
+
+  return undefined;
+}
+
+function withObservedSeasonCount(show: TraktShow, observedSeason?: number): TraktShow {
+  const observedCount = toPositiveInteger(observedSeason);
+  if (observedCount == null) return show;
+
+  const existingCount = resolveSeasonCount(show);
+  if (existingCount != null && existingCount >= observedCount) return show;
+
+  return {
+    ...show,
+    seasons: existingCount != null ? Math.max(existingCount, observedCount) : observedCount,
+  };
+}
+
 function applyCorePostFilters(
   items: (TraktMovie | TraktShow)[],
   filters?: TraktCatalogFilters
@@ -467,7 +519,38 @@ function applyCorePostFilters(
     });
   }
 
+  if (filters.traktAiredEpisodesMin != null || filters.traktAiredEpisodesMax != null) {
+    const minAiredEpisodes = filters.traktAiredEpisodesMin ?? 0;
+    const maxAiredEpisodes = filters.traktAiredEpisodesMax;
+
+    filtered = filtered.filter((item) => {
+      if (!('aired_episodes' in item)) return true;
+      const airedEpisodes = item.aired_episodes;
+      if (airedEpisodes == null) return true;
+      if (airedEpisodes < minAiredEpisodes) return false;
+      if (maxAiredEpisodes != null && airedEpisodes > maxAiredEpisodes) return false;
+      return true;
+    });
+  }
+
+  if (filters.traktExcludeSingleSeason) {
+    filtered = filtered.filter((item) => {
+      const seasonCount = resolveSeasonCount(item as TraktShow);
+      return seasonCount == null || seasonCount > 1;
+    });
+  }
+
   return filtered;
+}
+
+function buildPostFilterCacheSignature(filters?: TraktCatalogFilters): string {
+  if (!filters) return 'none';
+
+  return [
+    filters.traktAiredEpisodesMin ?? '',
+    filters.traktAiredEpisodesMax ?? '',
+    filters.traktExcludeSingleSeason ? '1' : '0',
+  ].join(':');
 }
 
 export async function getTrending(
@@ -633,15 +716,25 @@ export async function getCalendar(
   }
 
   const data = await traktFetch<TraktCalendarShow[]>(url, clientId);
-  const seen = new Set<string>();
-  const shows: TraktShow[] = [];
+  const showMap = new Map<string, { show: TraktShow; maxSeason?: number }>();
   for (const entry of data) {
     const key = entry.show.ids.imdb || entry.show.ids.slug || String(entry.show.ids.trakt);
-    if (!seen.has(key)) {
-      seen.add(key);
-      shows.push(entry.show);
+    const seasonNumber = toPositiveInteger(entry.episode?.season);
+    const existing = showMap.get(key);
+    if (!existing) {
+      showMap.set(key, {
+        show: entry.show,
+        maxSeason: seasonNumber,
+      });
+      continue;
+    }
+    if (seasonNumber != null && (existing.maxSeason == null || seasonNumber > existing.maxSeason)) {
+      existing.maxSeason = seasonNumber;
     }
   }
+  const shows = Array.from(showMap.values()).map((entry) =>
+    withObservedSeasonCount(entry.show, entry.maxSeason)
+  );
   return { items: shows, hasMore: false };
 }
 
@@ -674,14 +767,18 @@ export async function getUpcomingCalendar(
 ): Promise<{ items: (TraktMovie | TraktShow)[]; hasMore: boolean }> {
   const calendarSort = normalizeCalendarSort(filters?.traktCalendarSort, 'desc');
   const isDescending = calendarSort === 'desc';
-  const cacheKey = `upcoming:${calendarType}:${range.signature}:${calendarSort}:${type}:${clientId ?? ''}:${buildFilterParams(filters ?? {})}`;
+  const requiredCount = page * PAGE_LIMIT + 1;
+  const cacheKey = `upcoming:${calendarType}:${range.signature}:${calendarSort}:${type}:${clientId ?? ''}:${buildFilterParams(filters ?? {})}:${buildPostFilterCacheSignature(filters)}`;
   const now = Date.now();
   const cached = calendarCache.get(cacheKey);
+  let hasMoreFromEarlyStop = false;
 
-  let allItems: (TraktMovie | TraktShow)[];
+  let allItems: (TraktMovie | TraktShow)[] = [];
+  let hasResolvedItems = false;
 
   if (cached && now - cached.ts < CALENDAR_CACHE_TTL_MS) {
     allItems = cached.items;
+    hasResolvedItems = true;
   } else {
     const chunks = buildCalendarChunks(range.startDate, range.endDate);
 
@@ -693,85 +790,157 @@ export async function getUpcomingCalendar(
       chunks: chunks.length,
     });
 
+    const orderedChunks = isDescending ? [...chunks].reverse() : chunks;
+
     const filterParts = ['extended=full'];
     if (filters) {
       const filterStr = buildFilterParams(filters);
       if (filterStr) filterParts.push(filterStr);
     }
 
+    let stoppedEarly = false;
+
     if (isMovieCalendarType(calendarType, type)) {
-      const chunkResults = await Promise.all(
-        chunks.map((chunk) => {
-          const path = buildCalendarPath(calendarType, chunk.startDate, chunk.chunkDays, type);
-          const url = `${path}?${filterParts.join('&')}`;
-          return traktFetch<TraktCalendarMovie[]>(url, clientId);
-        })
-      );
-      const allMovies = chunkResults.flat();
       const movieMap = new Map<string, TraktCalendarMovie>();
-      for (const entry of allMovies) {
-        const key = entry.movie.ids.imdb || String(entry.movie.ids.tmdb || entry.movie.ids.trakt);
-        const existing = movieMap.get(key);
-        if (
-          !existing ||
-          (isDescending
-            ? (entry.released || '') > (existing.released || '')
-            : (entry.released || '') < (existing.released || ''))
-        ) {
-          movieMap.set(key, entry);
+
+      const materializeMovies = () =>
+        Array.from(movieMap.values())
+          .sort((a, b) =>
+            isDescending
+              ? (b.released || '').localeCompare(a.released || '')
+              : (a.released || '').localeCompare(b.released || '')
+          )
+          .map((i) => i.movie);
+
+      for (
+        let batchStart = 0;
+        batchStart < orderedChunks.length;
+        batchStart += CALENDAR_CHUNK_BATCH_SIZE
+      ) {
+        const chunkBatch = orderedChunks.slice(batchStart, batchStart + CALENDAR_CHUNK_BATCH_SIZE);
+        const chunkResults = await Promise.all(
+          chunkBatch.map((chunk) => {
+            const path = buildCalendarPath(calendarType, chunk.startDate, chunk.chunkDays, type);
+            const url = `${path}?${filterParts.join('&')}`;
+            return traktFetch<TraktCalendarMovie[]>(url, clientId);
+          })
+        );
+
+        for (const entry of chunkResults.flat()) {
+          const key = entry.movie.ids.imdb || String(entry.movie.ids.tmdb || entry.movie.ids.trakt);
+          const existing = movieMap.get(key);
+          if (
+            !existing ||
+            (isDescending
+              ? (entry.released || '') > (existing.released || '')
+              : (entry.released || '') < (existing.released || ''))
+          ) {
+            movieMap.set(key, entry);
+          }
+        }
+
+        const candidateItems = applyCorePostFilters(materializeMovies(), filters);
+        const hasRemainingChunks = batchStart + CALENDAR_CHUNK_BATCH_SIZE < orderedChunks.length;
+
+        if (candidateItems.length >= requiredCount && hasRemainingChunks) {
+          allItems = candidateItems;
+          hasResolvedItems = true;
+          stoppedEarly = true;
+          break;
         }
       }
-      allItems = Array.from(movieMap.values())
-        .sort((a, b) =>
-          isDescending
-            ? (b.released || '').localeCompare(a.released || '')
-            : (a.released || '').localeCompare(b.released || '')
-        )
-        .map((i) => i.movie);
+
+      if (!hasResolvedItems) {
+        allItems = applyCorePostFilters(materializeMovies(), filters);
+        hasResolvedItems = true;
+      }
     } else {
-      const chunkResults = await Promise.all(
-        chunks.map((chunk) => {
-          const path = buildCalendarPath(calendarType, chunk.startDate, chunk.chunkDays, type);
-          const url = `${path}?${filterParts.join('&')}`;
-          return traktFetch<TraktCalendarShow[]>(url, clientId);
-        })
-      );
-      const allShows = chunkResults.flat();
-      const showMap = new Map<string, TraktCalendarShow>();
-      for (const entry of allShows) {
-        const key = entry.show.ids.imdb || entry.show.ids.slug || String(entry.show.ids.trakt);
-        const existing = showMap.get(key);
-        if (
-          !existing ||
-          (isDescending
-            ? (entry.first_aired || '') > (existing.first_aired || '')
-            : (entry.first_aired || '') < (existing.first_aired || ''))
-        ) {
-          showMap.set(key, entry);
+      const showMap = new Map<string, { entry: TraktCalendarShow; maxSeason?: number }>();
+
+      const materializeShows = () =>
+        Array.from(showMap.values())
+          .sort((a, b) =>
+            isDescending
+              ? (b.entry.first_aired || '').localeCompare(a.entry.first_aired || '')
+              : (a.entry.first_aired || '').localeCompare(b.entry.first_aired || '')
+          )
+          .map((item) => withObservedSeasonCount(item.entry.show, item.maxSeason));
+
+      for (
+        let batchStart = 0;
+        batchStart < orderedChunks.length;
+        batchStart += CALENDAR_CHUNK_BATCH_SIZE
+      ) {
+        const chunkBatch = orderedChunks.slice(batchStart, batchStart + CALENDAR_CHUNK_BATCH_SIZE);
+        const chunkResults = await Promise.all(
+          chunkBatch.map((chunk) => {
+            const path = buildCalendarPath(calendarType, chunk.startDate, chunk.chunkDays, type);
+            const url = `${path}?${filterParts.join('&')}`;
+            return traktFetch<TraktCalendarShow[]>(url, clientId);
+          })
+        );
+
+        for (const entry of chunkResults.flat()) {
+          const key = entry.show.ids.imdb || entry.show.ids.slug || String(entry.show.ids.trakt);
+          const seasonNumber = toPositiveInteger(entry.episode?.season);
+          const existing = showMap.get(key);
+          if (!existing) {
+            showMap.set(key, {
+              entry,
+              maxSeason: seasonNumber,
+            });
+            continue;
+          }
+
+          if (
+            seasonNumber != null &&
+            (existing.maxSeason == null || seasonNumber > existing.maxSeason)
+          ) {
+            existing.maxSeason = seasonNumber;
+          }
+
+          if (
+            isDescending
+              ? (entry.first_aired || '') > (existing.entry.first_aired || '')
+              : (entry.first_aired || '') < (existing.entry.first_aired || '')
+          ) {
+            existing.entry = entry;
+          }
+        }
+
+        const candidateItems = applyCorePostFilters(materializeShows(), filters);
+        const hasRemainingChunks = batchStart + CALENDAR_CHUNK_BATCH_SIZE < orderedChunks.length;
+
+        if (candidateItems.length >= requiredCount && hasRemainingChunks) {
+          allItems = candidateItems;
+          hasResolvedItems = true;
+          stoppedEarly = true;
+          break;
         }
       }
-      allItems = Array.from(showMap.values())
-        .sort((a, b) =>
-          isDescending
-            ? (b.first_aired || '').localeCompare(a.first_aired || '')
-            : (a.first_aired || '').localeCompare(b.first_aired || '')
-        )
-        .map((i) => i.show);
+
+      if (!hasResolvedItems) {
+        allItems = applyCorePostFilters(materializeShows(), filters);
+        hasResolvedItems = true;
+      }
     }
 
-    allItems = applyCorePostFilters(allItems, filters);
-
-    calendarCache.set(cacheKey, { items: allItems, ts: now });
-    if (calendarCache.size > 100) {
-      const firstKey = calendarCache.keys().next().value;
-      if (firstKey) calendarCache.delete(firstKey);
+    if (stoppedEarly) {
+      hasMoreFromEarlyStop = true;
+    } else {
+      calendarCache.set(cacheKey, { items: allItems, ts: now });
+      if (calendarCache.size > 100) {
+        const firstKey = calendarCache.keys().next().value;
+        if (firstKey) calendarCache.delete(firstKey);
+      }
     }
   }
 
   const start = (page - 1) * PAGE_LIMIT;
+  const hasMore = hasMoreFromEarlyStop ? true : start + PAGE_LIMIT < allItems.length;
   return {
     items: allItems.slice(start, start + PAGE_LIMIT),
-    hasMore: start + PAGE_LIMIT < allItems.length,
+    hasMore,
   };
 }
 
@@ -785,14 +954,18 @@ export async function getRecentlyAired(
 ): Promise<{ items: (TraktMovie | TraktShow)[]; hasMore: boolean }> {
   const calendarSort = normalizeCalendarSort(filters?.traktCalendarSort, 'desc');
   const isDescending = calendarSort === 'desc';
-  const cacheKey = `recently:${calendarType}:${range.signature}:${calendarSort}:${type}:${clientId ?? ''}:${buildFilterParams(filters ?? {})}`;
+  const requiredCount = page * PAGE_LIMIT + 1;
+  const cacheKey = `recently:${calendarType}:${range.signature}:${calendarSort}:${type}:${clientId ?? ''}:${buildFilterParams(filters ?? {})}:${buildPostFilterCacheSignature(filters)}`;
   const now = Date.now();
   const cached = calendarCache.get(cacheKey);
+  let hasMoreFromEarlyStop = false;
 
-  let allItems: (TraktMovie | TraktShow)[];
+  let allItems: (TraktMovie | TraktShow)[] = [];
+  let hasResolvedItems = false;
 
   if (cached && now - cached.ts < CALENDAR_CACHE_TTL_MS) {
     allItems = cached.items;
+    hasResolvedItems = true;
   } else {
     const chunks = buildCalendarChunks(range.startDate, range.endDate);
 
@@ -804,85 +977,157 @@ export async function getRecentlyAired(
       chunks: chunks.length,
     });
 
+    const orderedChunks = isDescending ? [...chunks].reverse() : chunks;
+
     const filterParts = ['extended=full'];
     if (filters) {
       const filterStr = buildFilterParams(filters);
       if (filterStr) filterParts.push(filterStr);
     }
 
+    let stoppedEarly = false;
+
     if (isMovieCalendarType(calendarType, type)) {
-      const chunkResults = await Promise.all(
-        chunks.map((chunk) => {
-          const path = buildCalendarPath(calendarType, chunk.startDate, chunk.chunkDays, type);
-          const url = `${path}?${filterParts.join('&')}`;
-          return traktFetch<TraktCalendarMovie[]>(url, clientId);
-        })
-      );
-      const allMovies = chunkResults.flat();
       const movieMap = new Map<string, TraktCalendarMovie>();
-      for (const entry of allMovies) {
-        const key = entry.movie.ids.imdb || String(entry.movie.ids.tmdb || entry.movie.ids.trakt);
-        const existing = movieMap.get(key);
-        if (
-          !existing ||
-          (isDescending
-            ? (entry.released || '') > (existing.released || '')
-            : (entry.released || '') < (existing.released || ''))
-        ) {
-          movieMap.set(key, entry);
+
+      const materializeMovies = () =>
+        Array.from(movieMap.values())
+          .sort((a, b) =>
+            isDescending
+              ? (b.released || '').localeCompare(a.released || '')
+              : (a.released || '').localeCompare(b.released || '')
+          )
+          .map((i) => i.movie);
+
+      for (
+        let batchStart = 0;
+        batchStart < orderedChunks.length;
+        batchStart += CALENDAR_CHUNK_BATCH_SIZE
+      ) {
+        const chunkBatch = orderedChunks.slice(batchStart, batchStart + CALENDAR_CHUNK_BATCH_SIZE);
+        const chunkResults = await Promise.all(
+          chunkBatch.map((chunk) => {
+            const path = buildCalendarPath(calendarType, chunk.startDate, chunk.chunkDays, type);
+            const url = `${path}?${filterParts.join('&')}`;
+            return traktFetch<TraktCalendarMovie[]>(url, clientId);
+          })
+        );
+
+        for (const entry of chunkResults.flat()) {
+          const key = entry.movie.ids.imdb || String(entry.movie.ids.tmdb || entry.movie.ids.trakt);
+          const existing = movieMap.get(key);
+          if (
+            !existing ||
+            (isDescending
+              ? (entry.released || '') > (existing.released || '')
+              : (entry.released || '') < (existing.released || ''))
+          ) {
+            movieMap.set(key, entry);
+          }
+        }
+
+        const candidateItems = applyCorePostFilters(materializeMovies(), filters);
+        const hasRemainingChunks = batchStart + CALENDAR_CHUNK_BATCH_SIZE < orderedChunks.length;
+
+        if (candidateItems.length >= requiredCount && hasRemainingChunks) {
+          allItems = candidateItems;
+          hasResolvedItems = true;
+          stoppedEarly = true;
+          break;
         }
       }
-      allItems = Array.from(movieMap.values())
-        .sort((a, b) =>
-          isDescending
-            ? (b.released || '').localeCompare(a.released || '')
-            : (a.released || '').localeCompare(b.released || '')
-        )
-        .map((i) => i.movie);
+
+      if (!hasResolvedItems) {
+        allItems = applyCorePostFilters(materializeMovies(), filters);
+        hasResolvedItems = true;
+      }
     } else {
-      const chunkResults = await Promise.all(
-        chunks.map((chunk) => {
-          const path = buildCalendarPath(calendarType, chunk.startDate, chunk.chunkDays, type);
-          const url = `${path}?${filterParts.join('&')}`;
-          return traktFetch<TraktCalendarShow[]>(url, clientId);
-        })
-      );
-      const allShows = chunkResults.flat();
-      const showMap = new Map<string, TraktCalendarShow>();
-      for (const entry of allShows) {
-        const key = entry.show.ids.imdb || entry.show.ids.slug || String(entry.show.ids.trakt);
-        const existing = showMap.get(key);
-        if (
-          !existing ||
-          (isDescending
-            ? (entry.first_aired || '') > (existing.first_aired || '')
-            : (entry.first_aired || '') < (existing.first_aired || ''))
-        ) {
-          showMap.set(key, entry);
+      const showMap = new Map<string, { entry: TraktCalendarShow; maxSeason?: number }>();
+
+      const materializeShows = () =>
+        Array.from(showMap.values())
+          .sort((a, b) =>
+            isDescending
+              ? (b.entry.first_aired || '').localeCompare(a.entry.first_aired || '')
+              : (a.entry.first_aired || '').localeCompare(b.entry.first_aired || '')
+          )
+          .map((item) => withObservedSeasonCount(item.entry.show, item.maxSeason));
+
+      for (
+        let batchStart = 0;
+        batchStart < orderedChunks.length;
+        batchStart += CALENDAR_CHUNK_BATCH_SIZE
+      ) {
+        const chunkBatch = orderedChunks.slice(batchStart, batchStart + CALENDAR_CHUNK_BATCH_SIZE);
+        const chunkResults = await Promise.all(
+          chunkBatch.map((chunk) => {
+            const path = buildCalendarPath(calendarType, chunk.startDate, chunk.chunkDays, type);
+            const url = `${path}?${filterParts.join('&')}`;
+            return traktFetch<TraktCalendarShow[]>(url, clientId);
+          })
+        );
+
+        for (const entry of chunkResults.flat()) {
+          const key = entry.show.ids.imdb || entry.show.ids.slug || String(entry.show.ids.trakt);
+          const seasonNumber = toPositiveInteger(entry.episode?.season);
+          const existing = showMap.get(key);
+          if (!existing) {
+            showMap.set(key, {
+              entry,
+              maxSeason: seasonNumber,
+            });
+            continue;
+          }
+
+          if (
+            seasonNumber != null &&
+            (existing.maxSeason == null || seasonNumber > existing.maxSeason)
+          ) {
+            existing.maxSeason = seasonNumber;
+          }
+
+          if (
+            isDescending
+              ? (entry.first_aired || '') > (existing.entry.first_aired || '')
+              : (entry.first_aired || '') < (existing.entry.first_aired || '')
+          ) {
+            existing.entry = entry;
+          }
+        }
+
+        const candidateItems = applyCorePostFilters(materializeShows(), filters);
+        const hasRemainingChunks = batchStart + CALENDAR_CHUNK_BATCH_SIZE < orderedChunks.length;
+
+        if (candidateItems.length >= requiredCount && hasRemainingChunks) {
+          allItems = candidateItems;
+          hasResolvedItems = true;
+          stoppedEarly = true;
+          break;
         }
       }
-      allItems = Array.from(showMap.values())
-        .sort((a, b) =>
-          isDescending
-            ? (b.first_aired || '').localeCompare(a.first_aired || '')
-            : (a.first_aired || '').localeCompare(b.first_aired || '')
-        )
-        .map((i) => i.show);
+
+      if (!hasResolvedItems) {
+        allItems = applyCorePostFilters(materializeShows(), filters);
+        hasResolvedItems = true;
+      }
     }
 
-    allItems = applyCorePostFilters(allItems, filters);
-
-    calendarCache.set(cacheKey, { items: allItems, ts: now });
-    if (calendarCache.size > 100) {
-      const firstKey = calendarCache.keys().next().value;
-      if (firstKey) calendarCache.delete(firstKey);
+    if (stoppedEarly) {
+      hasMoreFromEarlyStop = true;
+    } else {
+      calendarCache.set(cacheKey, { items: allItems, ts: now });
+      if (calendarCache.size > 100) {
+        const firstKey = calendarCache.keys().next().value;
+        if (firstKey) calendarCache.delete(firstKey);
+      }
     }
   }
 
   const start = (page - 1) * PAGE_LIMIT;
+  const hasMore = hasMoreFromEarlyStop ? true : start + PAGE_LIMIT < allItems.length;
   return {
     items: allItems.slice(start, start + PAGE_LIMIT),
-    hasMore: start + PAGE_LIMIT < allItems.length,
+    hasMore,
   };
 }
 

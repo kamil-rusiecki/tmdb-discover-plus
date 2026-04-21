@@ -41,6 +41,7 @@ export interface TraktShow {
   language?: string;
   genres?: string[];
   aired_episodes?: number;
+  seasons?: number;
 }
 
 export interface TraktTrendingMovie {

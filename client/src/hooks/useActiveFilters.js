@@ -926,6 +926,20 @@ export function useActiveFilters({
           section: 'ratings',
         });
       }
+      if (filters.traktAiredEpisodesMin != null || filters.traktAiredEpisodesMax != null) {
+        active.push({
+          key: 'traktAiredEpisodes',
+          label: `Aired Episodes: ${filters.traktAiredEpisodesMin ?? '...'}–${filters.traktAiredEpisodesMax ?? '...'}`,
+          section: 'filters',
+        });
+      }
+      if (filters.traktExcludeSingleSeason) {
+        active.push({
+          key: 'traktExcludeSingleSeason',
+          label: 'Hide New / Single-Season Shows',
+          section: 'filters',
+        });
+      }
     }
 
     return active;
@@ -1309,6 +1323,12 @@ export function useActiveFilters({
           break;
         case 'traktVotesMin':
           update({ traktVotesMin: undefined });
+          break;
+        case 'traktAiredEpisodes':
+          update({ traktAiredEpisodesMin: undefined, traktAiredEpisodesMax: undefined });
+          break;
+        case 'traktExcludeSingleSeason':
+          update({ traktExcludeSingleSeason: undefined });
           break;
         default:
           break;
