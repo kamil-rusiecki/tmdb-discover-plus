@@ -1,4 +1,5 @@
 import { createLogger } from '../../utils/logger.ts';
+import { trackCacheOperation } from '../../utils/requestContext.ts';
 import type {
   ICacheAdapter,
   CacheErrorType,
@@ -102,6 +103,7 @@ export class CacheWrapper {
       const raw = await this.adapter.get(storageKey);
       if (raw === null || raw === undefined) {
         this.stats.misses++;
+        trackCacheOperation('misses');
         log.debug('Cache miss', { key: storageKey.substring(0, 80) });
         return null;
       }
@@ -110,6 +112,7 @@ export class CacheWrapper {
         const entry = raw as CacheWrapperEntry;
         if (typeof entry.__storedAt !== 'number' || typeof entry.__ttl !== 'number') {
           this.stats.corruptedEntries++;
+          trackCacheOperation('errors');
           log.warn('Malformed cache wrapper entry, cleaning up', { key: storageKey });
           await this.adapter.del(storageKey).catch((e) =>
             log.debug('Cache del failed during corruption cleanup', {
@@ -141,6 +144,7 @@ export class CacheWrapper {
 
         if (entry.__errorType) {
           this.stats.cachedErrors++;
+          trackCacheOperation('errors');
           return entry;
         }
 
@@ -149,22 +153,27 @@ export class CacheWrapper {
           if (age > entry.__ttl) {
             if (age < entry.__ttl * 2) {
               this.stats.staleServed++;
+              trackCacheOperation('hits');
               return { ...entry, __isStale: true };
             }
             this.stats.misses++;
+            trackCacheOperation('misses');
             return null;
           }
         }
 
         this.stats.hits++;
+        trackCacheOperation('hits');
         return entry;
       }
 
       this.stats.hits++;
+      trackCacheOperation('hits');
       log.debug('Cache hit (unwrapped)', { key: storageKey.substring(0, 80) });
       return raw as CacheWrapperEntry;
     } catch (err) {
       this.stats.errors++;
+      trackCacheOperation('errors');
       const errMsg = (err as Error).message ?? '';
       if (
         errMsg.includes('JSON') ||
@@ -212,8 +221,10 @@ export class CacheWrapper {
         data: value,
       };
       await this.adapter.set(storageKey, wrapped, Math.ceil(ttlSeconds * 2.5));
+      trackCacheOperation('writes');
     } catch (err) {
       this.stats.errors++;
+      trackCacheOperation('errors');
       const errMsg = (err as Error).message ?? '';
       if (
         errMsg.includes('ECONNREFUSED') ||
@@ -242,15 +253,20 @@ export class CacheWrapper {
         data: null,
       };
       await this.adapter.set(storageKey, entry, ttl);
+      trackCacheOperation('errors');
+      trackCacheOperation('writes');
       log.debug('Cached error result', { key: storageKey.substring(0, 80), errorType, ttl });
     } catch (err) {
+      trackCacheOperation('errors');
       log.warn('Failed to cache error', { error: (err as Error).message });
     }
   }
   async del(key: string): Promise<void> {
     try {
       await this.adapter.del(this._prefixKey(key));
+      trackCacheOperation('deletes');
     } catch (err) {
+      trackCacheOperation('errors');
       log.warn('Cache del failed', { key, error: (err as Error).message });
     }
   }

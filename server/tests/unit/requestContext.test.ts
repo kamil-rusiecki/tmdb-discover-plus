@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { requestIdMiddleware, getRequestId } from '../../src/utils/requestContext.ts';
+import {
+  requestIdMiddleware,
+  getRequestId,
+  getRequestContextSnapshot,
+  getRequestCacheStats,
+  trackCacheOperation,
+} from '../../src/utils/requestContext.ts';
 
 describe('requestIdMiddleware', () => {
   const middleware = requestIdMiddleware();
@@ -100,5 +106,73 @@ describe('getRequestId', () => {
 
     expect(capturedId).toBeDefined();
     expect(typeof capturedId).toBe('string');
+  });
+
+  it('captures request metadata in context snapshot', async () => {
+    const middleware = requestIdMiddleware();
+    let snapshot = getRequestContextSnapshot();
+    const req = {
+      headers: {},
+      method: 'GET',
+      originalUrl: '/api/catalog?foo=bar',
+      url: '/api/catalog?foo=bar',
+    };
+    const res = { setHeader: () => {} };
+
+    await new Promise<void>((resolve) => {
+      middleware(req as any, res as any, () => {
+        snapshot = getRequestContextSnapshot();
+        resolve();
+      });
+    });
+
+    expect(snapshot).toBeDefined();
+    expect(snapshot?.method).toBe('GET');
+    expect(snapshot?.path).toBe('/api/catalog?foo=bar');
+    expect(snapshot?.startedAt).toBeTypeOf('number');
+    expect(snapshot?.cache).toEqual({
+      hits: 0,
+      misses: 0,
+      writes: 0,
+      deletes: 0,
+      errors: 0,
+    });
+  });
+
+  it('tracks cache operation counters in request scope', async () => {
+    const middleware = requestIdMiddleware();
+    let cacheStats = getRequestCacheStats();
+    const req = {
+      headers: {},
+      method: 'GET',
+      originalUrl: '/api/discover',
+      url: '/api/discover',
+    };
+    const res = { setHeader: () => {} };
+
+    await new Promise<void>((resolve) => {
+      middleware(req as any, res as any, () => {
+        trackCacheOperation('hits');
+        trackCacheOperation('misses');
+        trackCacheOperation('writes');
+        trackCacheOperation('deletes');
+        trackCacheOperation('errors');
+        cacheStats = getRequestCacheStats();
+        resolve();
+      });
+    });
+
+    expect(cacheStats).toEqual({
+      hits: 1,
+      misses: 1,
+      writes: 1,
+      deletes: 1,
+      errors: 1,
+    });
+  });
+
+  it('does not track cache operation outside request context', () => {
+    trackCacheOperation('hits');
+    expect(getRequestCacheStats()).toBeUndefined();
   });
 });

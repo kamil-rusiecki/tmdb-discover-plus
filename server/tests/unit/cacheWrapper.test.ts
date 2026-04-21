@@ -6,6 +6,7 @@ import {
   classifyResult,
 } from '../../src/services/cache/CacheWrapper.ts';
 import { MockCacheAdapter, FailingCacheAdapter } from './helpers/mocks.ts';
+import { getRequestCacheStats, requestIdMiddleware } from '../../src/utils/requestContext.ts';
 
 describe('classifyError', () => {
   it('detects rate limiting by status code', () => {
@@ -90,6 +91,37 @@ describe('CacheWrapper', () => {
       const spy = vi.spyOn(adapter, 'set');
       await cache.set('key', 'val', 100);
       expect(spy).toHaveBeenCalledWith('v1.0.0:key', expect.any(Object), 250);
+    });
+
+    it('records per-request cache operation counters', async () => {
+      const middleware = requestIdMiddleware();
+      const req = {
+        headers: {},
+        method: 'GET',
+        originalUrl: '/api/test',
+        url: '/api/test',
+      };
+      const res = { setHeader: () => {} };
+      let stats = getRequestCacheStats();
+
+      await new Promise<void>((resolve) => {
+        middleware(req as any, res as any, async () => {
+          await cache.get('missing');
+          await cache.set('present', { ok: true }, 60);
+          await cache.get('present');
+          await cache.del('present');
+          stats = getRequestCacheStats();
+          resolve();
+        });
+      });
+
+      expect(stats).toEqual({
+        hits: 1,
+        misses: 1,
+        writes: 1,
+        deletes: 1,
+        errors: 0,
+      });
     });
   });
 

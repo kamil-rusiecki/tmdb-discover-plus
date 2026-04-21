@@ -33,7 +33,7 @@ import { getImdbQuotaStats } from './infrastructure/imdbQuota.ts';
 import { isImdbApiEnabled } from './services/imdb/index.ts';
 import { initImdbApi } from './services/imdb/index.ts';
 import { initAnimeIdMap } from './services/animeIdMap/index.ts';
-import { requestIdMiddleware } from './utils/requestContext.ts';
+import { requestIdMiddleware, getRequestCacheStats } from './utils/requestContext.ts';
 import { sendError, ErrorCodes, AppError } from './utils/AppError.ts';
 import { TIMEOUTS, HEAP_WARN_THRESHOLD_MB } from './constants.ts';
 import type { Server } from 'http';
@@ -161,6 +161,39 @@ app.use((req, res, next) => {
 });
 
 app.use(requestIdMiddleware());
+
+const REQUEST_LOG_IGNORED_PREFIXES = ['/health', '/ready', '/metrics'];
+const REQUEST_LOG_IGNORED_EXTENSIONS = /\.(?:js|css|map|png|jpg|jpeg|gif|svg|ico|webp|woff2?)$/i;
+
+const shouldLogCorrelationForPath = (pathname: string): boolean => {
+  if (REQUEST_LOG_IGNORED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return false;
+  if (pathname.startsWith('/assets/') || pathname.startsWith('/static/')) return false;
+  if (REQUEST_LOG_IGNORED_EXTENSIONS.test(pathname)) return false;
+  return true;
+};
+
+app.use((req, res, next) => {
+  const started = process.hrtime.bigint();
+  res.on('finish', () => {
+    if (!shouldLogCorrelationForPath(req.path)) return;
+    const durationMs = Number((process.hrtime.bigint() - started) / 1000000n);
+    const cache = getRequestCacheStats() ?? {
+      hits: 0,
+      misses: 0,
+      writes: 0,
+      deletes: 0,
+      errors: 0,
+    };
+    log.info('Request completed', {
+      method: req.method,
+      path: req.originalUrl || req.path,
+      statusCode: res.statusCode,
+      durationMs,
+      cache,
+    });
+  });
+  next();
+});
 
 app.use((req, res, next) => {
   req.setTimeout(TIMEOUTS.REQUEST_MS);
