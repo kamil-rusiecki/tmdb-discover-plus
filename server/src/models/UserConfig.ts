@@ -10,7 +10,7 @@ const catalogSchema = new mongoose.Schema(
       default: () => crypto.randomUUID(),
     },
     name: { type: String, required: true },
-    type: { type: String, enum: ['movie', 'series'], required: true },
+    type: { type: String, enum: ['movie', 'series', 'anime', 'collection'], required: true },
     source: {
       type: String,
       enum: ['tmdb', 'imdb', 'anilist', 'mal', 'simkl', 'trakt'],

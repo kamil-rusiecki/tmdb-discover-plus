@@ -230,6 +230,14 @@ export function useTMDB(apiKey) {
     [apiKey, hasAuth]
   );
 
+  const searchCollection = useCallback(
+    async (query, page = 1, language = '') => {
+      if (!hasAuth) throw new Error('Authentication required');
+      return api.searchCollection(apiKey, query, page, language);
+    },
+    [apiKey, hasAuth]
+  );
+
   const getWatchProviders = useCallback(
     async (type, region) => {
       if (!hasAuth) throw new Error('Authentication required');
@@ -275,6 +283,14 @@ export function useTMDB(apiKey) {
     async (id) => {
       if (!hasAuth) throw new Error('Authentication required');
       return api.getNetworkById(apiKey, id);
+    },
+    [apiKey, hasAuth]
+  );
+
+  const getCollectionById = useCallback(
+    async (id, language = '') => {
+      if (!hasAuth) throw new Error('Authentication required');
+      return api.getCollectionById(apiKey, id, language);
     },
     [apiKey, hasAuth]
   );
@@ -380,6 +396,7 @@ export function useTMDB(apiKey) {
     searchPerson,
     searchCompany,
     searchKeyword,
+    searchCollection,
     getWatchProviders,
     searchTVNetworks,
     refresh: loadMetadata,
@@ -387,5 +404,6 @@ export function useTMDB(apiKey) {
     getCompanyById,
     getKeywordById,
     getNetworkById,
+    getCollectionById,
   };
 }

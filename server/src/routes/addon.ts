@@ -810,6 +810,8 @@ async function handleCatalogRequest(
           displayLanguage: config.preferences?.defaultLanguage,
           language: resolvedFilters?.language || catalogConfig.filters?.language,
           region: resolvedFilters?.countries || catalogConfig.filters?.countries,
+          collectionId: resolvedFilters?.collectionId || catalogConfig.filters?.collectionId,
+          sortBy: resolvedFilters?.sortBy || catalogConfig.filters?.sortBy,
           randomize,
         })) as { results?: unknown[] } | null;
 

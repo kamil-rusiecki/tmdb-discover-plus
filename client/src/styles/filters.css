@@ -871,7 +871,7 @@
 }
 
 .filter-group .filter-label .label-text {
-  text-transform: uppercase;
+  /* text-transform: uppercase; */
 }
 
 /* Streaming Provider Grid */

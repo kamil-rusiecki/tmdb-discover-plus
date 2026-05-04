@@ -13,6 +13,7 @@ export const LIST_TYPES: Record<ContentType, ReferenceOption[]> = {
     { value: 'upcoming', label: '📅 Upcoming', description: 'Coming soon to theaters' },
     { value: 'top_rated', label: '⭐ Top Rated', description: 'All-time highest rated' },
     { value: 'popular', label: '🌟 Popular', description: 'Currently popular movies' },
+    { value: 'collection', label: '🧩 Collection', description: 'Movies from one TMDB collection' },
   ],
   series: [
     { value: 'discover', label: '🔍 Custom Discover', description: 'Use filters below' },
@@ -28,6 +29,7 @@ export const LIST_TYPES: Record<ContentType, ReferenceOption[]> = {
     { value: 'popular', label: '🌟 Popular', description: 'Currently popular shows' },
   ],
   anime: [],
+  collection: [],
 };
 
 export const PRESET_CATALOGS: Record<ContentType, ReferenceOption[]> = {
@@ -56,10 +58,12 @@ export const PRESET_CATALOGS: Record<ContentType, ReferenceOption[]> = {
     { value: 'popular', label: '🌟 Popular', description: 'Currently popular shows' },
   ],
   anime: [],
+  collection: [],
 };
 
 export const SORT_OPTIONS: Record<ContentType, ReferenceOption[]> = {
   movie: [
+    { value: 'collection_order', label: 'Collection Order' },
     { value: 'popularity.desc', label: 'Most Popular' },
     { value: 'popularity.asc', label: 'Least Popular' },
     { value: 'vote_average.desc', label: 'Highest Rated' },
@@ -92,6 +96,7 @@ export const SORT_OPTIONS: Record<ContentType, ReferenceOption[]> = {
     { value: 'name.desc', label: 'Localized Name Z → A' },
   ],
   anime: [],
+  collection: [],
 };
 
 export const RELEASE_TYPES: ReferenceOption[] = [

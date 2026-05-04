@@ -31,7 +31,13 @@ export function sanitizePage(page: unknown): number {
 }
 
 export function isValidContentType(type: string): boolean {
-  return type === 'movie' || type === 'series' || type === 'anime' || type === 'tv';
+  return (
+    type === 'movie' ||
+    type === 'series' ||
+    type === 'anime' ||
+    type === 'tv' ||
+    type === 'collection'
+  );
 }
 
 export function normalizeContentType(type: string): string {
@@ -49,6 +55,8 @@ export function sanitizeFilters(filters: unknown): Record<string, unknown> {
   const allowedKeys = [
     'sortBy',
     'listType',
+    'collectionId',
+    'collectionName',
     'genres',
     'excludeGenres',
     'genreMatchMode',
@@ -367,6 +375,8 @@ export function sanitizeImdbFilters(filters: unknown): Record<string, unknown> {
 }
 
 const TMDB_ONLY_FILTER_KEYS: ReadonlyArray<string> = [
+  'collectionId',
+  'collectionName',
   'voteCountMin',
   'imdbOnly',
   'displayLanguage',

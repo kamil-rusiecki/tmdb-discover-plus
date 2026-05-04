@@ -174,6 +174,47 @@ describe('fetchSpecialList', () => {
       expect.objectContaining({ language: 'de', region: 'DE' })
     );
   });
+
+  it('fetches collection items and paginates parts', async () => {
+    mockedFetch.mockResolvedValue({
+      id: 10,
+      name: 'Example Collection',
+      parts: Array.from({ length: 25 }, (_, i) => ({
+        id: i + 1,
+        title: `Movie ${i + 1}`,
+        release_date: `2020-01-${String((i % 28) + 1).padStart(2, '0')}`,
+      })),
+    });
+
+    const result = (await fetchSpecialList('key', 'collection', 'movie', {
+      collectionId: 10,
+      page: 2,
+    })) as {
+      page: number;
+      total_pages: number;
+      total_results: number;
+      results: Array<{ id: number }>;
+    };
+
+    expect(mockedFetch).toHaveBeenCalledWith('/collection/10', 'key', {});
+    expect(result.page).toBe(2);
+    expect(result.total_pages).toBe(2);
+    expect(result.total_results).toBe(25);
+    expect(result.results).toHaveLength(5);
+    expect(result.results[0].id).toBe(21);
+  });
+
+  it('throws when collection list is requested without collectionId', async () => {
+    await expect(fetchSpecialList('key', 'collection', 'movie')).rejects.toThrow(
+      'Collection ID required for collection list type'
+    );
+  });
+
+  it('throws when collection list is requested for series type', async () => {
+    await expect(
+      fetchSpecialList('key', 'collection', 'series', { collectionId: 10 })
+    ).rejects.toThrow('TMDB collections are only supported for movies');
+  });
 });
 
 describe('discover — releasedOnly filter', () => {

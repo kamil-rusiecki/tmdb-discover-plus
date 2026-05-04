@@ -30,6 +30,7 @@ export {
   searchPerson,
   searchCompany,
   searchKeyword,
+  searchCollection,
   comprehensiveSearch,
 } from './search.ts';
 
@@ -46,6 +47,7 @@ export {
   getCompanyById,
   getKeywordById,
   getNetworkById,
+  getCollectionById,
   getNetworks,
 } from './entityLookup.ts';
 

@@ -220,6 +220,12 @@ class ApiService {
     return this.request(this._buildAuthUrl('/search/keyword', apiKey, { query }));
   }
 
+  async searchCollection(apiKey, query, page = 1, language = '') {
+    return this.request(
+      this._buildAuthUrl('/search/collection', apiKey, { query, page, language })
+    );
+  }
+
   async getSortOptions() {
     return this.request('/sort-options');
   }
@@ -282,6 +288,12 @@ class ApiService {
 
   async getNetworkById(apiKey, id) {
     return this.request(this._buildAuthUrl(`/network/${encodeURIComponent(id)}`, apiKey));
+  }
+
+  async getCollectionById(apiKey, id, language = '') {
+    return this.request(
+      this._buildAuthUrl(`/collection/${encodeURIComponent(id)}`, apiKey, { language })
+    );
   }
 
   async previewImdbCatalog(type, filters) {

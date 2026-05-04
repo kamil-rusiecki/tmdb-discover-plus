@@ -6,6 +6,7 @@ import type {
   CompanySearchResult,
   KeywordSearchResult,
   NetworkSearchResult,
+  TmdbCollectionDetails,
 } from '../../types/index.ts';
 
 interface TmdbEntityResponse {
@@ -86,6 +87,22 @@ export async function getNetworkById(
     };
   } catch (err) {
     logSwallowedError('tmdb:network-by-id', err);
+    return null;
+  }
+}
+
+export async function getCollectionById(
+  apiKey: string,
+  id: number | string,
+  language?: string
+): Promise<TmdbCollectionDetails | null> {
+  if (!apiKey || !id) return null;
+  try {
+    const params: Record<string, string> = {};
+    if (language) params.language = language;
+    return (await tmdbFetch(`/collection/${id}`, apiKey, params)) as TmdbCollectionDetails;
+  } catch (err) {
+    logSwallowedError('tmdb:collection-by-id', err);
     return null;
   }
 }

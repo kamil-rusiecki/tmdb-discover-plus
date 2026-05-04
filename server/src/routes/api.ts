@@ -602,6 +602,21 @@ router.get('/search/keyword', requireAuth, resolveApiKey, async (req, res) => {
   }
 });
 
+router.get('/search/collection', requireAuth, resolveApiKey, async (req, res) => {
+  try {
+    const query = req.query.query as string | undefined;
+    if (!query) {
+      return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'Query required');
+    }
+    const page = sanitizePage(req.query.page as string | number | undefined);
+    const language = sanitizeString(req.query.language as string | undefined, 20);
+    const results = await tmdb.searchCollection(getApiKey(req), query, page, language);
+    res.json(results);
+  } catch (error) {
+    sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
+  }
+});
+
 router.get('/person/:id', requireAuth, resolveApiKey, async (req, res) => {
   try {
     const id = req.params.id as string;
@@ -645,6 +660,25 @@ router.get('/network/:id', requireAuth, resolveApiKey, async (req, res) => {
     const network = await tmdb.getNetworkById(getApiKey(req), id);
     if (!network) return sendError(res, 404, ErrorCodes.NOT_FOUND, 'Not found');
     res.json({ id: String(network.id), name: network.name, logo: network.logoPath });
+  } catch (err) {
+    sendError(res, 500, ErrorCodes.INTERNAL_ERROR, (err as Error).message);
+  }
+});
+
+router.get('/collection/:id', requireAuth, resolveApiKey, async (req, res) => {
+  try {
+    const id = req.params.id as string;
+    if (!id) return sendError(res, 400, ErrorCodes.VALIDATION_ERROR, 'ID required');
+    const language = sanitizeString(req.query.language as string | undefined, 20);
+    const collection = await tmdb.getCollectionById(getApiKey(req), id, language);
+    if (!collection) return sendError(res, 404, ErrorCodes.NOT_FOUND, 'Not found');
+    res.json({
+      id: String(collection.id),
+      name: collection.name,
+      poster_path: collection.poster_path,
+      backdrop_path: collection.backdrop_path,
+      parts: collection.parts || [],
+    });
   } catch (err) {
     sendError(res, 500, ErrorCodes.INTERNAL_ERROR, (err as Error).message);
   }
@@ -1272,6 +1306,8 @@ router.post('/preview', requireAuth, resolveApiKey, async (req, res) => {
         displayLanguage: resolvedFilters?.displayLanguage,
         language: resolvedFilters?.language,
         region: resolvedFilters?.countries,
+        collectionId: resolvedFilters?.collectionId,
+        sortBy: resolvedFilters?.sortBy,
         randomize,
       })) as PreviewResult;
     } else {

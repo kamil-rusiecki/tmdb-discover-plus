@@ -115,6 +115,7 @@ export function useCatalogEditorHandlers({
         const previousStash = typeFilterStashRef.current[catalogId]?.[type] || {};
 
         const isSeriesLike = type === 'series' || type === 'anime';
+        const isCollectionType = type === 'collection';
 
         const awardsWon = (strippedFilters.awardsWon || []).filter((a) =>
           isSeriesLike ? a !== 'best_picture_oscar' && a !== 'best_director_oscar' : a !== 'emmy'
@@ -134,7 +135,8 @@ export function useCatalogEditorHandlers({
           ...previousStash,
         };
 
-        const rankedList = isSeriesLike ? undefined : nextTypeFilters.rankedList;
+        const rankedList =
+          isSeriesLike || isCollectionType ? undefined : nextTypeFilters.rankedList;
 
         const updated = {
           ...prev,
@@ -144,8 +146,18 @@ export function useCatalogEditorHandlers({
             genres: prev.source === 'tmdb' || isImdb ? [] : nextTypeFilters.genres || [],
             excludeGenres:
               prev.source === 'tmdb' || isImdb ? [] : nextTypeFilters.excludeGenres || [],
-            sortBy:
-              nextTypeFilters.sortBy !== undefined
+            listType: isCollectionType
+              ? 'collection'
+              : nextTypeFilters.listType === 'collection'
+                ? 'discover'
+                : (nextTypeFilters.listType ?? 'discover'),
+            presetOrigin: isCollectionType ? undefined : nextTypeFilters.presetOrigin,
+            presetDefaults: isCollectionType ? undefined : nextTypeFilters.presetDefaults,
+            collectionId: isCollectionType ? nextTypeFilters.collectionId : undefined,
+            collectionName: isCollectionType ? nextTypeFilters.collectionName : undefined,
+            sortBy: isCollectionType
+              ? 'collection_order'
+              : nextTypeFilters.sortBy !== undefined
                 ? nextTypeFilters.sortBy
                 : getSource(prev.source || 'tmdb').defaultFilters?.sortBy,
             awardsWon,
@@ -153,9 +165,12 @@ export function useCatalogEditorHandlers({
             rankedList,
             rankedLists: filterRankedListsByType(nextTypeFilters.rankedLists),
             excludeRankedLists: filterRankedListsByType(nextTypeFilters.excludeRankedLists),
-            inTheatersLat: type === 'movie' ? nextTypeFilters.inTheatersLat : undefined,
-            inTheatersLong: type === 'movie' ? nextTypeFilters.inTheatersLong : undefined,
-            inTheatersRadius: type === 'movie' ? nextTypeFilters.inTheatersRadius : undefined,
+            inTheatersLat:
+              type === 'movie' && !isCollectionType ? nextTypeFilters.inTheatersLat : undefined,
+            inTheatersLong:
+              type === 'movie' && !isCollectionType ? nextTypeFilters.inTheatersLong : undefined,
+            inTheatersRadius:
+              type === 'movie' && !isCollectionType ? nextTypeFilters.inTheatersRadius : undefined,
           },
         };
         result = updated;

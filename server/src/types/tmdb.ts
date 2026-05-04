@@ -308,6 +308,22 @@ export interface NetworkSearchResult {
   logoPath: string | null;
 }
 
+export interface CollectionSearchResult {
+  id: number;
+  name: string;
+  posterPath: string | null;
+  backdropPath: string | null;
+}
+
+export interface TmdbCollectionDetails {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  parts: TmdbMovieResult[];
+}
+
 export interface TmdbLanguage {
   iso_639_1: string;
   english_name: string;
@@ -416,6 +432,8 @@ export interface SpecialListOptions {
   displayLanguage?: string;
   region?: string;
   randomize?: boolean;
+  collectionId?: number | string;
+  sortBy?: string;
 }
 
 export type SpecialListType =
@@ -427,6 +445,7 @@ export type SpecialListType =
   | 'on_the_air'
   | 'top_rated'
   | 'popular'
+  | 'collection'
   | 'random';
 
 export type GenreMap = Record<string, string>;

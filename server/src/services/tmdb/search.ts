@@ -9,6 +9,7 @@ import type {
   PersonSearchResult,
   CompanySearchResult,
   KeywordSearchResult,
+  CollectionSearchResult,
   ComprehensiveSearchOptions,
   ComprehensiveSearchResponse,
   TmdbPersonResult,
@@ -243,4 +244,48 @@ export async function searchKeyword(apiKey: string, query: string): Promise<Keyw
       name: keyword.name,
     })) || []
   );
+}
+
+export async function searchCollection(
+  apiKey: string,
+  query: string,
+  page: number = 1,
+  language?: string
+): Promise<{
+  page: number;
+  total_pages: number;
+  total_results: number;
+  results: CollectionSearchResult[];
+}> {
+  const params: Record<string, string | number | undefined> = { query, page };
+  if (language) params.language = language;
+
+  const data = (await tmdbFetch('/search/collection', apiKey, params)) as {
+    page?: number;
+    total_pages?: number;
+    total_results?: number;
+    results?: Array<{
+      id: number;
+      name: string;
+      poster_path: string | null;
+      backdrop_path: string | null;
+    }>;
+  };
+
+  return {
+    page: data.page || 1,
+    total_pages: data.total_pages || 0,
+    total_results: data.total_results || 0,
+    results:
+      data.results?.map((collection) => ({
+        id: collection.id,
+        name: collection.name,
+        posterPath: collection.poster_path
+          ? `${TMDB_IMAGE_BASE}/w185${collection.poster_path}`
+          : null,
+        backdropPath: collection.backdrop_path
+          ? `${TMDB_IMAGE_BASE}/w780${collection.backdrop_path}`
+          : null,
+      })) || [],
+  };
 }

@@ -57,6 +57,7 @@ export function useCatalogEditor() {
     searchPerson,
     searchCompany,
     searchKeyword,
+    searchCollection,
     searchTVNetworks,
     searchImdbPeople,
     searchImdbCompanies,
@@ -65,6 +66,7 @@ export function useCatalogEditor() {
     getCompanyById,
     getKeywordById,
     getNetworkById,
+    getCollectionById,
     getWatchProviders,
     // Anime sources
     previewAnilist: onPreviewAnilist,
@@ -136,6 +138,7 @@ export function useCatalogEditor() {
   const [selectedImdbPeople, setSelectedImdbPeople] = useState([]);
   const [selectedImdbCompanies, setSelectedImdbCompanies] = useState([]);
   const [selectedImdbExcludeCompanies, setSelectedImdbExcludeCompanies] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
     basic: false,
@@ -160,6 +163,7 @@ export function useCatalogEditor() {
     setSelectedImdbPeople(catalog?.formState?.selectedImdbPeople || []);
     setSelectedImdbCompanies(catalog?.formState?.selectedImdbCompanies || []);
     setSelectedImdbExcludeCompanies(catalog?.formState?.selectedImdbExcludeCompanies || []);
+    setSelectedCollection(catalog?.formState?.selectedCollection || null);
     setSelectedCity(catalog?.formState?.selectedCity || null);
 
     // Always start with all sections collapsed, regardless of what was saved
@@ -224,6 +228,14 @@ export function useCatalogEditor() {
               companies: selectedImdbCompanies.map((c) => c.id),
             }
           : {}),
+        ...(localCatalog?.source === 'tmdb'
+          ? {
+              collectionId: selectedCollection?.id
+                ? String(selectedCollection.id)
+                : localCatalog?.filters?.collectionId,
+              collectionName: selectedCollection?.name || localCatalog?.filters?.collectionName,
+            }
+          : {}),
       },
       formState: {
         selectedPeople: selectedPeople.length > 0 ? selectedPeople : undefined,
@@ -236,6 +248,7 @@ export function useCatalogEditor() {
         selectedImdbCompanies: selectedImdbCompanies.length > 0 ? selectedImdbCompanies : undefined,
         selectedImdbExcludeCompanies:
           selectedImdbExcludeCompanies.length > 0 ? selectedImdbExcludeCompanies : undefined,
+        selectedCollection: selectedCollection || undefined,
         selectedCity: selectedCity || undefined,
         expandedSections,
       },
@@ -251,6 +264,7 @@ export function useCatalogEditor() {
     selectedImdbPeople,
     selectedImdbCompanies,
     selectedImdbExcludeCompanies,
+    selectedCollection,
     selectedCity,
     expandedSections,
   ]);
@@ -378,10 +392,12 @@ export function useCatalogEditor() {
     searchPerson,
     searchCompany,
     searchKeyword,
+    searchCollection,
     searchTVNetworks,
     searchImdbPeople,
     searchImdbCompanies,
     searchCities,
+    getCollectionById,
 
     // Anime sources
     onPreviewAnilist,
@@ -440,6 +456,8 @@ export function useCatalogEditor() {
     setSelectedImdbCompanies,
     selectedImdbExcludeCompanies,
     setSelectedImdbExcludeCompanies,
+    selectedCollection,
+    setSelectedCollection,
     selectedCity,
     setSelectedCity,
 

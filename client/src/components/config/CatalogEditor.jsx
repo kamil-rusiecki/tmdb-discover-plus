@@ -59,6 +59,8 @@ export const CatalogEditor = memo(function CatalogEditor() {
     searchPerson,
     searchCompany,
     searchKeyword,
+    searchCollection,
+    getCollectionById,
     searchImdbPeople,
     searchImdbCompanies,
     searchCities,
@@ -113,6 +115,8 @@ export const CatalogEditor = memo(function CatalogEditor() {
     setSelectedImdbCompanies,
     selectedImdbExcludeCompanies,
     setSelectedImdbExcludeCompanies,
+    selectedCollection,
+    setSelectedCollection,
     selectedCity,
     setSelectedCity,
     activeFilters,
@@ -154,12 +158,15 @@ export const CatalogEditor = memo(function CatalogEditor() {
   const catalogType = localCatalog?.type || 'movie';
   const isMovie = catalogType === 'movie';
   const isAnime = catalogType === 'anime';
+  const isCollection = catalogType === 'collection';
   const currentSource = getSource(localCatalog?.source || 'tmdb');
   const supportedTypes = currentSource.supportedTypes || ['movie', 'series'];
+  const isTmdbSource = localCatalog?.source === 'tmdb';
+
   const currentListType = localCatalog?.filters?.listType || 'discover';
   const hasPresetOrigin = Boolean(localCatalog?.filters?.presetOrigin);
   const isPresetCatalog = currentListType && currentListType !== 'discover' && !hasPresetOrigin;
-  const supportsFullFilters = !isPresetCatalog;
+  const supportsFullFilters = !isPresetCatalog && !isCollection;
   const isImdbCatalog = localCatalog?.source === 'imdb';
   const showImdbSourceDisabledNotice = isImdbCatalog && !imdbEnabled;
 
@@ -239,6 +246,8 @@ export const CatalogEditor = memo(function CatalogEditor() {
     searchPerson,
     searchCompany,
     searchKeyword,
+    searchCollection,
+    getCollectionById,
     onSearchImdbPeople: searchImdbPeople,
     onSearchImdbCompanies: searchImdbCompanies,
     onSearchCities: searchCities,
@@ -248,6 +257,8 @@ export const CatalogEditor = memo(function CatalogEditor() {
     setSelectedImdbCompanies,
     selectedImdbExcludeCompanies,
     setSelectedImdbExcludeCompanies,
+    selectedCollection,
+    setSelectedCollection,
     selectedCity,
     setSelectedCity,
     imdbGenres,
@@ -395,16 +406,16 @@ export const CatalogEditor = memo(function CatalogEditor() {
             <button
               className={`type-btn ${isMovie ? 'active' : ''}`}
               onClick={() => handleTypeChange('movie')}
-              disabled={!supportsFullFilters}
-              style={!supportsFullFilters ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+              disabled={isPresetCatalog}
+              style={isPresetCatalog ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
             >
               <Film size={18} /> Movies
             </button>
             <button
               className={`type-btn ${catalogType === 'series' ? 'active' : ''}`}
               onClick={() => handleTypeChange('series')}
-              disabled={!supportsFullFilters}
-              style={!supportsFullFilters ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+              disabled={isPresetCatalog}
+              style={isPresetCatalog ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
             >
               <Tv size={18} /> TV Shows
             </button>
@@ -412,10 +423,18 @@ export const CatalogEditor = memo(function CatalogEditor() {
               <button
                 className={`type-btn ${isAnime ? 'active' : ''}`}
                 onClick={() => handleTypeChange('anime')}
-                disabled={!supportsFullFilters}
-                style={!supportsFullFilters ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                disabled={isPresetCatalog}
+                style={isPresetCatalog ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
               >
                 <Sparkles size={18} /> Anime
+              </button>
+            )}
+            {isTmdbSource && (
+              <button
+                className={`type-btn ${isCollection ? 'active' : ''}`}
+                onClick={() => handleTypeChange('collection')}
+              >
+                <Sparkles size={18} /> Collection
               </button>
             )}
           </div>

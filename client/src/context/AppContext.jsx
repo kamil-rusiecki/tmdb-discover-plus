@@ -138,6 +138,7 @@ export function AppProviders({ state, actions, config, tmdb, children }) {
       searchPerson: tmdb.searchPerson,
       searchCompany: tmdb.searchCompany,
       searchKeyword: tmdb.searchKeyword,
+      searchCollection: tmdb.searchCollection,
       searchTVNetworks: tmdb.searchTVNetworks,
       searchImdbPeople: tmdb.searchImdbPeople,
       searchImdbCompanies: tmdb.searchImdbCompanies,
@@ -146,6 +147,7 @@ export function AppProviders({ state, actions, config, tmdb, children }) {
       getCompanyById: tmdb.getCompanyById,
       getKeywordById: tmdb.getKeywordById,
       getNetworkById: tmdb.getNetworkById,
+      getCollectionById: tmdb.getCollectionById,
       getWatchProviders: tmdb.getWatchProviders,
     }),
     [tmdb]

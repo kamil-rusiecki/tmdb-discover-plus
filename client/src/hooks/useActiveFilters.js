@@ -63,7 +63,9 @@ export function useActiveFilters({
     const isAnilist = source === 'anilist';
     const isTmdb = !source || source === 'tmdb';
     const imdbSortDefault = 'POPULARITY';
-    const tmdbSortDefault = 'popularity.desc';
+    const effectiveTmdbType = localCatalog?.type === 'collection' ? 'movie' : localCatalog?.type;
+    const tmdbSortDefault =
+      localCatalog?.type === 'collection' ? 'collection_order' : 'popularity.desc';
     const anilistSortDefault = 'TRENDING_DESC';
 
     const humanize = (value) => {
@@ -110,7 +112,7 @@ export function useActiveFilters({
       }
     } else if (isTmdb && filters.sortBy && String(filters.sortBy) !== tmdbSortDefault) {
       // TMDB / fallback sorting chip
-      const sortOpts = sortOptions[localCatalog?.type] || sortOptions.movie || [];
+      const sortOpts = sortOptions[effectiveTmdbType] || sortOptions.movie || [];
       const match = sortOpts.find((s) => s.value === filters.sortBy);
       active.push({
         key: 'sortBy',

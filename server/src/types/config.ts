@@ -46,6 +46,8 @@ export interface BaseCatalogFilters {
 
 export interface TmdbCatalogFilters extends BaseCatalogFilters {
   listType?: string;
+  collectionId?: string;
+  collectionName?: string;
   voteCountMin?: number;
   stremioExtras?: string[];
   stremioExtraMode?: 'genre' | 'year' | 'sortBy' | 'certification';
@@ -230,6 +232,12 @@ export interface CatalogFormState {
   excludeKeywords?: Array<{ id: number | string; name: string }>;
   excludeCompanies?: Array<{ id: number | string; name: string; logo_path?: string }>;
   selectedNetworks?: Array<{ id: number | string; name: string; logo_path?: string }>;
+  selectedCollection?: {
+    id: number | string;
+    name: string;
+    poster_path?: string | null;
+    backdrop_path?: string | null;
+  };
   expandedSections?: Record<string, boolean>;
 }
 

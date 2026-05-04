@@ -462,4 +462,32 @@ describe('buildManifest', () => {
     expect(genreExtra?.options).toEqual(['All', 'Documentary', 'Drama']);
     expect(target?.extra.some((e) => e.name === 'year')).toBe(false);
   });
+
+  it('does not inject extras for TMDB collection catalogs', async () => {
+    const userConfig = {
+      userId: 'user-collection',
+      catalogs: [
+        {
+          _id: 'tmdb-collection',
+          name: 'Collection Catalog',
+          type: 'movie',
+          source: 'tmdb',
+          enabled: true,
+          filters: {
+            listType: 'collection',
+            collectionId: '10',
+            stremioExtraMode: 'genre',
+          },
+        },
+      ],
+      preferences: { disableSearch: true },
+    };
+
+    const manifest = buildManifest(userConfig as any, baseUrl);
+    await enrichManifestWithGenres(manifest, userConfig as any);
+    await enrichManifestWithExtras(manifest, userConfig as any);
+
+    const target = manifest.catalogs.find((c) => c.id === 'tmdb-tmdb-collection');
+    expect(target?.extra).toEqual([{ name: 'skip' }]);
+  });
 });

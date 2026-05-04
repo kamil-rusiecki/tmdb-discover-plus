@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X, Loader, User, Building, Tag } from 'lucide-react';
+import { Search, X, Loader, User, Building, Tag, Layers } from 'lucide-react';
 import { logger } from '../../utils/logger';
 
 export function SearchInput({
@@ -123,6 +123,8 @@ export function SearchInput({
         return <Building size={14} />;
       case 'keyword':
         return <Tag size={14} />;
+      case 'collection':
+        return <Layers size={14} />;
       default:
         return <Search size={14} />;
     }
@@ -130,9 +132,9 @@ export function SearchInput({
 
   return (
     <div className="search-input-container" ref={containerRef}>
-      {multiple && selectedItems.length > 0 && (
+      {((multiple && selectedItems?.length > 0) || (!multiple && selectedItems)) && (
         <div className="search-input-selected">
-          {selectedItems.map((item) => (
+          {(multiple ? selectedItems : [selectedItems]).map((item) => (
             <div key={item.id} className="search-input-tag">
               {getIcon()}
               <span>{item.name}</span>

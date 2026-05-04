@@ -264,7 +264,14 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
 
       return {
         id: `${prefix}-${catalog._id || catalog.name.toLowerCase().replace(/\s+/g, '-')}`,
-        type: catalog.type === 'anime' ? 'anime' : catalog.type === 'series' ? 'series' : 'movie',
+        type:
+          catalog.type === 'collection'
+            ? 'collection'
+            : catalog.type === 'anime'
+              ? 'anime'
+              : catalog.type === 'series'
+                ? 'series'
+                : 'movie',
         name: catalog.name,
         pageSize,
         extra: [{ name: 'skip' }],
@@ -561,6 +568,10 @@ export async function enrichManifestWithGenres(
             return idFromStored === catalog.id || idFromIdOnly === catalog.id;
           });
 
+          if (savedCatalog?.filters?.listType === 'collection') {
+            return;
+          }
+
           const dropdownMode = getStremioExtraMode(
             savedCatalog?.filters as Record<string, unknown> | undefined,
             TMDB_STREMIO_EXTRA_MODES
@@ -685,6 +696,7 @@ export async function enrichManifestWithExtras(
       return idFromStored === catalog.id || idFromIdOnly === catalog.id;
     });
     if (!savedCatalog) continue;
+    if (savedCatalog.filters?.listType === 'collection') continue;
 
     const dropdownMode = getStremioExtraMode(
       savedCatalog.filters as Record<string, unknown> | undefined,

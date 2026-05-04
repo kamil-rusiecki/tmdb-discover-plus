@@ -42,6 +42,12 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
 
     const sourceDescriptor = getSource(source);
     const filters = { ...sourceDescriptor.defaultFilters };
+    if (source === 'tmdb' && type === 'collection') {
+      filters.listType = 'collection';
+      filters.sortBy = 'collection_order';
+      delete filters.presetOrigin;
+      delete filters.presetDefaults;
+    }
 
     onAdd({
       name: name.trim(),
@@ -144,6 +150,16 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
                   >
                     <Sparkles size={16} />
                     Anime
+                  </button>
+                )}
+                {source === 'tmdb' && (
+                  <button
+                    type="button"
+                    className={`type-btn ${type === 'collection' ? 'active' : ''}`}
+                    onClick={() => setType('collection')}
+                  >
+                    <Sparkles size={16} />
+                    Collection
                   </button>
                 )}
               </div>

@@ -1,4 +1,4 @@
-export type ContentType = 'movie' | 'series' | 'anime';
+export type ContentType = 'movie' | 'series' | 'anime' | 'collection';
 
 export type TmdbMediaType = 'movie' | 'tv';
 

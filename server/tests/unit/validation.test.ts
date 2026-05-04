@@ -173,6 +173,19 @@ describe('sanitizeFilters', () => {
     expect(sanitizeFilters(undefined)).toEqual({});
     expect(sanitizeFilters('string')).toEqual({});
   });
+
+  it('allows TMDB collection fields', () => {
+    const result = sanitizeFilters({
+      listType: 'collection',
+      collectionId: '1241',
+      collectionName: 'Harry Potter Collection',
+    });
+    expect(result).toMatchObject({
+      listType: 'collection',
+      collectionId: '1241',
+      collectionName: 'Harry Potter Collection',
+    });
+  });
 });
 
 describe('sanitizeImdbFilters', () => {
@@ -220,9 +233,11 @@ describe('sanitizeFiltersForSource', () => {
       listType: 'top250',
       releasedOnly: true,
       voteCountMin: 100,
+      collectionId: '10',
     });
     expect(result).toHaveProperty('listType', 'top250');
     expect(result).not.toHaveProperty('releasedOnly');
     expect(result).not.toHaveProperty('voteCountMin');
+    expect(result).not.toHaveProperty('collectionId');
   });
 });

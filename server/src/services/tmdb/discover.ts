@@ -11,7 +11,101 @@ import type {
   DiscoverOptions,
   SpecialListOptions,
   SpecialListType,
+  TmdbCollectionDetails,
 } from '../../types/index.ts';
+
+function sortCollectionParts(
+  parts: Array<Record<string, unknown>>,
+  sortBy: string | undefined
+): Array<Record<string, unknown>> {
+  if (!sortBy || sortBy === 'collection_order') {
+    return parts;
+  }
+
+  const sorted = [...parts];
+  const getNumber = (item: Record<string, unknown>, key: string): number => {
+    const value = item[key];
+    return typeof value === 'number' ? value : 0;
+  };
+  const getString = (item: Record<string, unknown>, key: string): string => {
+    const value = item[key];
+    return typeof value === 'string' ? value : '';
+  };
+
+  switch (sortBy) {
+    case 'popularity.desc':
+      sorted.sort((a, b) => getNumber(b, 'popularity') - getNumber(a, 'popularity'));
+      break;
+    case 'popularity.asc':
+      sorted.sort((a, b) => getNumber(a, 'popularity') - getNumber(b, 'popularity'));
+      break;
+    case 'vote_average.desc':
+      sorted.sort((a, b) => getNumber(b, 'vote_average') - getNumber(a, 'vote_average'));
+      break;
+    case 'vote_average.asc':
+      sorted.sort((a, b) => getNumber(a, 'vote_average') - getNumber(b, 'vote_average'));
+      break;
+    case 'vote_count.desc':
+      sorted.sort((a, b) => getNumber(b, 'vote_count') - getNumber(a, 'vote_count'));
+      break;
+    case 'vote_count.asc':
+      sorted.sort((a, b) => getNumber(a, 'vote_count') - getNumber(b, 'vote_count'));
+      break;
+    case 'release_date.desc':
+      sorted.sort((a, b) =>
+        getString(b, 'release_date').localeCompare(getString(a, 'release_date'))
+      );
+      break;
+    case 'release_date.asc':
+      sorted.sort((a, b) =>
+        getString(a, 'release_date').localeCompare(getString(b, 'release_date'))
+      );
+      break;
+    case 'title.asc':
+      sorted.sort((a, b) => getString(a, 'title').localeCompare(getString(b, 'title')));
+      break;
+    case 'title.desc':
+      sorted.sort((a, b) => getString(b, 'title').localeCompare(getString(a, 'title')));
+      break;
+    default:
+      break;
+  }
+
+  return sorted;
+}
+
+function mapCollectionToPaginatedResult(
+  collection: TmdbCollectionDetails,
+  page: number,
+  sortBy: string | undefined
+): {
+  page: number;
+  results: Array<Record<string, unknown>>;
+  total_pages: number;
+  total_results: number;
+} {
+  const pageSize = 20;
+  const allParts = Array.isArray(collection.parts) ? collection.parts : [];
+  const sortedParts = sortCollectionParts(
+    allParts as unknown as Array<Record<string, unknown>>,
+    sortBy
+  );
+  const totalResults = sortedParts.length;
+  const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
+  const normalizedPage = Math.max(1, Math.min(page, totalPages));
+  const start = (normalizedPage - 1) * pageSize;
+  const results = sortedParts.slice(start, start + pageSize).map((part) => ({
+    ...part,
+    title: part.title || collection.name,
+  }));
+
+  return {
+    page: normalizedPage,
+    results,
+    total_pages: totalPages,
+    total_results: totalResults,
+  };
+}
 
 export async function discover(apiKey: string, options: DiscoverOptions = {}): Promise<unknown> {
   const {
@@ -265,7 +359,7 @@ export async function fetchSpecialList(
   type: ContentType = 'movie',
   options: SpecialListOptions = {}
 ): Promise<unknown> {
-  const { page = 1, language, displayLanguage, region } = options;
+  const { page = 1, language, displayLanguage, region, collectionId, sortBy } = options;
   const mediaType = type === 'series' ? 'tv' : 'movie';
 
   const params: Record<string, string | number | boolean | undefined> = { page };
@@ -300,6 +394,20 @@ export async function fetchSpecialList(
     case 'popular':
       endpoint = `/${mediaType}/popular`;
       break;
+    case 'collection': {
+      if (type !== 'movie' && type !== 'collection') {
+        throw new Error(
+          'TMDB collections are only supported for movies or collection type catalogs'
+        );
+      }
+      if (!collectionId) {
+        throw new Error('Collection ID required for collection list type');
+      }
+      const collection = (await tmdbFetch(`/collection/${collectionId}`, apiKey, {
+        ...(languageParam ? { language: languageParam } : {}),
+      })) as TmdbCollectionDetails;
+      return mapCollectionToPaginatedResult(collection, page, sortBy);
+    }
     case 'random':
       return discover(apiKey, { type, page, ...options, randomize: true });
     default:
