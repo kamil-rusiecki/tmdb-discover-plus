@@ -1,11 +1,16 @@
 import { createLogger } from '../../utils/logger.ts';
 import { TIMEOUTS, CIRCUIT_BREAKER_DEFAULTS } from '../../constants.ts';
+import { ADDON_VERSION } from '../../version.ts';
 
 const log = createLogger('mal:client');
 
 const JIKAN_API_BASE = process.env['JIKAN_API_BASE'] || 'https://api.jikan.moe/v4';
 const JIKAN_API_ORIGIN = new URL(JIKAN_API_BASE).origin;
 const MIN_INTERVAL_MS = 350; // ~3 req/s to respect Jikan rate limits
+const JIKAN_HEADERS = {
+  Accept: 'application/json',
+  'User-Agent': `TMDB-Discover-Plus/${ADDON_VERSION} (+https://github.com/semi-column/tmdb-discover-plus)`,
+} as const;
 
 let lastRequestTime = 0;
 const requestQueue: Array<{ resolve: () => void; reject: (err: Error) => void }> = [];
@@ -99,6 +104,7 @@ export async function jikanFetch<T>(path: string): Promise<T> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const response = await fetch(url, {
+        headers: JIKAN_HEADERS,
         signal: AbortSignal.timeout(TIMEOUTS.MAL_FETCH_MS),
       });
 
