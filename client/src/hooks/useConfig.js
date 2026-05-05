@@ -16,6 +16,7 @@ export function useConfig(initialUserId = null) {
   const [preferences, setPreferences] = useState({
     showAdultContent: false,
     defaultLanguage: 'en',
+    posterCustomUrlPattern: '',
     disableImdbSearch: true,
     disableAnilistSearch: true,
     disableMalSearch: true,
@@ -109,6 +110,7 @@ export function useConfig(initialUserId = null) {
     setPreferences({
       showAdultContent: false,
       defaultLanguage: 'en',
+      posterCustomUrlPattern: '',
       disableImdbSearch: true,
       disableAnilistSearch: true,
       disableMalSearch: true,
@@ -126,6 +128,7 @@ export function useConfig(initialUserId = null) {
     setPreferences({
       showAdultContent: false,
       defaultLanguage: 'en',
+      posterCustomUrlPattern: '',
       disableImdbSearch: true,
       disableAnilistSearch: true,
       disableMalSearch: true,

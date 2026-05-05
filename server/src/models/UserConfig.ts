@@ -166,11 +166,13 @@ const userConfigSchema = new mongoose.Schema({
     // Poster enhancement service (RPDB or Top Posters)
     posterService: {
       type: String,
-      enum: ['none', 'rpdb', 'topPosters'],
+      enum: ['none', 'rpdb', 'topPosters', 'customUrl'],
       default: 'none',
     },
     // Encrypted API key for the selected poster service
     posterApiKeyEncrypted: { type: String, required: false },
+    // Custom poster URL pattern used when posterService is customUrl
+    posterCustomUrlPattern: { type: String, required: false },
     // Option to disable search catalogs
     disableSearch: { type: Boolean, default: false },
     disableTmdbSearch: { type: Boolean, default: false },

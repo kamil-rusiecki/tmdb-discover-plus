@@ -139,15 +139,27 @@ function pickPreferredMetaLanguage(config: UserConfig | null): string {
 }
 
 function buildPosterOptions(userConfig: UserConfig): PosterOptions | null {
-  if (userConfig.preferences?.posterService && userConfig.preferences.posterService !== 'none') {
-    const apiKey = getPosterKeyFromConfig(userConfig);
-    if (!apiKey) return null;
+  const preferences = userConfig.preferences || {};
+  const service = preferences.posterService;
+  if (!service || service === 'none') return null;
+
+  if (service === 'customUrl') {
+    const customUrlPattern = preferences.posterCustomUrlPattern?.trim();
+    if (!customUrlPattern) return null;
     return {
-      apiKey,
-      service: userConfig.preferences.posterService,
+      service,
+      customUrlPattern,
     };
   }
-  return null;
+
+  const apiKey = getPosterKeyFromConfig(userConfig);
+  if (!apiKey) return null;
+
+  return {
+    apiKey,
+    service,
+    customUrlPattern: preferences.posterCustomUrlPattern,
+  };
 }
 
 function getPlaceholderUrls(baseUrl: string): {
@@ -387,7 +399,8 @@ async function handleImdbCatalogRequest(
     const posterService = posterOptions?.service || 'none';
     const posterIntegrationScope = buildPosterIntegrationScope(
       posterOptions?.service,
-      posterOptions?.apiKey
+      posterOptions?.apiKey,
+      posterOptions?.customUrlPattern
     );
     const cache = getCache();
 
@@ -977,13 +990,19 @@ async function handleMetaRequest(
     });
     const cache = getCache();
     const configVersion = config.updatedAt ? new Date(config.updatedAt).getTime() : 0;
-    const posterHash = posterOptions?.apiKey
-      ? crypto
-          .createHmac('sha256', appConfig.encryption.key)
-          .update(posterOptions.apiKey)
-          .digest('hex')
-          .slice(0, 16)
-      : 'none';
+    const posterScopeSeed =
+      (posterOptions?.apiKey && `${posterOptions.service}:${posterOptions.apiKey}`) ||
+      (posterOptions?.customUrlPattern &&
+        `${posterOptions.service}:${posterOptions.customUrlPattern}`) ||
+      'none';
+    const posterHash =
+      posterScopeSeed !== 'none'
+        ? crypto
+            .createHmac('sha256', appConfig.encryption.key)
+            .update(posterScopeSeed)
+            .digest('hex')
+            .slice(0, 16)
+        : 'none';
     const metaCacheKey = buildMetaCacheKey({
       userId,
       type,

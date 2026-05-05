@@ -75,6 +75,17 @@ export async function run() {
     );
   });
 
+  await runTest(SUITE, 'should generate custom URL using placeholders', async () => {
+    const result = generatePosterUrl({
+      service: PosterService.CUSTOM_URL,
+      customUrlPattern: 'https://img.example.com/{type}/{rating_id}?lang={language_short}',
+      tmdbId: 222,
+      type: 'movie',
+      language: 'en-US',
+    });
+    assert(result === 'https://img.example.com/movie/movie-222?lang=en');
+  });
+
   await runTest(SUITE, 'should generate RPDB backdrop URL with IMDb ID', async () => {
     const result = generateBackdropUrl({
       apiKey: testApiKey,
@@ -119,5 +130,11 @@ export async function run() {
     assert(isValidPosterConfig({ apiKey: 'test-key', service: PosterService.RPDB }) === true);
     assert(isValidPosterConfig({ apiKey: null, service: PosterService.RPDB }) === false);
     assert(isValidPosterConfig({ apiKey: 'test-key', service: PosterService.NONE }) === false);
+    assert(
+      isValidPosterConfig({
+        service: PosterService.CUSTOM_URL,
+        customUrlPattern: 'https://img.example.com/{rating_id}.jpg',
+      }) === true
+    );
   });
 }

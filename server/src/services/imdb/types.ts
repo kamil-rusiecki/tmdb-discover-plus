@@ -1,4 +1,4 @@
-import type { ContentType, PosterServiceType } from '../../types/index.ts';
+import type { ContentType, PosterOptions } from '../../types/index.ts';
 
 export interface ImdbImage {
   id?: string;
@@ -456,10 +456,7 @@ export interface ImdbCatalogFilters {
   withData?: ImdbWithData[];
 }
 
-export interface ImdbPosterOptions {
-  apiKey: string;
-  service: PosterServiceType;
-}
+export type ImdbPosterOptions = PosterOptions;
 
 export const IMDB_PRESET_CATALOGS = {
   movie: [

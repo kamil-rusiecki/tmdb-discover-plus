@@ -10,6 +10,8 @@ export function PosterSettingsSection() {
 
   const posterService = preferences?.posterService || 'none';
   const hasPosterKey = Boolean(preferences?.posterApiKeyEncrypted);
+  const posterCustomUrlPattern = preferences?.posterCustomUrlPattern || '';
+  const isCustomPosterService = posterService === 'customUrl';
 
   const handleServiceChange = (e) => {
     const newService = e.target.value;
@@ -33,6 +35,13 @@ export function PosterSettingsSection() {
         posterApiKey: newKey,
       });
     }
+  };
+
+  const handleCustomPatternChange = (e) => {
+    onPreferencesChange({
+      ...preferences,
+      posterCustomUrlPattern: e.target.value,
+    });
   };
 
   const serviceUrl =
@@ -82,13 +91,14 @@ export function PosterSettingsSection() {
               <option value="none">Default (TMDB)</option>
               <option value="rpdb">RPDB (Rating Posters)</option>
               <option value="topPosters">Top Posters</option>
+              <option value="customUrl">Custom URL Pattern</option>
             </select>
           </div>
 
           {posterService !== 'none' && (
             <div className="input-group">
               <label htmlFor="poster-api-key" className="poster-settings-label">
-                API Key{' '}
+                {isCustomPosterService ? 'API Key (optional)' : 'API Key'}{' '}
                 {hasPosterKey && !apiKeyInput && (
                   <span className="poster-settings-status">(set)</span>
                 )}
@@ -98,7 +108,13 @@ export function PosterSettingsSection() {
                   id="poster-api-key"
                   type={showApiKey ? 'text' : 'password'}
                   className="input poster-settings-input"
-                  placeholder={hasPosterKey ? '••••••••' : 'Enter API key'}
+                  placeholder={
+                    hasPosterKey
+                      ? '••••••••'
+                      : isCustomPosterService
+                        ? 'Optional (for {api_key} placeholder)'
+                        : 'Enter API key'
+                  }
                   value={apiKeyInput}
                   onChange={handleApiKeyChange}
                 />
@@ -111,17 +127,40 @@ export function PosterSettingsSection() {
                   {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
-              <p className="poster-settings-hint">
-                Get key from{' '}
-                <a
-                  href={serviceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="poster-settings-link"
-                >
-                  {serviceName} <ExternalLink size={10} className="poster-settings-link-icon" />
-                </a>
-              </p>
+              {serviceUrl && serviceName ? (
+                <p className="poster-settings-hint">
+                  Get key from{' '}
+                  <a
+                    href={serviceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="poster-settings-link"
+                  >
+                    {serviceName} <ExternalLink size={10} className="poster-settings-link-icon" />
+                  </a>
+                </p>
+              ) : null}
+
+              {isCustomPosterService && (
+                <>
+                  <label htmlFor="poster-custom-pattern" className="poster-settings-label">
+                    Custom URL Pattern
+                  </label>
+                  <input
+                    id="poster-custom-pattern"
+                    type="text"
+                    className="input poster-settings-input"
+                    placeholder="https://example.com/{type}/{rating_id}.jpg"
+                    value={posterCustomUrlPattern}
+                    onChange={handleCustomPatternChange}
+                  />
+                  <p className="poster-settings-hint">
+                    Placeholders: {'{type}'}, {'{imdb_id}'}, {'{tmdb_id}'}, {'{rating_id}'},{' '}
+                    {'{rating_id_type}'}, {'{api_key}'}, {'{api_key_urlencoded}'}, {'{language}'},{' '}
+                    {'{language_short}'}
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>

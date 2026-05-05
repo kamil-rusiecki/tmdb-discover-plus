@@ -108,9 +108,10 @@ export const PosterService = {
   NONE: 'none',
   RPDB: 'rpdb',
   TOP_POSTERS: 'topPosters',
+  CUSTOM_URL: 'customUrl',
 } as const;
 
-function getServiceBaseUrl(service: string): string | null {
+function getServiceBaseUrl(service: PosterServiceType): string | null {
   switch (service) {
     case PosterService.RPDB:
       return RPDB_BASE_URL;
@@ -121,14 +122,91 @@ function getServiceBaseUrl(service: string): string | null {
   }
 }
 
-export function generatePosterUrl(options: PosterUrlOptions): string | null {
-  const { apiKey, service, tmdbId, type, imdbId = null } = options;
+function hasValidTmdbId(tmdbId: number | string | null | undefined): boolean {
+  if (tmdbId === null || tmdbId === undefined) return false;
+  const value = String(tmdbId).trim();
+  return value.length > 0 && value !== '0';
+}
 
-  if (!apiKey || !service || service === PosterService.NONE) {
+function getTypePrefix(type: string): 'movie' | 'series' {
+  return type === 'series' ? 'series' : 'movie';
+}
+
+function resolveCustomPosterUrl(options: PosterUrlOptions): string | null {
+  const pattern = options.customUrlPattern?.trim();
+  if (!pattern) return null;
+
+  const typePrefix = getTypePrefix(options.type);
+  const hasImdb = Boolean(options.imdbId && String(options.imdbId).startsWith('tt'));
+  const hasTmdb = hasValidTmdbId(options.tmdbId);
+  const tmdbId = hasTmdb ? String(options.tmdbId).trim() : '';
+  const imdbId = hasImdb ? String(options.imdbId) : '';
+
+  const ratingIdType = hasImdb ? 'imdb' : hasTmdb ? 'tmdb' : '';
+  const ratingId = hasImdb ? imdbId : hasTmdb ? `${typePrefix}-${tmdbId}` : '';
+
+  const language = String(options.language || 'en').trim() || 'en';
+  const languageShort = language.includes('-') ? language.split('-')[0] : language;
+
+  const replacements: Record<string, string> = {
+    '{id}': imdbId || tmdbId,
+    '{imdb_id}': imdbId,
+    '{tmdb_id}': tmdbId,
+    '{type}': options.type,
+    '{type_prefix}': typePrefix,
+    '{tmdb_type_id}': hasTmdb ? `${typePrefix}-${tmdbId}` : '',
+    '{rating_id_type}': ratingIdType,
+    '{rating_id}': ratingId,
+    '{language}': language,
+    '{language_short}': languageShort,
+    '{api_key}': options.apiKey || '',
+    '{api_key_urlencoded}': options.apiKey ? encodeURIComponent(options.apiKey) : '',
+  };
+
+  const placeholdersInPattern = pattern.match(/\{[a-z_]+\}/g) || [];
+  const unknownPlaceholder = placeholdersInPattern.find(
+    (placeholder) => !(placeholder in replacements)
+  );
+  if (unknownPlaceholder) {
+    log.debug('Unsupported custom poster placeholder', { unknownPlaceholder });
     return null;
   }
 
-  if (!tmdbId && !imdbId) {
+  let resolved = pattern;
+  for (const placeholder of placeholdersInPattern) {
+    const value = replacements[placeholder] ?? '';
+    if (!value) {
+      log.debug('Missing value for custom poster placeholder', { placeholder });
+      return null;
+    }
+    resolved = resolved.split(placeholder).join(value);
+  }
+
+  try {
+    const parsed = new URL(resolved);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+export function generatePosterUrl(options: PosterUrlOptions): string | null {
+  const { apiKey, service, tmdbId, type, imdbId = null } = options;
+
+  if (!service || service === PosterService.NONE) {
+    return null;
+  }
+
+  if (service === PosterService.CUSTOM_URL) {
+    return resolveCustomPosterUrl(options);
+  }
+
+  if (!apiKey) {
+    return null;
+  }
+
+  if (!hasValidTmdbId(tmdbId) && !imdbId) {
     log.debug('Cannot generate poster URL: no ID provided');
     return null;
   }
@@ -143,18 +221,26 @@ export function generatePosterUrl(options: PosterUrlOptions): string | null {
     return `${baseUrl}/${apiKey}/imdb/poster-default/${imdbId}.jpg?fallback=true`;
   }
 
-  const prefix = type === 'series' ? 'series' : 'movie';
+  const prefix = getTypePrefix(type);
   return `${baseUrl}/${apiKey}/tmdb/poster-default/${prefix}-${tmdbId}.jpg?fallback=true`;
 }
 
 export function generateBackdropUrl(options: PosterUrlOptions): string | null {
   const { apiKey, service, tmdbId, type, imdbId = null } = options;
 
-  if (!apiKey || !service || service === PosterService.NONE) {
+  if (!service || service === PosterService.NONE) {
     return null;
   }
 
-  if (!tmdbId && !imdbId) {
+  if (service === PosterService.CUSTOM_URL) {
+    return resolveCustomPosterUrl(options);
+  }
+
+  if (!apiKey) {
+    return null;
+  }
+
+  if (!hasValidTmdbId(tmdbId) && !imdbId) {
     return null;
   }
 
@@ -167,14 +253,18 @@ export function generateBackdropUrl(options: PosterUrlOptions): string | null {
     return `${baseUrl}/${apiKey}/imdb/backdrop-default/${imdbId}.jpg?fallback=true`;
   }
 
-  const prefix = type === 'series' ? 'series' : 'movie';
+  const prefix = getTypePrefix(type);
   return `${baseUrl}/${apiKey}/tmdb/backdrop-default/${prefix}-${tmdbId}.jpg?fallback=true`;
 }
 
 export function isValidPosterConfig(posterOptions: PosterOptions | null): boolean {
   if (!posterOptions) return false;
-  const { apiKey, service } = posterOptions;
-  return Boolean(apiKey && service && service !== PosterService.NONE);
+  const { apiKey, service, customUrlPattern } = posterOptions;
+  if (!service || service === PosterService.NONE) return false;
+  if (service === PosterService.CUSTOM_URL) {
+    return Boolean(customUrlPattern && customUrlPattern.trim());
+  }
+  return Boolean(apiKey);
 }
 
 export function createPosterOptions(
@@ -189,6 +279,15 @@ export function createPosterOptions(
     return null;
   }
 
+  if (preferences.posterService === PosterService.CUSTOM_URL) {
+    const customUrlPattern = preferences.posterCustomUrlPattern?.trim();
+    if (!customUrlPattern) return null;
+    return {
+      service: preferences.posterService,
+      customUrlPattern,
+    };
+  }
+
   if (!preferences.posterApiKeyEncrypted) {
     return null;
   }
@@ -201,5 +300,6 @@ export function createPosterOptions(
   return {
     apiKey,
     service: preferences.posterService,
+    customUrlPattern: preferences.posterCustomUrlPattern,
   };
 }

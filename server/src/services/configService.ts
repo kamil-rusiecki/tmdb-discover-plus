@@ -176,6 +176,14 @@ export async function saveUserConfig(config: UserConfig): Promise<UserConfig> {
   try {
     const processedPreferences = { ...(mergedConfig.preferences || {}) };
 
+    if (typeof mergedConfig.preferences?.posterCustomUrlPattern === 'string') {
+      const safePattern = sanitizeString(
+        mergedConfig.preferences.posterCustomUrlPattern,
+        2000
+      ).trim();
+      processedPreferences.posterCustomUrlPattern = safePattern || undefined;
+    }
+
     if (mergedConfig.preferences?.posterApiKey) {
       const rawPosterKey = sanitizeString(mergedConfig.preferences.posterApiKey, 128);
       if (rawPosterKey) {

@@ -444,8 +444,12 @@ export async function toStremioFullMeta(
       tmdbId: details.id,
       type,
       imdbId: effectiveImdbId,
+      language: targetLanguage,
     });
-    if (enhancedPoster && (await checkPosterExists(enhancedPoster))) {
+    if (
+      enhancedPoster &&
+      (posterOptions.service === 'customUrl' || (await checkPosterExists(enhancedPoster)))
+    ) {
       poster = enhancedPoster;
     }
   }
@@ -710,8 +714,12 @@ export async function toStremioMetaPreview(
       tmdbId: details.id,
       type,
       imdbId: effectiveImdbId,
+      language: targetLanguage,
     });
-    if (enhancedPoster && (await checkPosterExists(enhancedPoster))) {
+    if (
+      enhancedPoster &&
+      (posterOptions.service === 'customUrl' || (await checkPosterExists(enhancedPoster)))
+    ) {
       poster = enhancedPoster;
     }
   }

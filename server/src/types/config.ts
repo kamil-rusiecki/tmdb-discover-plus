@@ -1,6 +1,6 @@
 import type { ContentType } from './common.ts';
 
-export type PosterServiceType = 'none' | 'rpdb' | 'topPosters';
+export type PosterServiceType = 'none' | 'rpdb' | 'topPosters' | 'customUrl';
 
 export interface UserPreferences {
   showAdultContent?: boolean;
@@ -9,6 +9,7 @@ export interface UserPreferences {
   posterService?: PosterServiceType;
   posterApiKeyEncrypted?: string;
   posterApiKey?: string;
+  posterCustomUrlPattern?: string;
   disableSearch?: boolean;
   disableTmdbSearch?: boolean;
   disableImdbSearch?: boolean;
@@ -293,14 +294,16 @@ export interface UserConfig {
 }
 
 export interface PosterOptions {
-  apiKey: string;
+  apiKey?: string;
   service: PosterServiceType;
+  customUrlPattern?: string;
 }
 
 export interface PosterUrlOptions extends PosterOptions {
   tmdbId: number | string;
   type: ContentType;
   imdbId?: string | null;
+  language?: string | null;
 }
 
 export interface ConfigCacheOptions {

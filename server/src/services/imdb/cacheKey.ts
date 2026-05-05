@@ -4,14 +4,16 @@ import type { ContentType } from '../../types/index.ts';
 
 export function buildPosterIntegrationScope(
   posterService: string | null | undefined,
-  posterApiKey: string | null | undefined
+  posterApiKey: string | null | undefined,
+  posterCustomUrlPattern: string | null | undefined = null
 ): string {
   const service = posterService || 'none';
-  if (!posterApiKey) return `${service}:none`;
+  const fingerprintSource = posterApiKey || posterCustomUrlPattern;
+  if (!fingerprintSource) return `${service}:none`;
 
   const keyHash = crypto
     .createHash('sha256')
-    .update(`${service}:${posterApiKey}`)
+    .update(`${service}:${fingerprintSource}`)
     .digest('hex')
     .slice(0, 16);
   return `${service}:${keyHash}`;

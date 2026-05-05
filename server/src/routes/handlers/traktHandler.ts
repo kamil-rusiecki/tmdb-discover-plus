@@ -91,18 +91,24 @@ export async function handleTraktCatalogRequest(
 
     const traktClientId =
       config.traktApi.clientId || getTraktKeyFromConfig(userConfig) || undefined;
-    const posterOptions: PosterOptions | null =
-      userConfig.preferences?.posterService && userConfig.preferences.posterService !== 'none'
-        ? (() => {
-            const apiKey = getPosterKeyFromConfig(userConfig);
-            return apiKey
-              ? {
-                  apiKey,
-                  service: userConfig.preferences.posterService,
-                }
-              : null;
-          })()
-        : null;
+    const posterOptions: PosterOptions | null = (() => {
+      const service = userConfig.preferences?.posterService;
+      if (!service || service === 'none') return null;
+
+      if (service === 'customUrl') {
+        const customUrlPattern = userConfig.preferences?.posterCustomUrlPattern?.trim();
+        if (!customUrlPattern) return null;
+        return { service, customUrlPattern };
+      }
+
+      const apiKey = getPosterKeyFromConfig(userConfig);
+      if (!apiKey) return null;
+      return {
+        apiKey,
+        service,
+        customUrlPattern: userConfig.preferences?.posterCustomUrlPattern,
+      };
+    })();
 
     if (catalogId === 'trakt-search-movie' || catalogId === 'trakt-search-series') {
       if (!searchQuery || !traktClientId) {

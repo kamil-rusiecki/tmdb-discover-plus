@@ -43,6 +43,27 @@ describe('generatePosterUrl', () => {
     expect(url).toContain('/tmdb/poster-default/series-1399.jpg');
   });
 
+  it('supports custom URL pattern placeholders', () => {
+    const url = generatePosterUrl({
+      service: 'customUrl',
+      customUrlPattern: 'https://img.example.com/{type}/{rating_id}?lang={language_short}',
+      tmdbId: 1399,
+      type: 'series',
+      language: 'en-US',
+    });
+    expect(url).toBe('https://img.example.com/series/series-1399?lang=en');
+  });
+
+  it('returns null for custom URL pattern with unresolved placeholder', () => {
+    const url = generatePosterUrl({
+      service: 'customUrl',
+      customUrlPattern: 'https://img.example.com/{imdb_id}.jpg',
+      tmdbId: 1399,
+      type: 'series',
+    });
+    expect(url).toBeNull();
+  });
+
   it('returns null for service=none', () => {
     expect(
       generatePosterUrl({ apiKey: 'key', service: 'none', tmdbId: 1, type: 'movie' })
@@ -95,6 +116,15 @@ describe('isValidPosterConfig', () => {
   it('returns false for empty apiKey', () => {
     expect(isValidPosterConfig({ apiKey: '', service: 'rpdb' })).toBe(false);
   });
+
+  it('returns true for custom URL service with pattern and no apiKey', () => {
+    expect(
+      isValidPosterConfig({
+        service: 'customUrl',
+        customUrlPattern: 'https://img.example.com/{rating_id}.jpg',
+      })
+    ).toBe(true);
+  });
 });
 
 describe('createPosterOptions', () => {
@@ -129,6 +159,21 @@ describe('createPosterOptions', () => {
 
   it('returns null when no encrypted key', () => {
     expect(createPosterOptions({ posterService: 'rpdb' }, mockDecrypt)).toBeNull();
+  });
+
+  it('returns custom URL options without encrypted key', () => {
+    const result = createPosterOptions(
+      {
+        posterService: 'customUrl',
+        posterCustomUrlPattern: 'https://img.example.com/{rating_id}.jpg',
+      },
+      mockDecrypt
+    );
+
+    expect(result).toEqual({
+      service: 'customUrl',
+      customUrlPattern: 'https://img.example.com/{rating_id}.jpg',
+    });
   });
 });
 

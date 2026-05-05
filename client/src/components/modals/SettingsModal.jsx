@@ -3,7 +3,6 @@ import {
   Upload,
   EyeOff,
   Settings,
-  X,
   KeyRound,
   Image as ImageIcon,
   Globe,
@@ -33,6 +32,8 @@ export function SettingsModal({ isOpen, onClose, onShowExport, onImportData }) {
   // Poster handlers
   const posterService = preferences?.posterService || 'none';
   const hasPosterKey = Boolean(preferences?.posterApiKeyEncrypted);
+  const posterCustomUrlPattern = preferences?.posterCustomUrlPattern || '';
+  const isCustomPosterService = posterService === 'customUrl';
 
   const handleLanguageChange = (val) => {
     onPreferencesChange({ ...preferences, defaultLanguage: val });
@@ -55,6 +56,13 @@ export function SettingsModal({ isOpen, onClose, onShowExport, onImportData }) {
     const newKey = e.target.value;
     setApiKeyInput(newKey);
     if (newKey) onPreferencesChange({ ...preferences, posterApiKey: newKey });
+  };
+
+  const handleCustomPatternChange = (e) => {
+    onPreferencesChange({
+      ...preferences,
+      posterCustomUrlPattern: e.target.value,
+    });
   };
 
   const posterServiceUrl =
@@ -349,6 +357,7 @@ export function SettingsModal({ isOpen, onClose, onShowExport, onImportData }) {
                       { id: 'none', name: 'Default (TMDB)' },
                       { id: 'rpdb', name: 'RPDB (Rating Posters)' },
                       { id: 'topPosters', name: 'Top Posters' },
+                      { id: 'customUrl', name: 'Custom URL Pattern' },
                     ]}
                     value={posterService}
                     onChange={(val) => handlePosterServiceChange({ target: { value: val } })}
@@ -362,6 +371,7 @@ export function SettingsModal({ isOpen, onClose, onShowExport, onImportData }) {
                     <div className="poster-key-box animate-fade-in" style={{ marginTop: '4px' }}>
                       <div className="input-group m-0" style={{ margin: 0 }}>
                         <label
+                          htmlFor="settings-poster-api-key"
                           className="text-xs text-muted font-medium"
                           style={{
                             display: 'flex',
@@ -369,7 +379,7 @@ export function SettingsModal({ isOpen, onClose, onShowExport, onImportData }) {
                             marginBottom: '8px',
                           }}
                         >
-                          API Key
+                          {isCustomPosterService ? 'API Key (optional)' : 'API Key'}
                           {hasPosterKey && !apiKeyInput && (
                             <span className="text-primary">Saved ✓</span>
                           )}
@@ -378,9 +388,16 @@ export function SettingsModal({ isOpen, onClose, onShowExport, onImportData }) {
                           style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
                         >
                           <input
+                            id="settings-poster-api-key"
                             type={showApiKey ? 'text' : 'password'}
                             className="input w-full"
-                            placeholder={hasPosterKey ? '••••••••' : 'Enter API key'}
+                            placeholder={
+                              hasPosterKey
+                                ? '••••••••'
+                                : isCustomPosterService
+                                  ? 'Optional (for {api_key} placeholder)'
+                                  : 'Enter API key'
+                            }
                             value={apiKeyInput}
                             onChange={handlePosterApiKeyChange}
                             style={{ paddingRight: '40px' }}
@@ -403,23 +420,57 @@ export function SettingsModal({ isOpen, onClose, onShowExport, onImportData }) {
                             )}
                           </button>
                         </div>
-                        <p
-                          style={{
-                            fontSize: '11.5px',
-                            marginTop: '10px',
-                            color: 'var(--text-muted)',
-                          }}
-                        >
-                          Get your key from{' '}
-                          <a
-                            href={posterServiceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline inline-flex items-center gap-1"
+                        {posterServiceUrl && posterServiceName ? (
+                          <p
+                            style={{
+                              fontSize: '11.5px',
+                              marginTop: '10px',
+                              color: 'var(--text-muted)',
+                            }}
                           >
-                            {posterServiceName} <ExternalLink size={10} />
-                          </a>
-                        </p>
+                            Get your key from{' '}
+                            <a
+                              href={posterServiceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline inline-flex items-center gap-1"
+                            >
+                              {posterServiceName} <ExternalLink size={10} />
+                            </a>
+                          </p>
+                        ) : null}
+
+                        {isCustomPosterService && (
+                          <>
+                            <label
+                              htmlFor="settings-poster-custom-url-pattern"
+                              className="text-xs text-muted font-medium"
+                              style={{ display: 'block', marginTop: '12px', marginBottom: '8px' }}
+                            >
+                              Custom URL Pattern
+                            </label>
+                            <input
+                              id="settings-poster-custom-url-pattern"
+                              type="text"
+                              className="input w-full"
+                              placeholder="https://example.com/{type}/{rating_id}.jpg"
+                              value={posterCustomUrlPattern}
+                              onChange={handleCustomPatternChange}
+                            />
+                            <p
+                              style={{
+                                fontSize: '11.5px',
+                                marginTop: '10px',
+                                color: 'var(--text-muted)',
+                                lineHeight: 1.4,
+                              }}
+                            >
+                              Placeholders: {'{type}'}, {'{imdb_id}'}, {'{tmdb_id}'},{' '}
+                              {'{rating_id}'}, {'{rating_id_type}'}, {'{api_key}'},{' '}
+                              {'{api_key_urlencoded}'}, {'{language}'}, {'{language_short}'}
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}

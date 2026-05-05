@@ -14,9 +14,20 @@ describe('IMDb enrichment cache key segregation', () => {
     const rpdbA = buildPosterIntegrationScope('rpdb', 'key-a');
     const rpdbB = buildPosterIntegrationScope('rpdb', 'key-b');
     const topA = buildPosterIntegrationScope('topPosters', 'key-a');
+    const customA = buildPosterIntegrationScope(
+      'customUrl',
+      null,
+      'https://img.example.com/{rating_id}.jpg'
+    );
+    const customB = buildPosterIntegrationScope(
+      'customUrl',
+      null,
+      'https://img.example.com/{imdb_id}.jpg'
+    );
 
     expect(rpdbA).not.toBe(rpdbB);
     expect(rpdbA).not.toBe(topA);
+    expect(customA).not.toBe(customB);
   });
 
   it('builds distinct top250 cache keys by integration scope', () => {
