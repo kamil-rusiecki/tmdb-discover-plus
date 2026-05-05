@@ -220,6 +220,7 @@ export const CatalogEditor = memo(function CatalogEditor() {
     onFiltersChange: handleFiltersChange,
     sortOptions,
     originalLanguages,
+    languages: safeOriginalLanguages,
     countries,
     safeCountries,
     safeCertifications,
