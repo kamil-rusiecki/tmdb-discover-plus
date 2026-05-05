@@ -82,9 +82,6 @@ export function SettingsModal({ isOpen, onClose, onShowExport, onImportData }) {
               Global Settings
             </h2>
           </div>
-          <button className="btn-close" onClick={onClose} aria-label="Close">
-            <X size={20} />
-          </button>
         </div>
 
         <div className="settings-modal-body">
@@ -430,6 +427,12 @@ export function SettingsModal({ isOpen, onClose, onShowExport, onImportData }) {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={onClose}>
+            Close
+          </button>
         </div>
       </div>
     </div>
