@@ -960,7 +960,9 @@ export function TraktFilterPanel({
               tooltip={
                 activeBrowseType === 'calendar'
                   ? 'Calendar options combine timeframe (upcoming/recently aired) and feed type.'
-                  : 'Select the specific list option within the chosen browse type.'
+                  : activeListType === 'recommended'
+                    ? 'Shows titles most often recommended by the Trakt community in the selected period. This is community-aggregated data — not your personal Trakt recommendations (those require account OAuth which is not supported).'
+                    : 'Select the specific list option within the chosen browse type.'
               }
             />
             <SearchableSelect

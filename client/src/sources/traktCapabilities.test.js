@@ -18,7 +18,7 @@ const listTypes = [
   { value: 'trending', label: 'Trending Now' },
   { value: 'popular', label: 'Most Popular' },
   { value: 'anticipated', label: 'Most Anticipated' },
-  { value: 'recommended', label: 'Recommended' },
+  { value: 'recommended', label: 'Community Recommended' },
   { value: 'favorited', label: 'Most Favorited' },
   { value: 'calendar', label: 'Calendar (Upcoming)' },
   { value: 'recently_aired', label: 'Recently Aired' },

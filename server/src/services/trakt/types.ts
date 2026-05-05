@@ -160,7 +160,7 @@ export const TRAKT_LIST_TYPES = [
   { value: 'trending', label: 'Trending Now', group: 'Discovery' },
   { value: 'popular', label: 'Most Popular', group: 'Discovery' },
   { value: 'anticipated', label: 'Most Anticipated', group: 'Discovery' },
-  { value: 'recommended', label: 'Recommended', group: 'Discovery' },
+  { value: 'recommended', label: 'Community Recommended', group: 'Discovery' },
   { value: 'favorited', label: 'Most Favorited', group: 'Rankings' },
   { value: 'community_stats', label: 'Community Stats', group: 'Rankings' },
   { value: 'calendar', label: 'Upcoming Releases', group: 'Schedule' },
