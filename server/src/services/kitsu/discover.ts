@@ -10,22 +10,8 @@ const PAGE_SIZE = 20;
 
 function contentTypeToSubtype(type: ContentType): string | null {
   if (type === 'movie') return 'movie';
+  if (type === 'series') return 'TV';
   return null;
-}
-
-function getSeasonDateRange(year: number, season: string): { start: string; end: string } {
-  switch (season) {
-    case 'winter':
-      return { start: `${year}-01-01`, end: `${year}-03-31` };
-    case 'spring':
-      return { start: `${year}-04-01`, end: `${year}-06-30` };
-    case 'summer':
-      return { start: `${year}-07-01`, end: `${year}-09-30` };
-    case 'fall':
-      return { start: `${year}-10-01`, end: `${year}-12-31` };
-    default:
-      return { start: `${year}-01-01`, end: `${year}-12-31` };
-  }
 }
 
 function parseKitsuResponse(response: KitsuListResponse): {
@@ -106,7 +92,6 @@ export async function browseAnime(
   }
 
   if (filters.kitsuSeason && filters.kitsuSeasonYear) {
-    const range = getSeasonDateRange(filters.kitsuSeasonYear, filters.kitsuSeason);
     params.set('filter[seasonYear]', String(filters.kitsuSeasonYear));
     params.set('filter[season]', filters.kitsuSeason);
   } else if (filters.kitsuSeasonYear) {

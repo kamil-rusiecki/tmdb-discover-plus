@@ -42,6 +42,7 @@ export function useCatalogEditorHandlers({
   onPreviewImdb,
   onPreviewAnilist,
   onPreviewMal,
+  onPreviewKitsu,
   onPreviewSimkl,
   onPreviewTrakt,
   selectedPeople,
@@ -268,6 +269,8 @@ export function useCatalogEditorHandlers({
         data = await onPreviewAnilist(localCatalog.type || 'movie', localCatalog.filters || {});
       } else if (localCatalog.source === 'mal' && onPreviewMal) {
         data = await onPreviewMal(localCatalog.type || 'movie', localCatalog.filters || {});
+      } else if (localCatalog.source === 'kitsu' && onPreviewKitsu) {
+        data = await onPreviewKitsu(localCatalog.type || 'movie', localCatalog.filters || {});
       } else if (localCatalog.source === 'simkl' && onPreviewSimkl) {
         data = await onPreviewSimkl(localCatalog.type || 'movie', localCatalog.filters || {});
       } else if (localCatalog.source === 'trakt' && onPreviewTrakt) {
@@ -298,6 +301,7 @@ export function useCatalogEditorHandlers({
     onPreviewImdb,
     onPreviewAnilist,
     onPreviewMal,
+    onPreviewKitsu,
     onPreviewSimkl,
     onPreviewTrakt,
     preferences?.defaultLanguage,

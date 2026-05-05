@@ -326,6 +326,13 @@ class ApiService {
     });
   }
 
+  async previewKitsuCatalog(type, filters) {
+    return this.request('/kitsu/preview', {
+      method: 'POST',
+      body: JSON.stringify({ type, filters }),
+    });
+  }
+
   async previewSimklCatalog(type, filters) {
     return this.request('/simkl/preview', {
       method: 'POST',

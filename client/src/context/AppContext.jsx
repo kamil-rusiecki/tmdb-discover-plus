@@ -96,6 +96,7 @@ export function AppProviders({ state, actions, config, tmdb, children }) {
       previewImdb: tmdb.previewImdb,
       previewAnilist: tmdb.previewAnilist,
       previewMal: tmdb.previewMal,
+      previewKitsu: tmdb.previewKitsu,
       previewSimkl: tmdb.previewSimkl,
       // Anime reference data
       anilistEnabled: tmdb.anilistEnabled,

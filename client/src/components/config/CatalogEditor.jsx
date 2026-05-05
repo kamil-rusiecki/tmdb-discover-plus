@@ -13,6 +13,7 @@ const SOURCE_ATTRIBUTION = {
   imdb: { label: 'Sleeyax', url: 'https://sleeyax.dev/' },
   anilist: { label: 'AniList', url: 'https://anilist.co/' },
   mal: { label: 'MyAnimeList', url: 'https://myanimelist.net/' },
+  kitsu: { label: 'Kitsu', url: 'https://kitsu.io/' },
   simkl: { label: 'Simkl', url: 'https://simkl.com/' },
   trakt: { label: 'Trakt', url: 'https://trakt.tv/' },
 };

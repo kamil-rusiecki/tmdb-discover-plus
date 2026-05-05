@@ -312,6 +312,9 @@
 .source-dot.mal {
   background: #2e51a2;
 }
+.source-dot.kitsu {
+  background: #f75239;
+}
 .source-dot.simkl {
   background: #0ac775;
 }

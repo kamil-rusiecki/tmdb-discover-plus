@@ -8,6 +8,75 @@ import {
   supportsTraktPeriod,
 } from '../sources/traktCapabilities';
 
+const KITSU_SORT_LABELS = {
+  '-averageRating': 'Highest Rated',
+  '-userCount': 'Most Popular',
+  '-favoritesCount': 'Most Favorited',
+  '-startDate': 'Newest',
+  startDate: 'Oldest',
+  '-episodeCount': 'Most Episodes',
+};
+
+const KITSU_SUBTYPE_LABELS = {
+  TV: 'TV',
+  movie: 'Movie',
+  OVA: 'OVA',
+  ONA: 'ONA',
+  special: 'Special',
+  music: 'Music',
+};
+
+const KITSU_STATUS_LABELS = {
+  current: 'Currently Airing',
+  finished: 'Finished',
+  tba: 'TBA',
+  unreleased: 'Unreleased',
+  upcoming: 'Upcoming',
+};
+
+const KITSU_AGE_RATING_LABELS = {
+  G: 'G - All Ages',
+  PG: 'PG - Children',
+  R: 'R - 17+',
+  R18: 'R18 - Explicit',
+};
+
+const KITSU_CATEGORY_LABELS = {
+  action: 'Action',
+  adventure: 'Adventure',
+  comedy: 'Comedy',
+  drama: 'Drama',
+  'sci-fi': 'Sci-Fi',
+  space: 'Space',
+  mystery: 'Mystery',
+  magic: 'Magic',
+  supernatural: 'Supernatural',
+  fantasy: 'Fantasy',
+  sports: 'Sports',
+  romance: 'Romance',
+  'slice-of-life': 'Slice of Life',
+  horror: 'Horror',
+  psychological: 'Psychological',
+  thriller: 'Thriller',
+  'martial-arts': 'Martial Arts',
+  'super-power': 'Super Power',
+  school: 'School',
+  ecchi: 'Ecchi',
+  historical: 'Historical',
+  military: 'Military',
+  mecha: 'Mecha',
+  demons: 'Demons',
+  harem: 'Harem',
+  music: 'Music',
+  shounen: 'Shounen',
+  shoujo: 'Shoujo',
+  seinen: 'Seinen',
+  josei: 'Josei',
+  isekai: 'Isekai',
+  kids: 'Kids',
+  parody: 'Parody',
+};
+
 export function useActiveFilters({
   localCatalog,
   setLocalCatalog,
@@ -773,59 +842,77 @@ export function useActiveFilters({
         active.push({ key: 'kitsuListType', label: 'Trending', section: 'filters' });
       }
 
-      if (filters.kitsuSort && filters.kitsuSort !== '-averageRating') {
+      if (
+        filters.kitsuSort &&
+        filters.kitsuSort !== '-averageRating' &&
+        filters.kitsuListType !== 'trending'
+      ) {
         active.push({
           key: 'kitsuSort',
-          label: `Sort: ${filters.kitsuSort}`,
+          label: `Sort: ${KITSU_SORT_LABELS[filters.kitsuSort] || filters.kitsuSort}`,
           section: 'filters',
         });
       }
 
       if (filters.kitsuCategories?.length > 0) {
+        const names = filters.kitsuCategories
+          .slice(0, 2)
+          .map((slug) => KITSU_CATEGORY_LABELS[slug] || slug);
+        const extra =
+          filters.kitsuCategories.length > 2 ? ` +${filters.kitsuCategories.length - 2}` : '';
         active.push({
           key: 'kitsuCategories',
-          label: `Categories: ${filters.kitsuCategories.length}`,
+          label: `Categories: ${names.join(', ')}${extra}`,
           section: 'genres',
         });
       }
 
       if (filters.kitsuSubtype?.length > 0) {
+        const names = filters.kitsuSubtype.map((value) => KITSU_SUBTYPE_LABELS[value] || value);
         active.push({
           key: 'kitsuSubtype',
-          label: `Type: ${filters.kitsuSubtype.join(', ')}`,
+          label: `Type: ${names.join(', ')}`,
           section: 'format',
         });
       }
 
       if (filters.kitsuStatus?.length > 0) {
+        const names = filters.kitsuStatus.map((value) => KITSU_STATUS_LABELS[value] || value);
         active.push({
           key: 'kitsuStatus',
-          label: `Status: ${filters.kitsuStatus.join(', ')}`,
+          label: `Status: ${names.join(', ')}`,
           section: 'format',
         });
       }
 
       if (filters.kitsuAgeRating?.length > 0) {
+        const names = filters.kitsuAgeRating.map(
+          (value) => KITSU_AGE_RATING_LABELS[value] || value
+        );
         active.push({
           key: 'kitsuAgeRating',
-          label: `Rating: ${filters.kitsuAgeRating.join(', ')}`,
+          label: `Rating: ${names.join(', ')}`,
           section: 'format',
         });
       }
 
-      if (filters.kitsuSeason) {
+      if (filters.kitsuSeason && filters.kitsuSeasonYear) {
         active.push({
           key: 'kitsuSeason',
-          label: `Season: ${filters.kitsuSeason}`,
-          section: 'filters',
+          label: `Season: ${toTitleCase(filters.kitsuSeason)} ${filters.kitsuSeasonYear}`,
+          section: 'season',
         });
-      }
-
-      if (filters.kitsuSeasonYear) {
+      } else if (filters.kitsuSeason) {
+        active.push({
+          key: 'kitsuSeason',
+          label: `Season: ${toTitleCase(filters.kitsuSeason)}`,
+          section: 'season',
+        });
+      } else if (filters.kitsuSeasonYear) {
         active.push({
           key: 'kitsuSeasonYear',
           label: `Year: ${filters.kitsuSeasonYear}`,
-          section: 'filters',
+          section: 'season',
         });
       }
     }
@@ -1320,6 +1407,31 @@ export function useActiveFilters({
           break;
         case 'malOrderBy':
           update({ malOrderBy: undefined });
+          break;
+        // --- Kitsu specific ---
+        case 'kitsuListType':
+          update({ kitsuListType: 'browse' });
+          break;
+        case 'kitsuSort':
+          update({ kitsuSort: '-averageRating' });
+          break;
+        case 'kitsuCategories':
+          update({ kitsuCategories: [] });
+          break;
+        case 'kitsuSubtype':
+          update({ kitsuSubtype: [] });
+          break;
+        case 'kitsuStatus':
+          update({ kitsuStatus: [] });
+          break;
+        case 'kitsuAgeRating':
+          update({ kitsuAgeRating: [] });
+          break;
+        case 'kitsuSeason':
+          update({ kitsuSeason: undefined, kitsuSeasonYear: undefined });
+          break;
+        case 'kitsuSeasonYear':
+          update({ kitsuSeasonYear: undefined });
           break;
         // --- Simkl specific ---
         case 'simklListType':

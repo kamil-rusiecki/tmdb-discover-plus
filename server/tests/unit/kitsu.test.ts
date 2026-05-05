@@ -249,6 +249,30 @@ describe('Kitsu source', () => {
       expect(result.anime[0].title).toBe('Test');
       const calledUrl = mockFetch.mock.calls[0][0];
       expect(calledUrl).toContain('/trending/anime');
+      expect(calledUrl).not.toContain('filter%5Bsubtype%5D');
+
+      vi.unstubAllGlobals();
+    });
+
+    it('applies TV subtype for series trending catalogs', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            data: [],
+            meta: { count: 0 },
+            links: {},
+          }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { discover } = await import('../../src/services/kitsu/discover');
+      await discover({ kitsuListType: 'trending' }, 'series', 1);
+
+      const calledUrl = mockFetch.mock.calls[0][0];
+      expect(calledUrl).toContain('/trending/anime');
+      expect(calledUrl).toContain('filter%5Bsubtype%5D=TV');
 
       vi.unstubAllGlobals();
     });
@@ -282,6 +306,37 @@ describe('Kitsu source', () => {
       expect(calledUrl).toContain('filter%5Bcategories%5D=action%2Ccomedy');
       expect(calledUrl).toContain('filter%5Bstatus%5D=current');
       expect(calledUrl).toContain('sort=-userCount');
+      expect(calledUrl).not.toContain('filter%5Bsubtype%5D');
+
+      vi.unstubAllGlobals();
+    });
+
+    it('applies TV subtype for series browse when subtype is not explicitly set', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            data: [],
+            meta: { count: 0 },
+            links: {},
+          }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { discover } = await import('../../src/services/kitsu/discover');
+      await discover(
+        {
+          kitsuListType: 'browse',
+          kitsuSort: '-averageRating',
+        },
+        'series',
+        1
+      );
+
+      const calledUrl = mockFetch.mock.calls[0][0];
+      expect(calledUrl).toContain('/anime?');
+      expect(calledUrl).toContain('filter%5Bsubtype%5D=TV');
 
       vi.unstubAllGlobals();
     });

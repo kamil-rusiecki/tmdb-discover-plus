@@ -319,6 +319,14 @@ export function useTMDB(apiKey) {
     [hasAuth]
   );
 
+  const previewKitsu = useCallback(
+    async (type, filters) => {
+      if (!hasAuth) throw new Error('Authentication required');
+      return api.previewKitsuCatalog(type, filters);
+    },
+    [hasAuth]
+  );
+
   const previewSimkl = useCallback(
     async (type, filters) => {
       if (!hasAuth) throw new Error('Authentication required');
@@ -387,6 +395,7 @@ export function useTMDB(apiKey) {
     previewImdb,
     previewAnilist,
     previewMal,
+    previewKitsu,
     previewSimkl,
     previewTrakt,
     searchImdb,

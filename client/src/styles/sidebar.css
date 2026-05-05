@@ -1437,6 +1437,9 @@
 .source-tab.active.mal {
   color: #2e51a2;
 }
+.source-tab.active.kitsu {
+  color: #f75239;
+}
 .source-tab.active.simkl {
   color: #0ac775;
 }

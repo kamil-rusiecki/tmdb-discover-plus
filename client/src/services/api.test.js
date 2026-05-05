@@ -115,6 +115,23 @@ describe('ApiService', () => {
     expect(result.token).toBe('new-jwt');
     expect(api.getSessionToken()).toBe('new-jwt');
   });
+
+  it('calls kitsu preview endpoint', async () => {
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ metas: [] }),
+    });
+
+    await api.previewKitsuCatalog('anime', { categories: ['action'] });
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      '/api/kitsu/preview',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+  });
 });
 
 function createStorage() {

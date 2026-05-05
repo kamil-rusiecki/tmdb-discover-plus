@@ -17,6 +17,7 @@ import * as tmdb from '../services/tmdb/index.ts';
 import * as imdb from '../services/imdb/index.ts';
 import * as anilist from '../services/anilist/index.ts';
 import * as mal from '../services/mal/index.ts';
+import * as kitsu from '../services/kitsu/index.ts';
 import * as simkl from '../services/simkl/index.ts';
 import * as trakt from '../services/trakt/index.ts';
 import { searchCities } from '../services/geo.ts';
@@ -1106,6 +1107,40 @@ router.post('/mal/preview', requireAuth, async (req, res) => {
     res.json({ metas: previewMetas.slice(0, PREVIEW_PAGE_SIZE), totalResults: null });
   } catch (error) {
     log.error('POST /mal/preview error', { error: (error as Error).message });
+    sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
+  }
+});
+
+router.post('/kitsu/preview', requireAuth, async (req, res) => {
+  try {
+    const { filters, type } = req.body;
+    const safeFilters = filters || {};
+    const randomize = Boolean(safeFilters.randomize || safeFilters.sortBy === 'random');
+    const contentType = (
+      type === 'anime' ? 'anime' : type === 'series' ? 'series' : 'movie'
+    ) as ContentType;
+    const metas: import('../types/stremio.ts').StremioMetaPreview[] = [];
+    let page = 1;
+
+    if (randomize) {
+      const probe = await kitsu.discover(safeFilters, contentType, 1);
+      const totalPages = Math.ceil(probe.total / 20) || 1;
+      page = Math.floor(Math.random() * Math.min(totalPages, 20)) + 1;
+    }
+
+    let pages = 0;
+    while (metas.length < PREVIEW_PAGE_SIZE && pages < PREVIEW_MAX_BACKFILL) {
+      const result = await kitsu.discover(safeFilters, contentType, page);
+      metas.push(...kitsu.batchConvertToStremioMeta(result.anime, contentType));
+      pages++;
+      if (!result.hasMore || result.anime.length === 0) break;
+      page++;
+    }
+
+    const previewMetas = randomize ? shuffleArray(metas) : metas;
+    res.json({ metas: previewMetas.slice(0, PREVIEW_PAGE_SIZE), totalResults: null });
+  } catch (error) {
+    log.error('POST /kitsu/preview error', { error: (error as Error).message });
     sendError(res, 500, ErrorCodes.INTERNAL_ERROR, safeErrorMessage(error as Error));
   }
 });

@@ -71,6 +71,7 @@ export function useCatalogEditor() {
     // Anime sources
     previewAnilist: onPreviewAnilist,
     previewMal: onPreviewMal,
+    previewKitsu: onPreviewKitsu,
     previewSimkl: onPreviewSimkl,
     anilistGenres = [],
     anilistTags = [],
@@ -411,6 +412,7 @@ export function useCatalogEditor() {
     // Anime sources
     onPreviewAnilist,
     onPreviewMal,
+    onPreviewKitsu,
     onPreviewSimkl,
     anilistGenres,
     anilistTags,

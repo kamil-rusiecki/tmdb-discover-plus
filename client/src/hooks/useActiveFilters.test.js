@@ -108,6 +108,58 @@ describe('useActiveFilters', () => {
       expect(sortFilter.label).not.toContain('anime_score');
     });
 
+    it('maps Kitsu sort value to friendly label', () => {
+      const props = createDefaultProps({
+        localCatalog: {
+          source: 'kitsu',
+          type: 'anime',
+          filters: { kitsuListType: 'browse', kitsuSort: '-startDate' },
+        },
+      });
+
+      const { result } = renderHook(() => useActiveFilters(props));
+      const sortFilter = result.current.activeFilters.find((f) => f.key === 'kitsuSort');
+
+      expect(sortFilter).toBeDefined();
+      expect(sortFilter.label).toBe('Sort: Newest');
+      expect(sortFilter.label).not.toContain('-startDate');
+    });
+
+    it('renders Kitsu categories with readable names', () => {
+      const props = createDefaultProps({
+        localCatalog: {
+          source: 'kitsu',
+          type: 'anime',
+          filters: { kitsuCategories: ['action', 'slice-of-life'] },
+        },
+      });
+
+      const { result } = renderHook(() => useActiveFilters(props));
+      const categoryFilter = result.current.activeFilters.find((f) => f.key === 'kitsuCategories');
+
+      expect(categoryFilter).toBeDefined();
+      expect(categoryFilter.label).toContain('Action');
+      expect(categoryFilter.label).toContain('Slice of Life');
+      expect(categoryFilter.label).not.toBe('Categories: 2');
+    });
+
+    it('maps Kitsu season chip to season section', () => {
+      const props = createDefaultProps({
+        localCatalog: {
+          source: 'kitsu',
+          type: 'anime',
+          filters: { kitsuSeason: 'winter', kitsuSeasonYear: 2024 },
+        },
+      });
+
+      const { result } = renderHook(() => useActiveFilters(props));
+      const seasonFilter = result.current.activeFilters.find((f) => f.key === 'kitsuSeason');
+
+      expect(seasonFilter).toBeDefined();
+      expect(seasonFilter.section).toBe('season');
+      expect(seasonFilter.label).toBe('Season: Winter 2024');
+    });
+
     it('detects selected genres', () => {
       const props = createDefaultProps({
         localCatalog: { type: 'movie', filters: { genres: [28, 12] } },
@@ -271,6 +323,49 @@ describe('useActiveFilters', () => {
       });
 
       expect(setSelectedPeople).toHaveBeenCalledWith([]);
+    });
+
+    it('clears Kitsu sort to default', () => {
+      const setLocalCatalog = vi.fn();
+      const props = createDefaultProps({
+        localCatalog: {
+          source: 'kitsu',
+          type: 'anime',
+          filters: { kitsuSort: '-startDate' },
+        },
+        setLocalCatalog,
+      });
+      const { result } = renderHook(() => useActiveFilters(props));
+
+      act(() => {
+        result.current.clearFilter('kitsuSort');
+      });
+
+      const updater = setLocalCatalog.mock.calls[0][0];
+      const updated = updater({ filters: { kitsuSort: '-startDate' } });
+      expect(updated.filters.kitsuSort).toBe('-averageRating');
+    });
+
+    it('clears Kitsu season and season year together', () => {
+      const setLocalCatalog = vi.fn();
+      const props = createDefaultProps({
+        localCatalog: {
+          source: 'kitsu',
+          type: 'anime',
+          filters: { kitsuSeason: 'winter', kitsuSeasonYear: 2024 },
+        },
+        setLocalCatalog,
+      });
+      const { result } = renderHook(() => useActiveFilters(props));
+
+      act(() => {
+        result.current.clearFilter('kitsuSeason');
+      });
+
+      const updater = setLocalCatalog.mock.calls[0][0];
+      const updated = updater({ filters: { kitsuSeason: 'winter', kitsuSeasonYear: 2024 } });
+      expect(updated.filters.kitsuSeason).toBeUndefined();
+      expect(updated.filters.kitsuSeasonYear).toBeUndefined();
     });
   });
 
