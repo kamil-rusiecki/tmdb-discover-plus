@@ -811,6 +811,7 @@ async function handleCatalogRequest(
           language: resolvedFilters?.language || catalogConfig.filters?.language,
           region: resolvedFilters?.countries || catalogConfig.filters?.countries,
           collectionId: resolvedFilters?.collectionId || catalogConfig.filters?.collectionId,
+          studioId: resolvedFilters?.studioId || catalogConfig.filters?.studioId,
           sortBy: resolvedFilters?.sortBy || catalogConfig.filters?.sortBy,
           randomize,
         })) as { results?: unknown[] } | null;

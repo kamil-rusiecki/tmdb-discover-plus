@@ -568,7 +568,10 @@ export async function enrichManifestWithGenres(
             return idFromStored === catalog.id || idFromIdOnly === catalog.id;
           });
 
-          if (savedCatalog?.filters?.listType === 'collection') {
+          if (
+            savedCatalog?.filters?.listType === 'collection' ||
+            savedCatalog?.filters?.listType === 'studio'
+          ) {
             return;
           }
 
@@ -696,7 +699,12 @@ export async function enrichManifestWithExtras(
       return idFromStored === catalog.id || idFromIdOnly === catalog.id;
     });
     if (!savedCatalog) continue;
-    if (savedCatalog.filters?.listType === 'collection') continue;
+    if (
+      savedCatalog.filters?.listType === 'collection' ||
+      savedCatalog.filters?.listType === 'studio'
+    ) {
+      continue;
+    }
 
     const dropdownMode = getStremioExtraMode(
       savedCatalog.filters as Record<string, unknown> | undefined,

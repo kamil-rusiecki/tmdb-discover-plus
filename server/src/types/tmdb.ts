@@ -433,6 +433,7 @@ export interface SpecialListOptions {
   region?: string;
   randomize?: boolean;
   collectionId?: number | string;
+  studioId?: number | string;
   sortBy?: string;
 }
 
@@ -446,6 +447,7 @@ export type SpecialListType =
   | 'top_rated'
   | 'popular'
   | 'collection'
+  | 'studio'
   | 'random';
 
 export type GenreMap = Record<string, string>;

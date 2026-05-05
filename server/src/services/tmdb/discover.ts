@@ -14,6 +14,62 @@ import type {
   TmdbCollectionDetails,
 } from '../../types/index.ts';
 
+type CompanyFilmographyListResult = {
+  page: number;
+  results: Array<{ id: number }>;
+  total_pages: number;
+  total_results: number;
+  __companyFilmographyIdsOnly: true;
+};
+
+async function fetchCompanyFilmographyList(
+  companyId: string,
+  page: number
+): Promise<CompanyFilmographyListResult> {
+  const url = new URL(`https://www.themoviedb.org/company/${companyId}/movie`);
+  url.searchParams.set('page', String(page));
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      accept: 'text/html,application/xhtml+xml',
+      'accept-language': 'en-US,en;q=0.9',
+      'user-agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`TMDB website company filmography request failed with ${response.status}`);
+  }
+
+  const html = await response.text();
+  const totalResultsMatch = html.match(/(\d[\d,]*)\s+movies/i);
+  const totalResults = totalResultsMatch ? parseInt(totalResultsMatch[1].replace(/,/g, ''), 10) : 0;
+
+  const seenIds = new Set<number>();
+  const results: Array<{ id: number }> = [];
+  const movieLinkPattern = /href="\/movie\/(\d+)(?:-[^"]*)?"/g;
+
+  for (const match of html.matchAll(movieLinkPattern)) {
+    const id = Number(match[1]);
+    if (!Number.isInteger(id) || seenIds.has(id)) continue;
+    seenIds.add(id);
+    results.push({ id });
+  }
+
+  if (results.length === 0) {
+    throw new Error('TMDB website company filmography returned no movie IDs');
+  }
+
+  return {
+    page,
+    results,
+    total_pages: Math.max(1, Math.ceil(totalResults / 20)),
+    total_results: totalResults || results.length,
+    __companyFilmographyIdsOnly: true,
+  };
+}
+
 function sortCollectionParts(
   parts: Array<Record<string, unknown>>,
   sortBy: string | undefined
@@ -359,7 +415,7 @@ export async function fetchSpecialList(
   type: ContentType = 'movie',
   options: SpecialListOptions = {}
 ): Promise<unknown> {
-  const { page = 1, language, displayLanguage, region, collectionId, sortBy } = options;
+  const { page = 1, language, displayLanguage, region, collectionId, studioId, sortBy } = options;
   const mediaType = type === 'series' ? 'tv' : 'movie';
 
   const params: Record<string, string | number | boolean | undefined> = { page };
@@ -407,6 +463,15 @@ export async function fetchSpecialList(
         ...(languageParam ? { language: languageParam } : {}),
       })) as TmdbCollectionDetails;
       return mapCollectionToPaginatedResult(collection, page, sortBy);
+    }
+    case 'studio': {
+      if (type !== 'collection') {
+        throw new Error('TMDB studio lists are only supported for collection type catalogs');
+      }
+      if (!studioId) {
+        throw new Error('Studio ID required for studio list type');
+      }
+      return fetchCompanyFilmographyList(String(studioId), page);
     }
     case 'random':
       return discover(apiKey, { type, page, ...options, randomize: true });

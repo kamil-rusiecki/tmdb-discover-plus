@@ -159,7 +159,7 @@ export function NewCatalogModal({ isOpen, onClose, onAdd, imdbEnabled = false })
                     onClick={() => setType('collection')}
                   >
                     <Sparkles size={16} />
-                    Collection
+                    Collections
                   </button>
                 )}
               </div>

@@ -329,7 +329,7 @@ export async function toStremioFullMeta(
 ): Promise<Partial<StremioMeta>> {
   if (!rawDetails) return {};
   const details = rawDetails as AnyTmdbDetails;
-  const isMovie = type === 'movie';
+  const isMovie = type === 'movie' || type === 'collection';
   const title = (isMovie ? details.title : details.name) || '';
   const releaseDate = isMovie ? details.release_date : details.first_air_date;
   const year = releaseDate ? String(releaseDate).split('-')[0] : '';
@@ -544,7 +544,7 @@ export function toStremioMeta(
   ratingsMap: Map<string, string> | null = null
 ): StremioMetaPreview {
   const item = rawItem as AnyTmdbResult;
-  const isMovie = type === 'movie';
+  const isMovie = type === 'movie' || type === 'collection';
   const title = (isMovie ? item.title : item.name) || '';
   const releaseDate = isMovie ? item.release_date : item.first_air_date;
   const year = releaseDate ? releaseDate.split('-')[0] : '';
@@ -649,7 +649,7 @@ export async function toStremioMetaPreview(
 ): Promise<StremioMetaPreview | null> {
   if (!rawDetails) return null;
   const details = rawDetails as AnyTmdbDetails;
-  const isMovie = type === 'movie';
+  const isMovie = type === 'movie' || type === 'collection';
   const title = (isMovie ? details.title : details.name) || '';
   const releaseDate = isMovie ? details.release_date : details.first_air_date;
   const year = releaseDate ? String(releaseDate).split('-')[0] : '';

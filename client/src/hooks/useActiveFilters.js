@@ -52,6 +52,8 @@ export function useActiveFilters({
 }) {
   const isImdbSource = localCatalog?.source === 'imdb';
   const isAnilistSource = localCatalog?.source === 'anilist';
+  const isCollectionCatalog = localCatalog?.type === 'collection';
+  const isStudioCollection = isCollectionCatalog && localCatalog?.filters?.listType === 'studio';
 
   const activeFilters = useMemo(() => {
     const filters = localCatalog?.filters || {};
@@ -65,7 +67,11 @@ export function useActiveFilters({
     const imdbSortDefault = 'POPULARITY';
     const effectiveTmdbType = localCatalog?.type === 'collection' ? 'movie' : localCatalog?.type;
     const tmdbSortDefault =
-      localCatalog?.type === 'collection' ? 'collection_order' : 'popularity.desc';
+      localCatalog?.type === 'collection'
+        ? localCatalog?.filters?.listType === 'studio'
+          ? undefined
+          : 'collection_order'
+        : 'popularity.desc';
     const anilistSortDefault = 'TRENDING_DESC';
 
     const humanize = (value) => {
@@ -993,7 +999,9 @@ export function useActiveFilters({
               ? { sortBy: 'POPULARITY', sortOrder: 'DESC' }
               : isAnilistSource
                 ? { sortBy: 'TRENDING_DESC' }
-                : { sortBy: 'popularity.desc' }
+                : isCollectionCatalog
+                  ? { sortBy: isStudioCollection ? undefined : 'collection_order' }
+                  : { sortBy: 'popularity.desc' }
           );
           break;
         case 'genres':
@@ -1339,6 +1347,8 @@ export function useActiveFilters({
     [
       isImdbSource,
       isAnilistSource,
+      isCollectionCatalog,
+      isStudioCollection,
       setSelectedPeople,
       setSelectedCompanies,
       setSelectedKeywords,
@@ -1352,7 +1362,18 @@ export function useActiveFilters({
   const clearAllFilters = useCallback(() => {
     setLocalCatalog((prev) => ({
       ...prev,
-      filters: { ...getSource(prev?.source ?? 'tmdb').defaultFilters },
+      filters:
+        prev?.source === 'tmdb' && prev?.type === 'collection'
+          ? {
+              ...getSource(prev?.source ?? 'tmdb').defaultFilters,
+              listType: prev?.filters?.listType === 'studio' ? 'studio' : 'collection',
+              sortBy: prev?.filters?.listType === 'studio' ? undefined : 'collection_order',
+              collectionId: undefined,
+              collectionName: undefined,
+              studioId: undefined,
+              studioName: undefined,
+            }
+          : { ...getSource(prev?.source ?? 'tmdb').defaultFilters },
     }));
     setSelectedPeople([]);
     setSelectedCompanies([]);

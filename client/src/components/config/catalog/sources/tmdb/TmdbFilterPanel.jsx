@@ -43,6 +43,7 @@ export const TmdbFilterPanel = memo(function TmdbFilterPanel({
   searchCompany,
   searchKeyword,
   searchCollection,
+  getCompanyById,
   getCollectionById,
   handleTVNetworkSearch,
   handleTriStateGenreClick,
@@ -55,10 +56,14 @@ export const TmdbFilterPanel = memo(function TmdbFilterPanel({
   supportsFullFilters,
   selectedCollection,
   setSelectedCollection,
+  selectedStudio,
+  setSelectedStudio,
 }) {
   const catalogType = localCatalog?.type || 'movie';
   const isMovie = catalogType === 'movie';
   const isCollectionMode = catalogType === 'collection';
+  const collectionMode = localCatalog?.filters?.listType === 'studio' ? 'studio' : 'collection';
+  const isStudioMode = isCollectionMode && collectionMode === 'studio';
 
   const currentGenres = safeGenres[catalogType] || [];
   const selectedGenres = localCatalog?.filters?.genres || [];
@@ -84,10 +89,17 @@ export const TmdbFilterPanel = memo(function TmdbFilterPanel({
         option.value === 'vote_count.asc'
     );
   }, [sortOptions]);
+  const collectionModeOptions = useMemo(
+    () => [
+      { value: 'collection', label: 'Collection' },
+      { value: 'studio', label: 'Studio' },
+    ],
+    []
+  );
 
   useEffect(() => {
     const currentCollectionId = localCatalog?.filters?.collectionId;
-    if (!isCollectionMode || !currentCollectionId || !getCollectionById) return;
+    if (!isCollectionMode || isStudioMode || !currentCollectionId || !getCollectionById) return;
     if (selectedCollection && String(selectedCollection.id) === String(currentCollectionId)) return;
 
     let cancelled = false;
@@ -109,10 +121,40 @@ export const TmdbFilterPanel = memo(function TmdbFilterPanel({
   }, [
     getCollectionById,
     isCollectionMode,
+    isStudioMode,
     localCatalog?.filters?.collectionId,
     localCatalog?.filters?.displayLanguage,
     selectedCollection,
     setSelectedCollection,
+  ]);
+
+  useEffect(() => {
+    const currentStudioId = localCatalog?.filters?.studioId;
+    if (!isCollectionMode || !isStudioMode || !currentStudioId || !getCompanyById) return;
+    if (selectedStudio && String(selectedStudio.id) === String(currentStudioId)) return;
+
+    let cancelled = false;
+    getCompanyById(currentStudioId)
+      .then((company) => {
+        if (cancelled || !company) return;
+        setSelectedStudio({
+          id: company.id,
+          name: company.name,
+          logo_path: company.logoPath || null,
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    getCompanyById,
+    isCollectionMode,
+    isStudioMode,
+    localCatalog?.filters?.studioId,
+    selectedStudio,
+    setSelectedStudio,
   ]);
 
   return (
@@ -120,62 +162,180 @@ export const TmdbFilterPanel = memo(function TmdbFilterPanel({
       {isCollectionMode && (
         <FilterSection
           id="collection"
-          title="Collection"
-          description="Select one TMDB collection"
+          title="Collection / Studio"
+          description="Choose one TMDB collection or one studio filmography"
           icon={Sparkles}
           isOpen={expandedSections.collection}
           onToggle={onToggleSection}
-          badgeCount={localCatalog?.filters?.collectionId ? 1 : 0}
+          badgeCount={
+            isStudioMode
+              ? localCatalog?.filters?.studioId
+                ? 1
+                : 0
+              : localCatalog?.filters?.collectionId
+                ? 1
+                : 0
+          }
         >
           <div className="filter-group">
-            <span className="filter-label">Find collection</span>
-            <SearchInput
-              type="collection"
-              placeholder="Search TMDB collections..."
-              onSearch={async (query) => {
-                const response = await searchCollection(
-                  query,
-                  1,
-                  localCatalog?.filters?.displayLanguage || ''
-                );
-                return response?.results || [];
-              }}
-              selectedItems={selectedCollection}
-              onSelect={(item) => {
-                const normalized = {
-                  id: item.id,
-                  name: item.name,
-                  poster_path: item.posterPath || null,
-                  backdrop_path: item.backdropPath || null,
-                };
-                setSelectedCollection(normalized);
-                onFiltersChange('listType', 'collection');
-                onFiltersChange('collectionId', String(normalized.id));
-                onFiltersChange('collectionName', normalized.name);
-              }}
-              onRemove={() => {
-                setSelectedCollection(null);
-                onFiltersChange('listType', 'collection');
-                onFiltersChange('collectionId', undefined);
-                onFiltersChange('collectionName', undefined);
-              }}
-              multiple={false}
-            />
-          </div>
-
-          <div className="filter-group" style={{ marginTop: 12 }}>
-            <span className="filter-label">Collection order</span>
+            <span className="filter-label">Mode</span>
             <SearchableSelect
-              options={collectionSortOptions}
-              value={localCatalog?.filters?.sortBy || 'collection_order'}
-              onChange={(value) => onFiltersChange('sortBy', value)}
-              placeholder="Collection Order"
+              options={collectionModeOptions}
+              value={collectionMode}
+              onChange={(value) => {
+                if (value === 'studio') {
+                  onFiltersChange('listType', 'studio');
+                  onFiltersChange('collectionId', undefined);
+                  onFiltersChange('collectionName', undefined);
+                  onFiltersChange(
+                    'studioId',
+                    selectedStudio?.id ? String(selectedStudio.id) : localCatalog?.filters?.studioId
+                  );
+                  onFiltersChange(
+                    'studioName',
+                    selectedStudio?.name || localCatalog?.filters?.studioName
+                  );
+                  onFiltersChange('sortBy', undefined);
+                  return;
+                }
+
+                onFiltersChange('listType', 'collection');
+                onFiltersChange('studioId', undefined);
+                onFiltersChange('studioName', undefined);
+                onFiltersChange(
+                  'collectionId',
+                  selectedCollection?.id
+                    ? String(selectedCollection.id)
+                    : localCatalog?.filters?.collectionId
+                );
+                onFiltersChange(
+                  'collectionName',
+                  selectedCollection?.name || localCatalog?.filters?.collectionName
+                );
+                onFiltersChange(
+                  'sortBy',
+                  localCatalog?.filters?.listType === 'collection' && localCatalog?.filters?.sortBy
+                    ? localCatalog.filters.sortBy
+                    : 'collection_order'
+                );
+              }}
+              placeholder="Collection"
               searchPlaceholder="Search..."
               labelKey="label"
               valueKey="value"
               allowClear={false}
             />
           </div>
+
+          {!isStudioMode && (
+            <>
+              <div className="filter-group">
+                <span className="filter-label">Find collection</span>
+                <SearchInput
+                  type="collection"
+                  placeholder="Search TMDB collections..."
+                  onSearch={async (query) => {
+                    const response = await searchCollection(
+                      query,
+                      1,
+                      localCatalog?.filters?.displayLanguage || ''
+                    );
+                    return response?.results || [];
+                  }}
+                  selectedItems={selectedCollection}
+                  onSelect={(item) => {
+                    const normalized = {
+                      id: item.id,
+                      name: item.name,
+                      poster_path: item.posterPath || null,
+                      backdrop_path: item.backdropPath || null,
+                    };
+                    setSelectedCollection(normalized);
+                    onFiltersChange('listType', 'collection');
+                    onFiltersChange('collectionId', String(normalized.id));
+                    onFiltersChange('collectionName', normalized.name);
+                    onFiltersChange('sortBy', localCatalog?.filters?.sortBy || 'collection_order');
+                  }}
+                  onRemove={() => {
+                    setSelectedCollection(null);
+                    onFiltersChange('listType', 'collection');
+                    onFiltersChange('collectionId', undefined);
+                    onFiltersChange('collectionName', undefined);
+                    onFiltersChange('sortBy', 'collection_order');
+                  }}
+                  multiple={false}
+                />
+              </div>
+
+              <div className="filter-group" style={{ marginTop: 12 }}>
+                <span className="filter-label">Collection order</span>
+                <SearchableSelect
+                  options={collectionSortOptions}
+                  value={localCatalog?.filters?.sortBy || 'collection_order'}
+                  onChange={(value) => onFiltersChange('sortBy', value)}
+                  placeholder="Collection Order"
+                  searchPlaceholder="Search..."
+                  labelKey="label"
+                  valueKey="value"
+                  allowClear={false}
+                />
+              </div>
+            </>
+          )}
+
+          {isStudioMode && (
+            <>
+              <div className="filter-group">
+                <span className="filter-label">Find studio</span>
+                <SearchInput
+                  type="company"
+                  placeholder="Search TMDB studios..."
+                  onSearch={async (query) => {
+                    const response = await searchCompany(query);
+                    return response || [];
+                  }}
+                  selectedItems={selectedStudio}
+                  onSelect={(item) => {
+                    const normalized = {
+                      id: item.id,
+                      name: item.name,
+                      logo_path: item.logoPath || null,
+                    };
+                    setSelectedStudio(normalized);
+                    onFiltersChange('listType', 'studio');
+                    onFiltersChange('studioId', String(normalized.id));
+                    onFiltersChange('studioName', normalized.name);
+                    onFiltersChange('collectionId', undefined);
+                    onFiltersChange('collectionName', undefined);
+                    onFiltersChange('sortBy', undefined);
+                  }}
+                  onRemove={() => {
+                    setSelectedStudio(null);
+                    onFiltersChange('listType', 'studio');
+                    onFiltersChange('studioId', undefined);
+                    onFiltersChange('studioName', undefined);
+                  }}
+                  multiple={false}
+                />
+              </div>
+
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-secondary)',
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                }}
+              >
+                Full studio mode shows the complete TMDB company filmography. Discover filters are
+                intentionally disabled here because TMDB does not reliably expose them for this
+                view.
+              </div>
+            </>
+          )}
         </FilterSection>
       )}
 

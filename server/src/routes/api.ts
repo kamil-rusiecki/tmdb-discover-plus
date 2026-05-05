@@ -1307,6 +1307,7 @@ router.post('/preview', requireAuth, resolveApiKey, async (req, res) => {
         language: resolvedFilters?.language,
         region: resolvedFilters?.countries,
         collectionId: resolvedFilters?.collectionId,
+        studioId: resolvedFilters?.studioId,
         sortBy: resolvedFilters?.sortBy,
         randomize,
       })) as PreviewResult;
@@ -1319,37 +1320,62 @@ router.post('/preview', requireAuth, resolveApiKey, async (req, res) => {
       })) as PreviewResult;
     }
 
-    let genreMap: Record<string, string> | null = null;
-    const displayLanguage = resolvedFilters?.displayLanguage;
-
-    if ((results?.results?.length ?? 0) > 0 && displayLanguage && displayLanguage !== 'en') {
-      try {
-        const localizedGenres = await tmdb.getGenres(apiKey, type, displayLanguage);
-        if (Array.isArray(localizedGenres)) {
-          const map: Record<string, string> = {};
-          localizedGenres.forEach((g) => {
-            map[String(g.id)] = g.name;
-          });
-          genreMap = map;
-        }
-      } catch (err) {
-        log.warn('Failed to fetch localized genres for preview', {
-          displayLanguage,
-          error: (err as Error).message,
-        });
-      }
-    }
-
     const allResults = (results?.results || []) as import('../types/index.ts').TmdbResult[];
-    const metas = allResults.slice(0, 20).map((item) => {
-      return tmdb.toStremioMeta(item, type, null, null, genreMap);
-    });
+    const displayLanguage = resolvedFilters?.displayLanguage;
+    const isCompanyFilmographyIdsOnly = Boolean(
+      (results as { __companyFilmographyIdsOnly?: boolean } | null)?.__companyFilmographyIdsOnly
+    );
 
-    const filteredMetas = metas.filter(Boolean);
+    let filteredMetas;
+
+    if (isCompanyFilmographyIdsOnly) {
+      const tmdbIds = allResults.slice(0, 20).map((item) => item.id);
+      const detailsMap = await tmdb.batchGetDetails(apiKey, tmdbIds, type, { displayLanguage });
+      filteredMetas = (
+        await Promise.all(
+          tmdbIds.map((tmdbId) =>
+            tmdb.toStremioMetaPreview(
+              detailsMap.get(tmdbId) as import('../types/index.ts').TmdbDetails | null,
+              type,
+              null,
+              displayLanguage || null,
+              null
+            )
+          )
+        )
+      ).filter(Boolean);
+    } else {
+      let genreMap: Record<string, string> | null = null;
+
+      if ((results?.results?.length ?? 0) > 0 && displayLanguage && displayLanguage !== 'en') {
+        try {
+          const localizedGenres = await tmdb.getGenres(apiKey, type, displayLanguage);
+          if (Array.isArray(localizedGenres)) {
+            const map: Record<string, string> = {};
+            localizedGenres.forEach((g) => {
+              map[String(g.id)] = g.name;
+            });
+            genreMap = map;
+          }
+        } catch (err) {
+          log.warn('Failed to fetch localized genres for preview', {
+            displayLanguage,
+            error: (err as Error).message,
+          });
+        }
+      }
+
+      const metas = allResults.slice(0, 20).map((item) => {
+        return tmdb.toStremioMeta(item, type, null, null, genreMap);
+      });
+
+      filteredMetas = metas.filter(Boolean);
+    }
 
     log.debug('Preview results', {
       fetchedCount: allResults.length,
       filteredCount: filteredMetas.length,
+      companyFilmographyIdsOnly: isCompanyFilmographyIdsOnly,
     });
 
     res.json({

@@ -5,8 +5,10 @@ import { promotePresetToDiscover } from './useCatalogManager';
 
 function stripOppositeTypeFilters(filters, targetType, sourceId) {
   const source = getSource(sourceId ?? 'tmdb');
+  const normalizedTargetType =
+    targetType === 'anime' ? 'series' : targetType === 'collection' ? 'movie' : targetType;
   const keysToRemove =
-    targetType === 'movie' ? source.seriesOnlyFilterKeys : source.movieOnlyFilterKeys;
+    normalizedTargetType === 'movie' ? source.seriesOnlyFilterKeys : source.movieOnlyFilterKeys;
   const result = { ...filters };
   for (const key of keysToRemove) {
     delete result[key];
@@ -16,7 +18,7 @@ function stripOppositeTypeFilters(filters, targetType, sourceId) {
 
 function pickTypeSpecificFilters(filters, type, sourceId) {
   const source = getSource(sourceId ?? 'tmdb');
-  const effectiveType = type === 'anime' ? 'series' : type;
+  const effectiveType = type === 'anime' ? 'series' : type === 'collection' ? 'movie' : type;
   const keys = effectiveType === 'movie' ? source.movieOnlyFilterKeys : source.seriesOnlyFilterKeys;
   const stash = {};
   for (const key of keys) {
@@ -134,6 +136,12 @@ export function useCatalogEditorHandlers({
           ...strippedFilters,
           ...previousStash,
         };
+        const collectionModeListType =
+          nextTypeFilters.listType === 'studio' ? 'studio' : 'collection';
+        const collectionModeSortBy =
+          collectionModeListType === 'studio'
+            ? nextTypeFilters.sortBy
+            : (nextTypeFilters.sortBy ?? 'collection_order');
 
         const rankedList =
           isSeriesLike || isCollectionType ? undefined : nextTypeFilters.rankedList;
@@ -147,16 +155,18 @@ export function useCatalogEditorHandlers({
             excludeGenres:
               prev.source === 'tmdb' || isImdb ? [] : nextTypeFilters.excludeGenres || [],
             listType: isCollectionType
-              ? 'collection'
-              : nextTypeFilters.listType === 'collection'
+              ? collectionModeListType
+              : nextTypeFilters.listType === 'collection' || nextTypeFilters.listType === 'studio'
                 ? 'discover'
                 : (nextTypeFilters.listType ?? 'discover'),
             presetOrigin: isCollectionType ? undefined : nextTypeFilters.presetOrigin,
             presetDefaults: isCollectionType ? undefined : nextTypeFilters.presetDefaults,
             collectionId: isCollectionType ? nextTypeFilters.collectionId : undefined,
             collectionName: isCollectionType ? nextTypeFilters.collectionName : undefined,
+            studioId: isCollectionType ? nextTypeFilters.studioId : undefined,
+            studioName: isCollectionType ? nextTypeFilters.studioName : undefined,
             sortBy: isCollectionType
-              ? 'collection_order'
+              ? collectionModeSortBy
               : nextTypeFilters.sortBy !== undefined
                 ? nextTypeFilters.sortBy
                 : getSource(prev.source || 'tmdb').defaultFilters?.sortBy,

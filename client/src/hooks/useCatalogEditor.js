@@ -139,6 +139,7 @@ export function useCatalogEditor() {
   const [selectedImdbCompanies, setSelectedImdbCompanies] = useState([]);
   const [selectedImdbExcludeCompanies, setSelectedImdbExcludeCompanies] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState(null);
+  const [selectedStudio, setSelectedStudio] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
     basic: false,
@@ -164,6 +165,7 @@ export function useCatalogEditor() {
     setSelectedImdbCompanies(catalog?.formState?.selectedImdbCompanies || []);
     setSelectedImdbExcludeCompanies(catalog?.formState?.selectedImdbExcludeCompanies || []);
     setSelectedCollection(catalog?.formState?.selectedCollection || null);
+    setSelectedStudio(catalog?.formState?.selectedStudio || null);
     setSelectedCity(catalog?.formState?.selectedCity || null);
 
     // Always start with all sections collapsed, regardless of what was saved
@@ -234,6 +236,10 @@ export function useCatalogEditor() {
                 ? String(selectedCollection.id)
                 : localCatalog?.filters?.collectionId,
               collectionName: selectedCollection?.name || localCatalog?.filters?.collectionName,
+              studioId: selectedStudio?.id
+                ? String(selectedStudio.id)
+                : localCatalog?.filters?.studioId,
+              studioName: selectedStudio?.name || localCatalog?.filters?.studioName,
             }
           : {}),
       },
@@ -249,6 +255,7 @@ export function useCatalogEditor() {
         selectedImdbExcludeCompanies:
           selectedImdbExcludeCompanies.length > 0 ? selectedImdbExcludeCompanies : undefined,
         selectedCollection: selectedCollection || undefined,
+        selectedStudio: selectedStudio || undefined,
         selectedCity: selectedCity || undefined,
         expandedSections,
       },
@@ -265,6 +272,7 @@ export function useCatalogEditor() {
     selectedImdbCompanies,
     selectedImdbExcludeCompanies,
     selectedCollection,
+    selectedStudio,
     selectedCity,
     expandedSections,
   ]);
@@ -397,6 +405,7 @@ export function useCatalogEditor() {
     searchImdbPeople,
     searchImdbCompanies,
     searchCities,
+    getCompanyById,
     getCollectionById,
 
     // Anime sources
@@ -458,6 +467,8 @@ export function useCatalogEditor() {
     setSelectedImdbExcludeCompanies,
     selectedCollection,
     setSelectedCollection,
+    selectedStudio,
+    setSelectedStudio,
     selectedCity,
     setSelectedCity,
 

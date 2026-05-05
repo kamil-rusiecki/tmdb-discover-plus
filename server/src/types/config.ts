@@ -48,6 +48,8 @@ export interface TmdbCatalogFilters extends BaseCatalogFilters {
   listType?: string;
   collectionId?: string;
   collectionName?: string;
+  studioId?: string;
+  studioName?: string;
   voteCountMin?: number;
   stremioExtras?: string[];
   stremioExtraMode?: 'genre' | 'year' | 'sortBy' | 'certification';
@@ -237,6 +239,11 @@ export interface CatalogFormState {
     name: string;
     poster_path?: string | null;
     backdrop_path?: string | null;
+  };
+  selectedStudio?: {
+    id: number | string;
+    name: string;
+    logo_path?: string | null;
   };
   expandedSections?: Record<string, boolean>;
 }

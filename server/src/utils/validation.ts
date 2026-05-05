@@ -57,6 +57,8 @@ export function sanitizeFilters(filters: unknown): Record<string, unknown> {
     'listType',
     'collectionId',
     'collectionName',
+    'studioId',
+    'studioName',
     'genres',
     'excludeGenres',
     'genreMatchMode',
@@ -377,6 +379,8 @@ export function sanitizeImdbFilters(filters: unknown): Record<string, unknown> {
 const TMDB_ONLY_FILTER_KEYS: ReadonlyArray<string> = [
   'collectionId',
   'collectionName',
+  'studioId',
+  'studioName',
   'voteCountMin',
   'imdbOnly',
   'displayLanguage',

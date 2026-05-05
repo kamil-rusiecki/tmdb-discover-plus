@@ -60,6 +60,7 @@ export const CatalogEditor = memo(function CatalogEditor() {
     searchCompany,
     searchKeyword,
     searchCollection,
+    getCompanyById,
     getCollectionById,
     searchImdbPeople,
     searchImdbCompanies,
@@ -117,6 +118,8 @@ export const CatalogEditor = memo(function CatalogEditor() {
     setSelectedImdbExcludeCompanies,
     selectedCollection,
     setSelectedCollection,
+    selectedStudio,
+    setSelectedStudio,
     selectedCity,
     setSelectedCity,
     activeFilters,
@@ -248,6 +251,7 @@ export const CatalogEditor = memo(function CatalogEditor() {
     searchCompany,
     searchKeyword,
     searchCollection,
+    getCompanyById,
     getCollectionById,
     onSearchImdbPeople: searchImdbPeople,
     onSearchImdbCompanies: searchImdbCompanies,
@@ -260,6 +264,8 @@ export const CatalogEditor = memo(function CatalogEditor() {
     setSelectedImdbExcludeCompanies,
     selectedCollection,
     setSelectedCollection,
+    selectedStudio,
+    setSelectedStudio,
     selectedCity,
     setSelectedCity,
     imdbGenres,
@@ -435,7 +441,7 @@ export const CatalogEditor = memo(function CatalogEditor() {
                 className={`type-btn ${isCollection ? 'active' : ''}`}
                 onClick={() => handleTypeChange('collection')}
               >
-                <Sparkles size={18} /> Collection
+                <Sparkles size={18} /> Collections
               </button>
             )}
           </div>

@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { mockedFetch } = vi.hoisted(() => ({ mockedFetch: vi.fn() }));
+const mockWebsiteFetch = vi.fn();
+
+vi.stubGlobal('fetch', mockWebsiteFetch);
 
 vi.mock('../../src/services/tmdb/client.ts', () => ({
   tmdbFetch: mockedFetch,
@@ -22,6 +25,7 @@ import { discover, fetchSpecialList } from '../../src/services/tmdb/discover.ts'
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockWebsiteFetch.mockReset();
 });
 
 describe('discover', () => {
@@ -124,6 +128,22 @@ describe('discover', () => {
       expect.objectContaining({ region: 'DE', with_release_type: '4' })
     );
   });
+
+  it('keeps using TMDB discover for company filters in normal discover mode', async () => {
+    mockedFetch.mockResolvedValue({ page: 1, results: [] });
+
+    await discover('key', {
+      type: 'movie',
+      withCompanies: '13510',
+    });
+
+    expect(mockWebsiteFetch).not.toHaveBeenCalled();
+    expect(mockedFetch).toHaveBeenCalledWith(
+      '/discover/movie',
+      'key',
+      expect.objectContaining({ with_companies: '13510' })
+    );
+  });
 });
 
 describe('fetchSpecialList', () => {
@@ -204,9 +224,52 @@ describe('fetchSpecialList', () => {
     expect(result.results[0].id).toBe(21);
   });
 
+  it('fetches studio filmography from the TMDB website for collection-only studio mode', async () => {
+    mockWebsiteFetch.mockResolvedValue({
+      ok: true,
+      text: vi.fn().mockResolvedValue(`
+        <html>
+          <body>
+            <h3>147 movies</h3>
+            <a href="/movie/222218-wcw-starrcade-1990">WCW Starrcade 1990</a>
+            <a href="/movie/225067-wcw-halloween-havoc-1994">WCW Halloween Havoc 1994</a>
+            <a href="/movie/229747-wcw-fall-brawl-1997">WCW Fall Brawl 1997</a>
+          </body>
+        </html>
+      `),
+    });
+
+    const result = (await fetchSpecialList('key', 'studio', 'collection', {
+      studioId: 13510,
+      page: 2,
+    })) as {
+      page: number;
+      total_pages: number;
+      total_results: number;
+      results: Array<{ id: number }>;
+      __companyFilmographyIdsOnly?: boolean;
+    };
+
+    expect(mockWebsiteFetch).toHaveBeenCalledWith(
+      'https://www.themoviedb.org/company/13510/movie?page=2',
+      expect.objectContaining({ headers: expect.any(Object) })
+    );
+    expect(mockedFetch).not.toHaveBeenCalled();
+    expect(result.__companyFilmographyIdsOnly).toBe(true);
+    expect(result.total_results).toBe(147);
+    expect(result.total_pages).toBe(8);
+    expect(result.results.map((item) => item.id)).toEqual([222218, 225067, 229747]);
+  });
+
   it('throws when collection list is requested without collectionId', async () => {
     await expect(fetchSpecialList('key', 'collection', 'movie')).rejects.toThrow(
       'Collection ID required for collection list type'
+    );
+  });
+
+  it('throws when studio list is requested without studioId', async () => {
+    await expect(fetchSpecialList('key', 'studio', 'collection')).rejects.toThrow(
+      'Studio ID required for studio list type'
     );
   });
 
@@ -214,6 +277,18 @@ describe('fetchSpecialList', () => {
     await expect(
       fetchSpecialList('key', 'collection', 'series', { collectionId: 10 })
     ).rejects.toThrow('TMDB collections are only supported for movies');
+  });
+
+  it('throws when studio list is requested for movie type', async () => {
+    await expect(fetchSpecialList('key', 'studio', 'movie', { studioId: 10 })).rejects.toThrow(
+      'TMDB studio lists are only supported for collection type catalogs'
+    );
+  });
+
+  it('throws when studio list is requested for series type', async () => {
+    await expect(fetchSpecialList('key', 'studio', 'series', { studioId: 10 })).rejects.toThrow(
+      'TMDB studio lists are only supported for collection type catalogs'
+    );
   });
 });
 
