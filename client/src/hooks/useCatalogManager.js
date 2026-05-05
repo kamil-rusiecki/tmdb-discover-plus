@@ -103,7 +103,14 @@ export function useCatalogManager(config, addToast) {
       name: `${catalog.name} (Copy)`,
     };
 
-    config.setCatalogs((prev) => [...prev, newCatalog]);
+    config.setCatalogs((prev) => {
+      const sourceIndex = prev.findIndex((c) => c._id === catalogId || c.id === catalogId);
+      if (sourceIndex < 0) return [...prev, newCatalog];
+
+      const next = [...prev];
+      next.splice(sourceIndex + 1, 0, newCatalog);
+      return next;
+    });
     setActiveCatalog(newCatalog);
     addToast('Catalog duplicated');
   };
