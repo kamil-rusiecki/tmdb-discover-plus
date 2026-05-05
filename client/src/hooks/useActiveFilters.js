@@ -768,6 +768,68 @@ export function useActiveFilters({
       }
     }
 
+    if (source === 'kitsu') {
+      if (filters.kitsuListType === 'trending') {
+        active.push({ key: 'kitsuListType', label: 'Trending', section: 'filters' });
+      }
+
+      if (filters.kitsuSort && filters.kitsuSort !== '-averageRating') {
+        active.push({
+          key: 'kitsuSort',
+          label: `Sort: ${filters.kitsuSort}`,
+          section: 'filters',
+        });
+      }
+
+      if (filters.kitsuCategories?.length > 0) {
+        active.push({
+          key: 'kitsuCategories',
+          label: `Categories: ${filters.kitsuCategories.length}`,
+          section: 'genres',
+        });
+      }
+
+      if (filters.kitsuSubtype?.length > 0) {
+        active.push({
+          key: 'kitsuSubtype',
+          label: `Type: ${filters.kitsuSubtype.join(', ')}`,
+          section: 'format',
+        });
+      }
+
+      if (filters.kitsuStatus?.length > 0) {
+        active.push({
+          key: 'kitsuStatus',
+          label: `Status: ${filters.kitsuStatus.join(', ')}`,
+          section: 'format',
+        });
+      }
+
+      if (filters.kitsuAgeRating?.length > 0) {
+        active.push({
+          key: 'kitsuAgeRating',
+          label: `Rating: ${filters.kitsuAgeRating.join(', ')}`,
+          section: 'format',
+        });
+      }
+
+      if (filters.kitsuSeason) {
+        active.push({
+          key: 'kitsuSeason',
+          label: `Season: ${filters.kitsuSeason}`,
+          section: 'filters',
+        });
+      }
+
+      if (filters.kitsuSeasonYear) {
+        active.push({
+          key: 'kitsuSeasonYear',
+          label: `Year: ${filters.kitsuSeasonYear}`,
+          section: 'filters',
+        });
+      }
+    }
+
     if (source === 'simkl') {
       if (filters.simklListType && filters.simklListType !== 'trending') {
         const typeLabel = getOptionLabel(simklListTypes, filters.simklListType);

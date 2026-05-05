@@ -480,6 +480,18 @@ const MAL_ONLY_FILTER_KEYS = [
   'malRating',
 ];
 
+const KITSU_ONLY_FILTER_KEYS = [
+  'kitsuListType',
+  'kitsuSort',
+  'kitsuSubtype',
+  'kitsuStatus',
+  'kitsuAgeRating',
+  'kitsuCategories',
+  'kitsuSeason',
+  'kitsuSeasonYear',
+  'kitsuStreamers',
+];
+
 const SIMKL_ONLY_FILTER_KEYS = [
   'simklListType',
   'simklTrendingPeriod',
@@ -541,6 +553,7 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...IMDB_ONLY_FILTER_KEYS,
     ...ANILIST_ONLY_FILTER_KEYS,
     ...MAL_ONLY_FILTER_KEYS,
+    ...KITSU_ONLY_FILTER_KEYS,
     ...SIMKL_ONLY_FILTER_KEYS,
     ...TRAKT_ONLY_FILTER_KEYS,
   ],
@@ -548,6 +561,7 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...TMDB_ONLY_FILTER_KEYS,
     ...ANILIST_ONLY_FILTER_KEYS,
     ...MAL_ONLY_FILTER_KEYS,
+    ...KITSU_ONLY_FILTER_KEYS,
     ...SIMKL_ONLY_FILTER_KEYS,
     ...TRAKT_ONLY_FILTER_KEYS,
   ],
@@ -555,6 +569,7 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...TMDB_ONLY_FILTER_KEYS,
     ...IMDB_ONLY_FILTER_KEYS,
     ...MAL_ONLY_FILTER_KEYS,
+    ...KITSU_ONLY_FILTER_KEYS,
     ...SIMKL_ONLY_FILTER_KEYS,
     ...TRAKT_ONLY_FILTER_KEYS,
   ],
@@ -562,6 +577,15 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...TMDB_ONLY_FILTER_KEYS,
     ...IMDB_ONLY_FILTER_KEYS,
     ...ANILIST_ONLY_FILTER_KEYS,
+    ...KITSU_ONLY_FILTER_KEYS,
+    ...SIMKL_ONLY_FILTER_KEYS,
+    ...TRAKT_ONLY_FILTER_KEYS,
+  ],
+  kitsu: [
+    ...TMDB_ONLY_FILTER_KEYS,
+    ...IMDB_ONLY_FILTER_KEYS,
+    ...ANILIST_ONLY_FILTER_KEYS,
+    ...MAL_ONLY_FILTER_KEYS,
     ...SIMKL_ONLY_FILTER_KEYS,
     ...TRAKT_ONLY_FILTER_KEYS,
   ],
@@ -570,6 +594,7 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...IMDB_ONLY_FILTER_KEYS,
     ...ANILIST_ONLY_FILTER_KEYS,
     ...MAL_ONLY_FILTER_KEYS,
+    ...KITSU_ONLY_FILTER_KEYS,
     ...TRAKT_ONLY_FILTER_KEYS,
   ],
   trakt: [
@@ -577,6 +602,7 @@ const ALL_SOURCE_SPECIFIC_KEYS: Record<string, string[]> = {
     ...IMDB_ONLY_FILTER_KEYS,
     ...ANILIST_ONLY_FILTER_KEYS,
     ...MAL_ONLY_FILTER_KEYS,
+    ...KITSU_ONLY_FILTER_KEYS,
     ...SIMKL_ONLY_FILTER_KEYS,
   ],
 };

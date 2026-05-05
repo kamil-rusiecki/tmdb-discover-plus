@@ -14,6 +14,7 @@ export interface UserPreferences {
   disableImdbSearch?: boolean;
   disableAnilistSearch?: boolean;
   disableMalSearch?: boolean;
+  disableKitsuSearch?: boolean;
   disableSimklSearch?: boolean;
   disableTraktSearch?: boolean;
   includeAdult?: boolean;
@@ -162,6 +163,18 @@ export interface MalCatalogFilters extends BaseCatalogFilters {
   malOrderBy?: string;
 }
 
+export interface KitsuCatalogFilters extends BaseCatalogFilters {
+  kitsuListType?: string;
+  kitsuSort?: string;
+  kitsuSubtype?: string[];
+  kitsuStatus?: string[];
+  kitsuAgeRating?: string[];
+  kitsuCategories?: string[];
+  kitsuSeason?: string;
+  kitsuSeasonYear?: number;
+  kitsuStreamers?: string;
+}
+
 export interface SimklCatalogFilters extends BaseCatalogFilters {
   simklListType?: string;
   simklTrendingPeriod?: string;
@@ -218,12 +231,13 @@ export interface TraktCatalogFilters extends BaseCatalogFilters {
   traktRtUserMeterMax?: number;
 }
 
-export type SourceType = 'tmdb' | 'imdb' | 'anilist' | 'mal' | 'simkl' | 'trakt';
+export type SourceType = 'tmdb' | 'imdb' | 'anilist' | 'mal' | 'simkl' | 'trakt' | 'kitsu';
 
 export type CatalogFilters = TmdbCatalogFilters &
   ImdbCatalogFilters &
   AnilistCatalogFilters &
   MalCatalogFilters &
+  KitsuCatalogFilters &
   SimklCatalogFilters &
   TraktCatalogFilters;
 

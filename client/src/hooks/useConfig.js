@@ -19,6 +19,7 @@ export function useConfig(initialUserId = null) {
     disableImdbSearch: true,
     disableAnilistSearch: true,
     disableMalSearch: true,
+    disableKitsuSearch: true,
     disableSimklSearch: true,
     disableTraktSearch: true,
   });
@@ -111,6 +112,7 @@ export function useConfig(initialUserId = null) {
       disableImdbSearch: true,
       disableAnilistSearch: true,
       disableMalSearch: true,
+      disableKitsuSearch: true,
       disableSimklSearch: true,
       disableTraktSearch: true,
     });
@@ -127,6 +129,7 @@ export function useConfig(initialUserId = null) {
       disableImdbSearch: true,
       disableAnilistSearch: true,
       disableMalSearch: true,
+      disableKitsuSearch: true,
       disableSimklSearch: true,
       disableTraktSearch: true,
       ...(configData.preferences || {}),

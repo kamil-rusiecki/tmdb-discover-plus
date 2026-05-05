@@ -303,6 +303,7 @@ export function SettingsModal({ isOpen, onClose, onShowExport, onImportData }) {
                       { id: 'IMDb', pref: 'disableImdbSearch', defaultActive: true },
                       { id: 'AniList', pref: 'disableAnilistSearch', defaultActive: true },
                       { id: 'MAL', pref: 'disableMalSearch', defaultActive: true },
+                      { id: 'Kitsu', pref: 'disableKitsuSearch', defaultActive: true },
                       { id: 'Simkl', pref: 'disableSimklSearch', defaultActive: true },
                       { id: 'Trakt', pref: 'disableTraktSearch', defaultActive: true },
                     ].map((p) => {

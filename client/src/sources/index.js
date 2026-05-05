@@ -2,6 +2,7 @@ import { TMDB_SOURCE } from './tmdb.source';
 import { IMDB_SOURCE } from './imdb.source';
 import { ANILIST_SOURCE } from './anilist.source';
 import { MAL_SOURCE } from './mal.source';
+import { KITSU_SOURCE } from './kitsu.source';
 import { SIMKL_SOURCE } from './simkl.source';
 import { TRAKT_SOURCE } from './trakt.source';
 
@@ -10,6 +11,7 @@ const SOURCE_REGISTRY = new Map([
   [IMDB_SOURCE.id, IMDB_SOURCE],
   [ANILIST_SOURCE.id, ANILIST_SOURCE],
   [MAL_SOURCE.id, MAL_SOURCE],
+  [KITSU_SOURCE.id, KITSU_SOURCE],
   [SIMKL_SOURCE.id, SIMKL_SOURCE],
   [TRAKT_SOURCE.id, TRAKT_SOURCE],
 ]);
@@ -22,4 +24,12 @@ export function getAllSources() {
   return Array.from(SOURCE_REGISTRY.values());
 }
 
-export { TMDB_SOURCE, IMDB_SOURCE, ANILIST_SOURCE, MAL_SOURCE, SIMKL_SOURCE, TRAKT_SOURCE };
+export {
+  TMDB_SOURCE,
+  IMDB_SOURCE,
+  ANILIST_SOURCE,
+  MAL_SOURCE,
+  KITSU_SOURCE,
+  SIMKL_SOURCE,
+  TRAKT_SOURCE,
+};

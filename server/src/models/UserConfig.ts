@@ -177,6 +177,7 @@ const userConfigSchema = new mongoose.Schema({
     disableImdbSearch: { type: Boolean, default: true },
     disableAnilistSearch: { type: Boolean, default: true },
     disableMalSearch: { type: Boolean, default: true },
+    disableKitsuSearch: { type: Boolean, default: true },
     disableSimklSearch: { type: Boolean, default: true },
     disableTraktSearch: { type: Boolean, default: true },
   },

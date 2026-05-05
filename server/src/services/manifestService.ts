@@ -351,6 +351,27 @@ export function buildManifest(userConfig: UserConfig | null, baseUrl: string): S
       });
     }
 
+    if (userConfig?.preferences?.disableKitsuSearch === false) {
+      catalogs.push({
+        id: 'kitsu-search-movie',
+        type: 'movie',
+        name: 'Kitsu Search',
+        extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
+      });
+      catalogs.push({
+        id: 'kitsu-search-series',
+        type: 'series',
+        name: 'Kitsu Search',
+        extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
+      });
+      catalogs.push({
+        id: 'kitsu-search-anime',
+        type: 'anime',
+        name: 'Kitsu Search',
+        extra: [{ name: 'search', isRequired: true }, { name: 'skip' }],
+      });
+    }
+
     if (simkl.isSimklEnabled() && userConfig?.preferences?.disableSimklSearch === false) {
       catalogs.push({
         id: 'simkl-search-movie',
